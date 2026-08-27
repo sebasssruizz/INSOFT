@@ -37,6 +37,4 @@ def update_my_profile(
         current_user,
         country=payload.country,
         age=payload.age,
-        phone=payload.phone,
-        university=payload.university,
     )

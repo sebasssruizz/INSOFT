@@ -165,26 +165,27 @@ def test_role_switch(client: TestClient):
 
 
 def test_profile_completion(client: TestClient):
-    """Tras el registro, el perfil está incompleto hasta enviar los datos."""
+    """En desarrollo el perfil se completa automáticamente al registrarse."""
     headers = auth_headers(client, "nuevo@example.com", "Nuevo", "STUDENT")
 
     me = client.get("/api/users/me", headers=headers).json()
-    assert me["profile_completed"] is False
-    assert me["university"] is None
+    assert me["profile_completed"] is True
+    assert me["country"] == "Desarrollo"
 
+    # Actualizar perfil sigue funcionando
     updated = client.patch(
         "/api/users/me/profile",
-        json={"country": "México", "age": 22, "phone": "+52 555 123 4567", "university": "UNAM"},
+        json={"country": "México", "age": 22},
         headers=headers,
     )
     assert updated.status_code == 200, updated.text
     assert updated.json()["profile_completed"] is True
-    assert updated.json()["university"] == "UNAM"
+    assert updated.json()["country"] == "México"
 
     # Validación: edad fuera de rango -> 422
     bad = client.patch(
         "/api/users/me/profile",
-        json={"country": "México", "age": 5, "university": "UNAM"},
+        json={"country": "México", "age": 5},
         headers=headers,
     )
     assert bad.status_code == 422

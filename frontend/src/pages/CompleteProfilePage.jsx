@@ -1,28 +1,48 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCakeCandles, faGlobe, faPhone, faUserCheck } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faCakeCandles, faGlobe, faUserCheck } from '@fortawesome/free-solid-svg-icons'
 import Logo from '../components/Logo'
-import UniversityAutocomplete from '../components/UniversityAutocomplete'
 import { useAuth } from '../hooks/useAuth'
 
 export default function CompleteProfilePage() {
-  const { user, completeProfile } = useAuth()
+  const { user, completeProfile, logout } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ country: '', age: '', phone: '', university: '' })
+  const [form, setForm] = useState({ country: '', age: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [touched, setTouched] = useState({ country: false, age: false })
+
+  const handleBack = () => {
+    logout()
+    navigate('/')
+  }
+
+  const validate = () => {
+    const errors = []
+    if (!form.country.trim()) errors.push('El país es obligatorio.')
+    if (form.country.trim().length < 2) errors.push('El país debe tener al menos 2 caracteres.')
+    if (!form.age) errors.push('La edad es obligatoria.')
+    const age = Number(form.age)
+    if (isNaN(age) || age < 10 || age > 110) errors.push('La edad debe ser un número entre 10 y 110.')
+    return errors
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setTouched({ country: true, age: true })
+    const errors = validate()
+    if (errors.length > 0) {
+      setError(errors.join(' '))
+      return
+    }
+
     setLoading(true)
     setError(null)
     try {
       await completeProfile({
         country: form.country.trim(),
         age: Number(form.age),
-        phone: form.phone.trim() || null,
-        university: form.university.trim(),
       })
       navigate('/dashboard')
     } catch (err) {
@@ -32,8 +52,16 @@ export default function CompleteProfilePage() {
     }
   }
 
-  const inputClass =
-    'w-full rounded-lg border border-slate-300 pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ins-500'
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }))
+  }
+
+  const inputClass = (field) =>
+    `w-full rounded-lg border pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ins-500 ${
+      touched[field] && !form[field].trim() ? 'border-red-300' : 'border-slate-300'
+    }`
+
+  const showError = (field) => touched[field] && !form[field].trim()
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
@@ -43,6 +71,14 @@ export default function CompleteProfilePage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl shadow-oft-100 border border-slate-100 p-8 animate-fade-in-up">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-ins-600 mb-4 transition-colors"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} />
+            Atrás
+          </button>
+
           <div className="text-center">
             <span className="inline-flex w-12 h-12 rounded-full bg-oft-600 text-white items-center justify-center text-lg shadow-md">
               <FontAwesomeIcon icon={faUserCheck} />
@@ -63,14 +99,16 @@ export default function CompleteProfilePage() {
                 </span>
                 <input
                   type="text"
-                  required
-                  minLength={2}
                   value={form.country}
                   onChange={(e) => setForm({ ...form, country: e.target.value })}
+                  onBlur={() => handleBlur('country')}
                   placeholder="México, Colombia, España…"
-                  className={inputClass}
+                  className={inputClass('country')}
                 />
               </div>
+              {showError('country') && (
+                <p className="mt-1 text-xs text-red-600">El país es obligatorio.</p>
+              )}
             </div>
 
             <div>
@@ -81,43 +119,18 @@ export default function CompleteProfilePage() {
                 </span>
                 <input
                   type="number"
-                  required
                   min={10}
                   max={110}
                   value={form.age}
                   onChange={(e) => setForm({ ...form, age: e.target.value })}
+                  onBlur={() => handleBlur('age')}
                   placeholder="22"
-                  className={inputClass}
+                  className={inputClass('age')}
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Teléfono (opcional)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <FontAwesomeIcon icon={faPhone} />
-                </span>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="+52 555 123 4567"
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Universidad *</label>
-              <UniversityAutocomplete
-                value={form.university}
-                onChange={(university) => setForm({ ...form, university })}
-                required
-              />
-              <p className="mt-1 text-xs text-slate-400">
-                Escribe al menos 3 letras y elige tu universidad de la lista.
-              </p>
+              {showError('age') && (
+                <p className="mt-1 text-xs text-red-600">La edad es obligatoria.</p>
+              )}
             </div>
 
             {error && (

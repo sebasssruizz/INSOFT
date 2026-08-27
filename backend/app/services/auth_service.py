@@ -84,6 +84,12 @@ def authenticate_dev(db: Session, email: str, name: str, role: str) -> User:
             db.refresh(user)
             if requested == UserRole.STUDENT:
                 course_service.enroll_student_in_general_course(db, user)
+        # Si el perfil está incompleto, completarlo automáticamente en desarrollo
+        if not user.profile_completed:
+            user.country = "Desarrollo"
+            user.age = 25
+            db.commit()
+            db.refresh(user)
         return user
     if user is None:
         # TEACHER_EMAILS tiene prioridad sobre el rol solicitado (igual que con Google)
@@ -96,5 +102,10 @@ def authenticate_dev(db: Session, email: str, name: str, role: str) -> User:
             profile_image=None,
             role=user_role,
         )
+        # En desarrollo, completar el perfil automáticamente
+        user.country = "Desarrollo"
+        user.age = 25
+        db.commit()
+        db.refresh(user)
         return _finalize_login(db, user, is_new=True)
     return user

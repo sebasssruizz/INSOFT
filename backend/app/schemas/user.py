@@ -15,8 +15,6 @@ class UserRead(BaseModel):
     role: UserRole
     country: str | None = None
     age: int | None = None
-    phone: str | None = None
-    university: str | None = None
     profile_completed: bool = False
     created_at: datetime
 
@@ -26,8 +24,6 @@ class ProfileUpdate(BaseModel):
 
     country: str = Field(min_length=2, max_length=120)
     age: int = Field(ge=10, le=110)
-    phone: str | None = Field(default=None, max_length=30)
-    university: str = Field(min_length=2, max_length=255)
 
 
 class RoleUpdate(BaseModel):

@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faCheck, faCopy, faPlus, faUsers } from '@fortawesome/free-solid-svg-icons'
-import ImageCarousel from '../components/ImageCarousel'
-import { SLIDESHOW_IMAGES } from '../data/slideshow'
 import { useAuth } from '../hooks/useAuth'
 import { createCourse, listCourses } from '../services/courseService'
 
@@ -148,12 +146,6 @@ export default function TeacherDashboard() {
         Gestiona tus cursos y comparte el código con tus estudiantes. El contenido académico es el oficial de
         INSOFT.
       </p>
-
-      <ImageCarousel
-        images={SLIDESHOW_IMAGES}
-        interval={7000}
-        className="mt-5 rounded-xl shadow-md h-36 md:h-44"
-      />
 
       <div className="mt-6 grid lg:grid-cols-3 gap-6 items-start">
         <section className="lg:col-span-2">

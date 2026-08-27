@@ -11,8 +11,6 @@ from app.database.session import engine
 NEW_COLUMNS = {
     ("users", "country"): "VARCHAR(120)",
     ("users", "age"): "INTEGER",
-    ("users", "phone"): "VARCHAR(30)",
-    ("users", "university"): "VARCHAR(255)",
 }
 
 

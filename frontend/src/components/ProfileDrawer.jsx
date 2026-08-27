@@ -2,12 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faBuildingColumns,
   faCakeCandles,
   faChalkboardUser,
   faGlobe,
   faGraduationCap,
-  faPhone,
   faRightFromBracket,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
@@ -127,8 +125,6 @@ export default function ProfileDrawer({ open, onClose }) {
             <dl className="space-y-2.5">
               <DataRow icon={faGlobe} label="País" value={user.country} />
               <DataRow icon={faCakeCandles} label="Edad" value={user.age ? `${user.age} años` : null} />
-              <DataRow icon={faPhone} label="Teléfono" value={user.phone} />
-              <DataRow icon={faBuildingColumns} label="Universidad" value={user.university} />
             </dl>
             <p className="mt-3 text-xs text-slate-400">
               Proveedor: {user.profile_image ? 'Google' : 'INSOFT'}

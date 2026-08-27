@@ -2,10 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faBookOpen, faCircleCheck } from '@fortawesome/free-solid-svg-icons'
-import ImageCarousel from '../components/ImageCarousel'
 import JoinCourseForm from '../components/JoinCourseForm'
 import ProgressBar from '../components/ProgressBar'
-import { SLIDESHOW_IMAGES } from '../data/slideshow'
 import { useAuth } from '../hooks/useAuth'
 import { listCourses } from '../services/courseService'
 
@@ -86,12 +84,6 @@ export default function StudentDashboard() {
           <p className="text-slate-500 mt-1 text-sm">Estos son tus cursos de Oftalmología.</p>
         </div>
       </header>
-
-      <ImageCarousel
-        images={SLIDESHOW_IMAGES}
-        interval={7000}
-        className="mt-5 rounded-xl shadow-md h-36 md:h-44"
-      />
 
       <div className="mt-6 grid lg:grid-cols-3 gap-6 items-start">
         {/* Cursos: ocupan 2/3 del ancho */}

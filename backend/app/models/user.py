@@ -24,15 +24,13 @@ class User(Base):
     # Datos de perfil complementarios (se solicitan tras el primer inicio de sesión)
     country: Mapped[str | None] = mapped_column(String(120), nullable=True)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
-    university: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
 
     @property
     def profile_completed(self) -> bool:
-        return bool(self.country and self.university and self.age)
+        return bool(self.country and self.age)
 
     memberships = relationship("CourseMembership", back_populates="user", cascade="all, delete-orphan")
     taught_courses = relationship("Course", back_populates="teacher")
