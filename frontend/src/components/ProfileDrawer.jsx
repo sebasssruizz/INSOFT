@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -39,32 +38,15 @@ function DataRow({ icon, label, value }) {
 }
 
 export default function ProfileDrawer({ open, onClose }) {
-  const { user, changeRole, logout } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [switching, setSwitching] = useState(false)
-  const [error, setError] = useState(null)
 
   if (!user) return null
 
   const isTeacher = user.role === 'TEACHER'
-  const targetRole = isTeacher ? 'STUDENT' : 'TEACHER'
   const joinedAt = user.created_at
     ? new Date(user.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
     : null
-
-  const handleSwitchRole = async () => {
-    setSwitching(true)
-    setError(null)
-    try {
-      await changeRole(targetRole)
-      onClose()
-      navigate('/dashboard')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSwitching(false)
-    }
-  }
 
   const handleLogout = () => {
     logout()
@@ -127,31 +109,9 @@ export default function ProfileDrawer({ open, onClose }) {
               <DataRow icon={faCakeCandles} label="Edad" value={user.age ? `${user.age} años` : null} />
             </dl>
             <p className="mt-3 text-xs text-slate-400">
-              Proveedor: {user.profile_image ? 'Google' : 'INSOFT'}
+              Rol asignado por {user.profile_image ? 'Google' : 'INSOFT'}
               {joinedAt && ` · Miembro desde ${joinedAt}`}
             </p>
-          </section>
-
-          <section className="border-t border-slate-100 pt-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Rol</h3>
-            <p className="text-sm text-slate-500 mb-3">
-              {isTeacher
-                ? 'Como profesor puedes crear cursos y gestionar estudiantes.'
-                : 'Como estudiante puedes unirte a cursos y registrar tu progreso.'}
-            </p>
-            <button
-              onClick={handleSwitchRole}
-              disabled={switching}
-              className={`w-full inline-flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2.5 transition-colors disabled:opacity-50 ${
-                isTeacher
-                  ? 'bg-ins-600 hover:bg-ins-700 text-white'
-                  : 'bg-oft-600 hover:bg-oft-700 text-white'
-              }`}
-            >
-              <FontAwesomeIcon icon={isTeacher ? faGraduationCap : faChalkboardUser} />
-              {switching ? 'Cambiando…' : isTeacher ? 'Cambiar a Estudiante' : 'Cambiar a Profesor'}
-            </button>
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           </section>
         </div>
 
