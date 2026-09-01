@@ -1,60 +1,87 @@
 import { useState } from 'react'
 import { GoogleLogin } from '@react-oauth/google'
+import { motion, useReducedMotion } from 'motion/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faArrowDown, faBookOpen, faChartLine, faEye, faKey, faShieldHalved,
-  faMicroscope, faStethoscope, faLaptopMedical, faUsers, faGraduationCap,
-  faHeartPulse, faCheckCircle, faDesktop, faSyringe, faHandHoldingMedical,
+  faArrowRight, faBookOpen, faChartLine, faKey, faShieldHalved,
+  faLaptopMedical, faGraduationCap, faCircleCheck, faLayerGroup,
+  faUserGraduate,
 } from '@fortawesome/free-solid-svg-icons'
 import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
-import { useInView } from '../hooks/useInView'
+import { ProcessTimeline } from '../components/ui/process-timeline'
+import { SectionHeading } from '../components/ui/section-heading'
 
 const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
 const devLoginEnabled = import.meta.env.VITE_ENABLE_DEV_LOGIN === 'true'
 
-const FEATURES = [
-  { icon: faBookOpen, title: 'Contenido oficial', text: 'Temas y subtemas de Oftalmología estructurados y verificados por expertos.' },
-  { icon: faEye, title: 'Curso General', text: 'Acceso automático al Curso General de Oftalmología al registrarte.' },
-  { icon: faKey, title: 'Cursos con código', text: 'Únete a los cursos de tus profesores con un código único de acceso.' },
-  { icon: faChartLine, title: 'Tu progreso', text: 'Marca subtemas completados y visualiza tu avance en tiempo real.' },
-  { icon: faLaptopMedical, title: 'Aprende a tu ritmo', text: 'Estudia desde cualquier dispositivo, cuando quieras y donde quieras.' },
-  { icon: faShieldHalved, title: 'Plataforma segura', text: 'Autenticación con Google OAuth para proteger tu información.' },
+const TOPICS = [
+  { name: 'Anatomía ocular', count: 4 },
+  { name: 'Glaucoma', count: 4 },
+  { name: 'Catarata', count: 3 },
+  { name: 'Patologías de la retina', count: 3 },
 ]
 
-const STATS = [
-  { icon: faMicroscope, value: '14+', label: 'Subtemas oficiales' },
-  { icon: faUsers, value: '2', label: 'Roles de usuario' },
-  { icon: faGraduationCap, value: '∞', label: 'Cursos disponibles' },
-  { icon: faHeartPulse, value: '24/7', label: 'Acceso continuo' },
+const PROCESS_PHASES = [
+  {
+    id: 'paso-1',
+    title: 'Accede a la plataforma',
+    description:
+      'Inicia sesión con tu cuenta de Google. No hay que crear ninguna contraseña nueva ni rellenar formularios largos.',
+  },
+  {
+    id: 'paso-2',
+    title: 'Completa tu perfil',
+    description:
+      'Indica tu país y tu edad una sola vez. Con eso ya tienes acceso al Curso General de Oftalmología.',
+  },
+  {
+    id: 'paso-3',
+    title: 'Estudia el temario',
+    description:
+      'Recorre los temas y subtemas del contenido oficial. Si tu profesor te pasa un código, únete también a su curso.',
+  },
+  {
+    id: 'paso-4',
+    title: 'Sigue tu avance',
+    description:
+      'Marca cada subtema cuando lo termines. La plataforma calcula tu progreso en cada curso automáticamente.',
+  },
 ]
 
-const STEPS = [
-  { icon: faCheckCircle, title: 'Regístrate', text: 'Inicia sesión con tu cuenta de Google o con el acceso de desarrollo.' },
-  { icon: faLaptopMedical, title: 'Completa tu perfil', text: 'Indica tu país y edad para personalizar tu experiencia.' },
-  { icon: faBookOpen, title: 'Estudia', text: 'Accede al Curso General o únete a cursos de tus profesores con un código.' },
-  { icon: faChartLine, title: 'Avanza', text: 'Marca subtemas completados y sigue tu progreso visual.' },
-]
+const EASE = [0.16, 1, 0.3, 1]
 
-function RevealSection({ children, className = '', animation = 'reveal-up', delay = 0 }) {
-  const [ref, inView] = useInView(0.1)
+function Reveal({ children, className = '', delay = 0 }) {
+  const reduce = useReducedMotion()
   return (
-    <div
-      ref={ref}
+    <motion.div
       className={className}
-      style={{ animationDelay: `${delay}ms` }}
+      initial={reduce ? false : { opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.6, delay, ease: EASE }}
     >
-      {inView ? (
-        <div className={`animate-${animation}`}>{children}</div>
-      ) : (
-        <div className="opacity-0">{children}</div>
-      )}
-    </div>
+      {children}
+    </motion.div>
+  )
+}
+
+function FeatureIcon({ icon, variant = 'ins' }) {
+  const styles = {
+    ins: 'bg-ins-50 text-ins-700',
+    oft: 'bg-oft-50 text-oft-600',
+    onDark: 'bg-white/10 text-white backdrop-blur',
+  }
+  return (
+    <span className={`inline-flex h-11 w-11 items-center justify-center rounded-xl text-lg ${styles[variant]}`}>
+      <FontAwesomeIcon icon={icon} />
+    </span>
   )
 }
 
 export default function LandingPage() {
   const { loginGoogle, loginDevelopment } = useAuth()
+  const reduce = useReducedMotion()
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -75,241 +102,298 @@ export default function LandingPage() {
     setLoading(true)
     const isTeacher = role === 'TEACHER'
     const email = isTeacher ? 'profesor@demo.com' : 'estudiante@demo.com'
-    const name = isTeacher ? 'Dr. Pérez' : 'Ana García'
+    const name = isTeacher ? 'Dra. Rojas' : 'Ana García'
     try {
       await loginDevelopment(email, name, role)
     } catch (err) {
-      setError(err.message || 'Login de desarrollo no disponible.')
+      setError(err.message || 'El acceso de desarrollo no está disponible.')
     } finally {
       setLoading(false)
     }
   }
 
+  const heroStagger = reduce
+    ? {}
+    : { initial: 'hidden', animate: 'show', variants: { show: { transition: { staggerChildren: 0.09 } } } }
+  const heroItem = reduce
+    ? {}
+    : { variants: { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } } } }
+
   return (
-    <div className="w-full min-h-screen bg-surgery-50">
-      {/* Cabecera quirúrgica */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-surgery-200 shadow-sm">
-        <div className="h-1 w-full bg-gradient-to-r from-ins-500 via-ins-400 to-oft-500" />
-        <div className="w-full px-6 lg:px-12 py-3 flex items-center justify-between">
+    <div className="w-full bg-white font-sans text-slate-700 antialiased">
+      {/* Cabecera */}
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div className="h-1 w-full bg-ins-600" />
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Logo size="text-2xl" />
           <a
             href="#acceso"
-            className="text-sm font-semibold text-ins-700 bg-ins-50 hover:bg-ins-100 border border-ins-200 rounded-lg px-5 py-2 transition-all hover:shadow-md"
+            className="rounded-lg bg-ins-700 px-5 py-2 text-sm font-semibold text-white shadow-ins-sm transition-colors hover:bg-ins-800"
           >
             Acceder
           </a>
         </div>
       </header>
 
-      {/* Hero — Estilo quirófano limpio */}
-      <section className="w-full bg-gradient-to-b from-white via-ins-50/50 to-surgery-50 py-24 lg:py-36">
-        <div className="w-full px-6 lg:px-12 text-center">
-          <RevealSection animation="reveal-scale">
-            <div className="inline-flex items-center gap-2 bg-ins-100 text-ins-700 rounded-full px-4 py-1.5 text-xs font-semibold mb-6">
-              <FontAwesomeIcon icon={faMicroscope} className="text-sm" />
-              Plataforma educativa de Oftalmología
-            </div>
-          </RevealSection>
-
-          <RevealSection delay={150}>
-            <h1 className="text-5xl lg:text-7xl font-extrabold text-slate-900 leading-tight tracking-tight">
-              Aprende{' '}
-              <span className="bg-gradient-to-r from-ins-500 to-oft-500 bg-clip-text text-transparent">
-                Oftalmología
-              </span>
-              <br />
-              a tu ritmo
-            </h1>
-          </RevealSection>
-
-          <RevealSection delay={300}>
-            <p className="mt-6 text-xl lg:text-2xl text-slate-500 max-w-3xl mx-auto leading-relaxed">
-              Sistema web de apoyo al aprendizaje de Oftalmología e Instrumentación Quirúrgica.
-              Estudia el contenido oficial y sigue tu progreso.
-            </p>
-          </RevealSection>
-
-          <RevealSection delay={450}>
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
-              <a
+      {/* Hero — split asimétrico sobre un lavado verde suave */}
+      <section className="bg-gradient-to-b from-ins-50 via-white to-white">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-16 pt-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24 lg:pt-20">
+          <motion.div {...heroStagger}>
+            <motion.p
+              {...heroItem}
+              className="text-sm font-semibold uppercase tracking-[0.16em] text-ins-700"
+            >
+              Plataforma de aprendizaje de Oftalmología
+            </motion.p>
+            <motion.h1
+              {...heroItem}
+              className="mt-4 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-5xl lg:text-6xl"
+            >
+              Aprende <span className="text-ins-700">Oftalmología</span> con el contenido oficial
+            </motion.h1>
+            <motion.p
+              {...heroItem}
+              className="mt-5 max-w-[52ch] text-lg leading-relaxed text-slate-500"
+            >
+              Estudia temas verificados, únete a los cursos de tu facultad con un código y sigue tu
+              progreso en cada subtema.
+            </motion.p>
+            <motion.div {...heroItem} className="mt-8 flex flex-wrap gap-3">
+              <motion.a
                 href="#acceso"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-ins-500 to-ins-600 hover:from-ins-600 hover:to-ins-700 text-white font-semibold rounded-xl px-8 py-4 text-lg transition-all shadow-lg shadow-ins-500/25 hover:shadow-xl hover:shadow-ins-500/30 hover:-translate-y-0.5"
+                whileHover={reduce ? undefined : { y: -2 }}
+                whileTap={reduce ? undefined : { scale: 0.98 }}
+                className="inline-flex items-center gap-2 rounded-xl bg-ins-700 px-7 py-3.5 text-base font-semibold text-white shadow-ins-md transition-colors hover:bg-ins-800"
               >
-                Comenzar ahora
-                <FontAwesomeIcon icon={faArrowDown} />
-              </a>
+                Acceder
+                <FontAwesomeIcon icon={faArrowRight} />
+              </motion.a>
               <a
-                href="#features"
-                className="inline-flex items-center gap-2 bg-white hover:bg-surgery-50 text-slate-700 font-semibold rounded-xl px-8 py-4 text-lg border border-surgery-200 transition-all hover:shadow-md hover:-translate-y-0.5"
+                href="#como-funciona"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-7 py-3.5 text-base font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50"
               >
-                Saber más
+                Ver cómo funciona
               </a>
+            </motion.div>
+
+            {/* Una sola cifra, integrada en el hero */}
+            <motion.div {...heroItem} className="mt-10 flex items-center gap-4 border-t border-slate-200 pt-6">
+              <span className="text-4xl font-extrabold tracking-tight text-slate-900">14</span>
+              <span className="max-w-[22ch] text-sm leading-tight text-slate-500">
+                subtemas del temario oficial de Oftalmología, disponibles desde el primer día
+              </span>
+            </motion.div>
+          </motion.div>
+
+          {/* Visual: foto real + tarjeta de progreso (vista de producto) */}
+          <Reveal delay={0.15} className="relative">
+            <div className="overflow-hidden rounded-3xl border border-slate-200 shadow-ins-lg">
+              <img
+                src="/images/slideshow/slide-2.jpg"
+                alt="Profesional realizando una exploración oftalmológica con lámpara de hendidura"
+                className="h-full w-full object-cover"
+                loading="eager"
+                width={1280}
+                height={960}
+              />
             </div>
-          </RevealSection>
-        </div>
-      </section>
-
-      {/* Estadísticas */}
-      <section className="w-full bg-white border-y border-surgery-200 py-12">
-        <div className="w-full px-6 lg:px-12 grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {STATS.map((s, i) => (
-            <RevealSection key={s.label} delay={i * 100}>
-              <div className="text-center">
-                <div className="inline-flex w-14 h-14 rounded-2xl bg-ins-50 text-ins-500 items-center justify-center text-xl mb-3 shadow-sm">
-                  <FontAwesomeIcon icon={s.icon} />
-                </div>
-                <p className="text-3xl font-extrabold text-slate-900">{s.value}</p>
-                <p className="text-sm text-slate-500 mt-1">{s.label}</p>
-              </div>
-            </RevealSection>
-          ))}
-        </div>
-      </section>
-
-      {/* Características */}
-      <section id="features" className="w-full py-20 lg:py-28 bg-surgery-50">
-        <div className="w-full px-6 lg:px-12">
-          <RevealSection>
-            <div className="text-center mb-14">
-              <div className="inline-flex items-center gap-2 bg-oft-50 text-oft-600 rounded-full px-4 py-1.5 text-xs font-semibold mb-4">
-                <FontAwesomeIcon icon={faStethoscope} className="text-sm" />
-                Herramientas de estudio
-              </div>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900">
-                Todo lo que necesitas para estudiar
-              </h2>
-              <p className="mt-3 text-lg text-slate-500 max-w-2xl mx-auto">
-                Una plataforma completa diseñada para estudiantes y profesores de Oftalmología.
-              </p>
-            </div>
-          </RevealSection>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((f, i) => (
-              <RevealSection key={f.title} delay={i * 80}>
-                <article className="group h-full bg-white rounded-2xl border border-surgery-200 p-6 shadow-sm hover:shadow-lg hover:border-ins-300 hover:-translate-y-1 transition-all duration-300">
-                  <span className="inline-flex w-12 h-12 rounded-xl bg-gradient-to-br from-ins-500 to-oft-500 text-white items-center justify-center text-lg shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <FontAwesomeIcon icon={f.icon} />
-                  </span>
-                  <h3 className="mt-4 font-bold text-slate-900 text-lg">{f.title}</h3>
-                  <p className="mt-2 text-sm text-slate-500 leading-relaxed">{f.text}</p>
-                </article>
-              </RevealSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Cómo funciona */}
-      <section className="w-full py-20 lg:py-28 bg-white">
-        <div className="w-full px-6 lg:px-12">
-          <RevealSection>
-            <div className="text-center mb-14">
-              <div className="inline-flex items-center gap-2 bg-ins-50 text-ins-600 rounded-full px-4 py-1.5 text-xs font-semibold mb-4">
-                <FontAwesomeIcon icon={faDesktop} className="text-sm" />
-                Proceso simple
-              </div>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900">
-                ¿Cómo funciona?
-              </h2>
-            </div>
-          </RevealSection>
-
-          <div className="grid md:grid-cols-4 gap-8">
-            {STEPS.map((s, i) => (
-              <RevealSection key={s.title} delay={i * 120}>
-                <div className="text-center">
-                  <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-ins-500 to-ins-600 text-white text-2xl mb-5 shadow-lg shadow-ins-500/20">
-                    <FontAwesomeIcon icon={s.icon} />
-                    <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-oft-500 text-white text-xs font-bold flex items-center justify-center shadow-md">
-                      {i + 1}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-lg">{s.title}</h3>
-                  <p className="mt-2 text-sm text-slate-500 leading-relaxed">{s.text}</p>
-                </div>
-              </RevealSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Contenido académico */}
-      <section className="w-full py-20 lg:py-28 bg-gradient-to-b from-surgery-50 to-white">
-        <div className="w-full px-6 lg:px-12 grid lg:grid-cols-2 gap-16 items-center">
-          <RevealSection animation="reveal-left">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-oft-50 text-oft-600 rounded-full px-4 py-1.5 text-xs font-semibold mb-4">
-                <FontAwesomeIcon icon={faSyringe} className="text-sm" />
-                Contenido académico
-              </div>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900">
-                Contenido oficial de Oftalmología
-              </h2>
-              <p className="mt-4 text-lg text-slate-500 leading-relaxed">
-                Accede a temas y subtemas verificados por expertos: Anatomía ocular, Glaucoma,
-                Catarata, Patologías de la retina y más.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {[
-                  'Temas estructurados con subtemas detallados',
-                  'Contenido verificado y actualizado',
-                  'Seguimiento de progreso individual',
-                  'Acceso desde cualquier dispositivo',
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <FontAwesomeIcon icon={faCheckCircle} className="text-ins-500 mt-1 shrink-0" />
-                    <span className="text-slate-600">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </RevealSection>
-
-          <RevealSection animation="reveal-right" delay={200}>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="absolute -bottom-6 -left-4 hidden w-64 rounded-2xl border border-slate-200 bg-white p-4 shadow-ins-lg sm:block">
+              <p className="text-xs font-semibold text-slate-900">Curso General de Oftalmología</p>
               {[
-                { icon: faEye, label: 'Anatomía ocular', color: 'from-ins-400 to-ins-600' },
-                { icon: faHandHoldingMedical, label: 'Glaucoma', color: 'from-oft-400 to-oft-600' },
-                { icon: faMicroscope, label: 'Catarata', color: 'from-ins-500 to-oft-500' },
-                { icon: faHeartPulse, label: 'Patologías retina', color: 'from-oft-500 to-ins-500' },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className={`bg-gradient-to-br ${item.color} rounded-2xl p-6 text-white shadow-lg hover:scale-105 transition-transform`}
-                >
-                  <FontAwesomeIcon icon={item.icon} className="text-3xl mb-3" />
-                  <p className="font-semibold">{item.label}</p>
+                { label: 'Anatomía ocular', value: 100 },
+                { label: 'Glaucoma', value: 60 },
+                { label: 'Catarata', value: 25 },
+              ].map((row) => (
+                <div key={row.label} className="mt-2.5">
+                  <div className="flex justify-between text-[11px] text-slate-500">
+                    <span>{row.label}</span>
+                    <span className="font-semibold text-ins-700">{row.value}%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full rounded-full bg-slate-200">
+                    <div className="h-1.5 rounded-full bg-ins-500" style={{ width: `${row.value}%` }} />
+                  </div>
                 </div>
               ))}
             </div>
-          </RevealSection>
+          </Reveal>
         </div>
       </section>
 
-      {/* Acceso */}
-      <section id="acceso" className="w-full py-20 lg:py-28 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="w-full px-6 lg:px-12 grid lg:grid-cols-2 gap-16 items-center">
-          <RevealSection animation="reveal-left">
-            <div className="text-white">
-              <div className="inline-flex items-center gap-2 bg-ins-500/20 text-ins-300 rounded-full px-4 py-1.5 text-xs font-semibold mb-4">
-                <FontAwesomeIcon icon={faUsers} className="text-sm" />
-                Únete a INSOFT
-              </div>
-              <h2 className="text-3xl lg:text-4xl font-extrabold">
-                Comienza a estudiar hoy
-              </h2>
-              <p className="mt-4 text-lg text-slate-300 leading-relaxed">
-                Inicia sesión con tu cuenta de Google para acceder a la plataforma completa.
-                O usa el acceso de desarrollo para explorar.
-              </p>
-            </div>
-          </RevealSection>
+      {/* Lo que necesitas — bento sobre gris claro */}
+      <section id="caracteristicas" className="border-y border-slate-200 bg-slate-50">
+        <div className="mx-auto max-w-6xl px-6 py-16 lg:py-24">
+          <Reveal>
+            <SectionHeading accent="ins" className="max-w-2xl">
+              Lo que necesitas para estudiar, y nada más
+            </SectionHeading>
+            <p className="mt-4 max-w-xl text-lg text-slate-500">
+              Una plataforma centrada en el contenido oficial y en tu progreso.
+            </p>
+          </Reveal>
 
-          <RevealSection animation="reveal-right" delay={200}>
-            <div className="bg-white rounded-2xl shadow-2xl p-8">
-              <div className="h-1 w-full rounded-full overflow-hidden mb-6 surgical-line" />
-              <h3 className="text-xl font-bold text-slate-900 text-center">Iniciar sesión</h3>
+          <div className="mt-12 grid gap-4 lg:grid-cols-12">
+            {/* A — celda grande con imagen */}
+            <Reveal className="lg:col-span-8">
+              <article className="relative flex h-full min-h-[300px] flex-col justify-end overflow-hidden rounded-2xl border border-slate-200">
+                <img
+                  src="/images/slideshow/slide-5.jpg"
+                  alt="Quirófano oftalmológico preparado"
+                  className="absolute inset-0 h-full w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-transparent" />
+                <div className="relative p-7">
+                  <FeatureIcon icon={faBookOpen} variant="onDark" />
+                  <h3 className="mt-4 text-xl font-bold text-white">Contenido oficial</h3>
+                  <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-200">
+                    Temas y subtemas de Oftalmología estructurados y revisados. Una sola fuente,
+                    compartida por todos los cursos sin duplicarse.
+                  </p>
+                </div>
+              </article>
+            </Reveal>
+
+            {/* B — celda tintada de verde */}
+            <Reveal delay={0.05} className="lg:col-span-4">
+              <article className="flex h-full flex-col rounded-2xl border border-ins-100 bg-ins-50 p-6">
+                <FeatureIcon icon={faGraduationCap} variant="ins" />
+                <h3 className="mt-4 text-lg font-bold text-slate-900">Curso General</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  Acceso automático al registrarte, sin necesidad de código.
+                </p>
+              </article>
+            </Reveal>
+
+            {/* C — celda oscura */}
+            <Reveal delay={0.05} className="lg:col-span-4">
+              <article className="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-900 p-6">
+                <FeatureIcon icon={faKey} variant="onDark" />
+                <h3 className="mt-4 text-lg font-bold text-white">Cursos con código</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                  Únete a la clase de tu profesor con un código único OFT-XXXX.
+                </p>
+              </article>
+            </Reveal>
+
+            {/* D */}
+            <Reveal delay={0.1} className="lg:col-span-4">
+              <article className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-slate-300">
+                <FeatureIcon icon={faChartLine} variant="oft" />
+                <h3 className="mt-4 text-lg font-bold text-slate-900">Tu progreso</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  Marca cada subtema completado y consulta tu porcentaje de avance.
+                </p>
+              </article>
+            </Reveal>
+
+            {/* E */}
+            <Reveal delay={0.1} className="lg:col-span-4">
+              <article className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-slate-300">
+                <FeatureIcon icon={faLaptopMedical} variant="ins" />
+                <h3 className="mt-4 text-lg font-bold text-slate-900">Multidispositivo</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  Estudia desde el móvil, la tablet o el ordenador, a tu ritmo.
+                </p>
+              </article>
+            </Reveal>
+
+            {/* F — banda verde ancha */}
+            <Reveal delay={0.15} className="lg:col-span-12">
+              <article className="flex flex-col justify-between gap-4 rounded-2xl bg-ins-700 p-7 text-white sm:flex-row sm:items-center">
+                <div className="flex items-start gap-4">
+                  <FeatureIcon icon={faShieldHalved} variant="onDark" />
+                  <div>
+                    <h3 className="text-lg font-bold">Acceso con tu cuenta de Google</h3>
+                    <p className="mt-1 max-w-lg text-sm leading-relaxed text-ins-50">
+                      Autenticación verificada en el servidor. Sin contraseñas nuevas que recordar.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="#acceso"
+                  className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-ins-800 transition-colors hover:bg-ins-50"
+                >
+                  Acceder
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </a>
+              </article>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* Cómo funciona — sección oscura y compacta con timeline horizontal */}
+      <section id="como-funciona" className="bg-slate-950">
+        <ProcessTimeline
+          phases={PROCESS_PHASES}
+          title="¿Cómo funciona?"
+          intro="Cuatro pasos desde que entras hasta que empiezas a seguir tu progreso."
+        />
+      </section>
+
+      {/* Temario — imagen + texto sobre blanco */}
+      <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24">
+        <Reveal className="order-2 lg:order-1">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 shadow-ins-lg">
+            <img
+              src="/images/slideshow/slide-3.jpg"
+              alt="Equipo quirúrgico durante una intervención oftalmológica con microscopio"
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        </Reveal>
+
+        <div className="order-1 lg:order-2">
+          <Reveal>
+            <SectionHeading accent="ins">El temario oficial de Oftalmología</SectionHeading>
+            <p className="mt-4 text-lg leading-relaxed text-slate-500">
+              El contenido existe una sola vez y lo comparten todos los cursos. Estos son los temas
+              que encontrarás al entrar:
+            </p>
+          </Reveal>
+          <ul className="mt-6 divide-y divide-slate-200 border-y border-slate-200">
+            {TOPICS.map((topic, i) => (
+              <Reveal key={topic.name} delay={i * 0.05}>
+                <li className="flex items-center justify-between py-3.5">
+                  <span className="flex items-center gap-3 font-medium text-slate-800">
+                    <FontAwesomeIcon
+                      icon={faLayerGroup}
+                      className={i % 2 === 0 ? 'text-ins-600' : 'text-oft-500'}
+                    />
+                    {topic.name}
+                  </span>
+                  <span className="text-sm text-slate-400">{topic.count} subtemas</span>
+                </li>
+              </Reveal>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Acceso — bloque oscuro de cierre */}
+      <section id="acceso" className="bg-slate-950 py-16 lg:py-24">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-2 lg:gap-16">
+          <Reveal>
+            <SectionHeading accent="oft" tone="dark">Empieza a estudiar hoy</SectionHeading>
+            <p className="mt-4 max-w-md text-lg leading-relaxed text-slate-300">
+              Inicia sesión con tu cuenta de Google para acceder al Curso General y a los cursos de
+              tus profesores.
+            </p>
+            <ul className="mt-6 space-y-2.5">
+              {['Sin coste para estudiantes', 'Acceso inmediato al Curso General', 'Tu progreso guardado en cada curso'].map((item) => (
+                <li key={item} className="flex items-center gap-3 text-slate-200">
+                  <FontAwesomeIcon icon={faCircleCheck} className="text-ins-400" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          <Reveal delay={0.1}>
+            <div className="rounded-2xl bg-white p-8 shadow-2xl">
+              <div className="mb-6 h-1 w-full rounded-full bg-ins-600" />
+              <h3 className="text-center text-xl font-bold text-slate-900">Iniciar sesión</h3>
 
               <div className="mt-6 flex flex-col items-center gap-4">
                 {googleConfigured ? (
@@ -324,7 +408,7 @@ export default function LandingPage() {
                   />
                 ) : (
                   !devLoginEnabled && (
-                    <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-700">
                       Google OAuth no está configurado.
                     </p>
                   )
@@ -332,48 +416,48 @@ export default function LandingPage() {
 
                 {loading && <p className="text-sm text-slate-500">Iniciando sesión…</p>}
                 {error && (
-                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3 w-full text-center">
+                  <p className="w-full rounded-lg border border-red-200 bg-red-50 p-3 text-center text-sm text-red-600">
                     {error}
                   </p>
                 )}
 
                 {(devLoginEnabled || !googleConfigured) && (
-                  <div className="w-full border-t border-surgery-200 pt-4 mt-2 space-y-3">
-                    <p className="text-xs text-slate-400 text-center uppercase tracking-wide">
+                  <div className="mt-2 w-full space-y-3 border-t border-slate-200 pt-4">
+                    <p className="text-center text-xs uppercase tracking-wide text-slate-400">
                       Acceso de desarrollo
                     </p>
                     <button
                       type="button"
                       disabled={loading}
                       onClick={() => handleDevLogin('STUDENT')}
-                      className="w-full bg-ins-600 hover:bg-ins-700 text-white font-medium rounded-lg py-3 text-sm transition-all shadow-md disabled:opacity-50 hover:shadow-lg"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-ins-700 py-3 text-sm font-semibold text-white shadow-ins-sm transition-colors hover:bg-ins-800 disabled:opacity-50"
                     >
-                      {loading ? 'Entrando…' : 'Entrar como Estudiante'}
+                      <FontAwesomeIcon icon={faUserGraduate} />
+                      {loading ? 'Entrando…' : 'Entrar como estudiante'}
                     </button>
                     <button
                       type="button"
                       disabled={loading}
                       onClick={() => handleDevLogin('TEACHER')}
-                      className="w-full bg-oft-600 hover:bg-oft-700 text-white font-medium rounded-lg py-3 text-sm transition-all shadow-md disabled:opacity-50 hover:shadow-lg"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-ins-300 py-3 text-sm font-semibold text-ins-800 transition-colors hover:bg-ins-50 disabled:opacity-50"
                     >
-                      {loading ? 'Entrando…' : 'Entrar como Profesor'}
+                      <FontAwesomeIcon icon={faGraduationCap} />
+                      {loading ? 'Entrando…' : 'Entrar como profesor'}
                     </button>
                   </div>
                 )}
               </div>
             </div>
-          </RevealSection>
+          </Reveal>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="w-full bg-slate-900 text-slate-400 py-10 border-t border-slate-800">
-        <div className="w-full px-6 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Logo size="text-xl" withIcon />
-            <span className="text-sm ml-3">
-              — Sistema web de apoyo al aprendizaje de Oftalmología
-            </span>
+      <footer className="bg-slate-950 py-10 text-slate-400">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
+          <div className="flex items-center gap-3">
+            <Logo size="text-lg" light />
+            <span className="text-sm">Sistema web de apoyo al aprendizaje de Oftalmología</span>
           </div>
           <p className="text-xs text-slate-500">
             © {new Date().getFullYear()} INSOFT. Todos los derechos reservados.
