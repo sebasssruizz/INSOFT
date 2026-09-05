@@ -7,6 +7,8 @@ diferida), de modo que no se depende de APIs externas ni se gasta cuota.
 """
 from __future__ import annotations
 
+import math
+from collections.abc import Sequence
 from functools import lru_cache
 
 from app.core.config import settings
@@ -72,3 +74,13 @@ def embed_batch(texts: list[str]) -> list[list[float]]:
     validated = [_validate_text(text) for text in texts]
     vectors = get_embedding_model().encode(validated)
     return [[float(value) for value in row.tolist()] for row in vectors]
+
+
+def cosine_similarity(a: Sequence[float], b: Sequence[float]) -> float:
+    """Similitud coseno entre dos vectores de embeddings (0.0 a 1.0)."""
+    dot = sum(x * y for x, y in zip(a, b))
+    norm_a = math.sqrt(sum(x * x for x in a))
+    norm_b = math.sqrt(sum(y * y for y in b))
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+    return dot / (norm_a * norm_b)

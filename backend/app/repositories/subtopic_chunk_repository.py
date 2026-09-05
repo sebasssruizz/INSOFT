@@ -30,6 +30,11 @@ def list_chunks_for_subtopic(db: Session, subtopic_id: int) -> list[SubtopicChun
     return list(db.scalars(stmt).all())
 
 
+def list_all_chunks(db: Session) -> list[SubtopicChunk]:
+    """Todos los chunks indexados (para búsqueda global sin filtro de subtema)."""
+    return list(db.scalars(select(SubtopicChunk).order_by(SubtopicChunk.id)).all())
+
+
 def delete_chunks_for_subtopic(db: Session, subtopic_id: int) -> int:
     """Elimina todos los chunks de un subtema (útil para reindexar)."""
     result = db.execute(
