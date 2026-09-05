@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.database.base import Base
 from app.database.migrations import ensure_schema_compatibility
 from app.database.session import SessionLocal, engine
+from app.rag.vector_store import enable_pgvector, index_content
 from app.seed.seed_content import seed_official_content
 from app.services.exceptions import ServiceError
 
@@ -25,8 +26,10 @@ async def lifespan(app: FastAPI):
     attempts = 30
     while True:
         try:
-            Base.metadata.create_all(bind=engine)
+            # Migraciones antes de create_all: habilita pgvector (lo necesitan
+            # las columnas `vector`) y añade columnas faltantes en tablas viejas.
             ensure_schema_compatibility()
+            Base.metadata.create_all(bind=engine)
             break
         except OperationalError:
             attempts -= 1
@@ -36,6 +39,9 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_official_content(db)
+        # Módulo RAG/IA: habilita pgvector e indexa el contenido oficial.
+        enable_pgvector(db)
+        index_content(db)
     finally:
         db.close()
     yield

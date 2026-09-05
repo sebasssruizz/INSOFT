@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Login de desarrollo (sin Google). SOLO para pruebas locales. Desactivado por defecto.
     DEV_AUTH_ENABLED: bool = False
 
+    # Modelo local de embeddings para el RAG (sentence-transformers, corre en CPU).
+    # Multilingüe (español incluido), 384 dimensiones y liviano para CPU.
+    EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:

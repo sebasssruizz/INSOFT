@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgres:16-alpine
+    # Imagen con la extensión pgvector incluida (necesaria para el módulo RAG/IA).
+    image: pgvector/pgvector:pg16
     container_name: insoft-db
     restart: unless-stopped
     environment:
