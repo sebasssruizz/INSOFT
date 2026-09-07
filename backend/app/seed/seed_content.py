@@ -1,236 +1,197 @@
 """Contenido académico oficial de Oftalmología.
 
-Fuente ÚNICA y centralizada: todos los cursos (general y de profesores)
-referencian estos mismos temas/subtemas mediante CourseTopic, sin duplicarlos.
-
-El seed es idempotente: solo crea lo que no exista.
+Fuente única y centralizada: todos los cursos referencian estas mismas
+unidades y subtemas mediante CourseTopic, sin duplicar contenido.
 """
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.models.content import Subtopic, Topic
+from app.models.progress import Progress
 from app.services import course_service
+
 
 OFFICIAL_CONTENT = [
     {
-        "name": "Anatomía ocular",
-        "description": "Estructuras fundamentales del ojo y su función en la visión.",
+        "name": "UNIDAD 1. Generalidades en Cirugía Oftalmológica",
+        "description": "Bases anatómicas, técnicas, materiales y protocolos del entorno quirúrgico oftalmológico.",
         "subtopics": [
             {
-                "name": "Globo ocular",
-                "content": (
-                    "El globo ocular es una estructura esférica de aproximadamente 24 mm de diámetro "
-                    "alojada en la órbita. Está formado por tres capas concéntricas:\n\n"
-                    "1. **Capa externa (fibrosa):** córnea y esclerótica. Proporciona protección y mantiene "
-                    "la forma del ojo.\n"
-                    "2. **Capa media (vascular o úvea):** iris, cuerpo ciliar y coroides. Aporta nutrición y "
-                    "regula la entrada de luz.\n"
-                    "3. **Capa interna (nerviosa):** la retina, encargada de la fototransducción.\n\n"
-                    "En su interior se distinguen el humor acuoso (cámaras anterior y posterior), el cristalino "
-                    "y el humor vítreo, que mantienen la presión y la transparencia óptica del globo."
-                ),
+                "name": "Anatomía del Globo Ocular y estructuras anexas",
+                "content": "Estudio del globo ocular, órbita, párpados, conjuntiva, aparato lagrimal y músculos extraoculares. Se revisan sus relaciones anatómicas y su importancia para la preparación y el abordaje seguro de una cirugía oftalmológica.",
             },
             {
-                "name": "Córnea",
-                "content": (
-                    "La córnea es la estructura transparente anterior del ojo y la principal lente del sistema "
-                    "óptico, con unas 43 dioptrías de potencia. Consta de cinco capas: epitelio, membrana de "
-                    "Bowman, estroma, membrana de Descemet y endotelio.\n\n"
-                    "Es avascular y se nutre del humor acuoso y de las lágrimas. El endotelio corneal mantiene "
-                    "su deshidratación y transparencia; su daño produce edema corneal y pérdida de visión. "
-                    "Es una de las estructuras con mayor densidad de terminaciones nerviosas del cuerpo."
-                ),
+                "name": "Tipos de Anestesia para Cirugía Oftalmológica",
+                "content": "Se describen la anestesia tópica, local, regional y general, junto con sus indicaciones, preparación del paciente, vigilancia y posibles complicaciones. La selección depende del procedimiento, la cooperación del paciente y la valoración del equipo médico.",
             },
             {
-                "name": "Cristalino",
-                "content": (
-                    "El cristalino es una lente biconvexa, transparente y avascular situada detrás del iris. "
-                    "Aporta unas 15-20 dioptrías y, gracias a la acomodación, modifica su potencia para enfocar "
-                    "objetos a distintas distancias.\n\n"
-                    "Con la edad pierde elasticidad (presbicia) y puede perder transparencia (catarata), "
-                    "constituyendo una de las principales causas de ceguera reversible en el mundo."
-                ),
+                "name": "Instrumental para cirugía Oftalmológica",
+                "content": "Reconocimiento, montaje, manipulación y cuidado del instrumental básico y especializado para cirugía oftalmológica. Incluye pinzas, tijeras, separadores, blefaróstatos, portaagujas y material para microcirugía.",
             },
             {
-                "name": "Retina",
-                "content": (
-                    "La retina es la capa nerviosa interna del ojo, responsable de transformar la luz en señales "
-                    "eléctricas que viajan por el nervio óptico hasta la corteza visual.\n\n"
-                    "Contiene dos tipos de fotorreceptores: conos (visión central, color y alta agudeza, "
-                    "concentrados en la mácula) y bastones (visión periférica y nocturna). La fóvea, en el centro "
-                    "de la mácula, es la zona de máxima agudeza visual.\n\n"
-                    "Su exploración mediante oftalmoscopia es fundamental en el diagnóstico de glaucoma, "
-                    "retinopatía diabética y degeneración macular."
-                ),
+                "name": "Equipos Biomédicos",
+                "content": "Identificación y uso seguro del microscopio quirúrgico, facoemulsificador, vitrector, láser, electrobisturí y sistemas de irrigación y aspiración. Se enfatizan la revisión preoperatoria, la bioseguridad y la respuesta ante fallas.",
+            },
+            {
+                "name": "Material de Suturas",
+                "content": "Clasificación de suturas absorbibles y no absorbibles, monofilamento y multifilamento, calibres, agujas y criterios de selección. Se relacionan las características del material con la cicatrización y el tejido ocular intervenido.",
+            },
+            {
+                "name": "Medicación en Cirugía Oftalmológica",
+                "content": "Funciones y precauciones de los medicamentos empleados antes, durante y después de la cirugía: antibióticos, antiinflamatorios, midriáticos, mióticos, anestésicos y soluciones de irrigación. Se revisan identificación, rotulado y administración segura.",
+            },
+            {
+                "name": "Protocolos del Instrumentador Quirúrgico en cirugía oftalmológica",
+                "content": "Funciones del instrumentador en las fases preoperatoria, intraoperatoria y posoperatoria. Incluye verificación de equipos e instrumental, preparación del campo, conteos, técnica aséptica, trazabilidad y entrega segura del paciente.",
             },
         ],
     },
     {
-        "name": "Glaucoma",
-        "description": "Neuropatía óptica progresiva asociada habitualmente a presión intraocular elevada.",
+        "name": "UNIDAD 2. Procedimientos Quirúrgicos de oftalmológica generales",
+        "description": "Procedimientos ambulatorios frecuentes y sus cuidados de instrumentación.",
         "subtopics": [
             {
-                "name": "Conceptos generales",
-                "content": (
-                    "El glaucoma es un grupo de neuropatías ópticas caracterizadas por la pérdida progresiva de "
-                    "fibras ganglionares de la retina, con alteraciones típicas del campo visual y de la papila.\n\n"
-                    "Es la primera causa de ceguera irreversible mundial. El principal factor de riesgo es la "
-                    "presión intraocular (PIO) elevada, aunque existen glaucomas de tensión normal.\n\n"
-                    "Se clasifica en glaucoma de ángulo abierto (el más frecuente, crónico e indoloro) y glaucoma "
-                    "de cierre angular (puede ser agudo, doloroso y una urgencia oftalmológica)."
-                ),
+                "name": "Resección de pterigión",
+                "content": "Indicaciones, preparación del campo, instrumental y pasos generales de la resección de pterigión, con o sin injerto conjuntival. Se consideran la protección corneal, la hemostasia y los cuidados del tejido para reducir recurrencias.",
             },
             {
-                "name": "Fisiopatología",
-                "content": (
-                    "La PIO depende del equilibrio entre producción y drenaje del humor acuoso, que se produce "
-                    "en los procesos ciliares y se drena por la malla trabecular y el canal de Schlemm.\n\n"
-                    "Cuando el drenaje se obstruye, la PIO aumenta y daña las fibras ganglionares en la cabeza "
-                    "del nervio óptico, produciendo la excavación papilar característica y defectos del campo "
-                    "visual que comienzan en la periferia y avanzan hacia el centro."
-                ),
+                "name": "Drenaje de chalazión",
+                "content": "Organización del procedimiento para incisión y drenaje de un chalazión. Se revisan la antisepsia, la anestesia local, el uso del clamp, el abordaje conjuntival y la disposición del material contaminado.",
             },
             {
-                "name": "Diagnóstico",
-                "content": (
-                    "El diagnóstico del glaucoma se basa en la combinación de:\n\n"
-                    "- **Tonometría:** medición de la PIO (normal: 10-21 mmHg).\n"
-                    "- **Oftalmoscopia:** evaluación de la excavación papilar (relación excavación/disco).\n"
-                    "- **Campimetría:** detección de defectos del campo visual.\n"
-                    "- **Gonioscopia:** evaluación del ángulo iridocorneal para clasificar el glaucoma.\n"
-                    "- **Paquimetría y OCT:** espesor corneal central y análisis de la capa de fibras nerviosas.\n\n"
-                    "Ninguna prueba aislada es suficiente; el diagnóstico integra todos estos hallazgos."
-                ),
+                "name": "Dilatación de vías lagrimales",
+                "content": "Valoración e instrumentación para la dilatación y exploración de las vías lagrimales. Incluye la preparación de dilatadores y sondas, la irrigación y las medidas para evitar trauma de los canalículos.",
             },
             {
-                "name": "Tratamiento",
-                "content": (
-                    "El objetivo del tratamiento es reducir la PIO para frenar la progresión del daño, ya que "
-                    "la pérdida visual establecida es irreversible.\n\n"
-                    "- **Tratamiento médico:** análogos de prostaglandinas (primera línea), betabloqueantes, "
-                    "agonistas alfa-2 e inhibidores de la anhidrasa carbónica.\n"
-                    "- **Láser:** trabeculoplastia selectiva en glaucoma de ángulo abierto; iridotomía en cierre "
-                    "angular.\n"
-                    "- **Cirugía:** trabeculectomía y dispositivos de drenaje cuando el tratamiento médico y "
-                    "láser no controlan la PIO.\n\n"
-                    "El glaucoma agudo de cierre angular es una urgencia que requiere reducir la PIO de forma "
-                    "inmediata."
-                ),
+                "name": "Inyecciones intravítreas",
+                "content": "Preparación del paciente, antisepsia, instrumental y cuidados asociados a la administración intravítrea de medicamentos. Se resaltan la técnica estéril, la identificación del fármaco y la vigilancia de signos de alarma.",
             },
         ],
     },
     {
-        "name": "Catarata",
-        "description": "Opacificación del cristalino, principal causa de ceguera reversible en el mundo.",
+        "name": "UNIDAD 3. Glaucoma",
+        "description": "Procedimientos para favorecer el drenaje del humor acuoso y controlar la presión intraocular.",
         "subtopics": [
             {
-                "name": "Conceptos generales",
-                "content": (
-                    "La catarata es la pérdida de transparencia del cristalino, que provoca disminución progresiva "
-                    "e indolora de la visión.\n\n"
-                    "La causa más frecuente es la edad (catarata senil). Otros factores: diabetes, corticoides, "
-                    "traumatismos, radiación UV y causas congénitas.\n\n"
-                    "Según su localización se clasifican en nucleares, corticales y subcapsulares posteriores, "
-                    "cada una con síntomas característicos."
-                ),
+                "name": "Trabeculotomía más iridectomía periférica",
+                "content": "Objetivos, indicaciones y organización quirúrgica de la trabeculotomía asociada a iridectomía periférica. Se revisan el instrumental de microcirugía, la secuencia del procedimiento y las precauciones para proteger las estructuras intraoculares.",
             },
             {
-                "name": "Diagnóstico",
-                "content": (
-                    "El paciente refiere visión borrosa, deslumbramiento, miopización progresiva y alteración de "
-                    "la percepción de colores.\n\n"
-                    "El diagnóstico es clínico, mediante exploración con lámpara de hendidura con la pupila "
-                    "dilatada, que permite visualizar la opacidad del cristalino. Se evalúa la agudeza visual y "
-                    "el reflejo rojo.\n\n"
-                    "Antes de la cirugía se realiza biometría ocular para calcular la potencia de la lente "
-                    "intraocular a implantar."
-                ),
+                "name": "Colocación de implantes para Drenaje de Humor acuoso",
+                "content": "Preparación e instrumentación para la colocación de dispositivos de drenaje del humor acuoso. Incluye componentes del implante, selección del material, control de la cámara anterior y cuidados del dispositivo.",
             },
             {
-                "name": "Tratamiento",
-                "content": (
-                    "El único tratamiento eficaz de la catarata es quirúrgico; no existe tratamiento médico que "
-                    "revierta la opacificación.\n\n"
-                    "La técnica estándar es la **facoemulsificación**: fragmentación y aspiración del cristalino "
-                    "a través de una incisión mínima, con implante de lente intraocular. Es una de las cirugías "
-                    "más frecuentes y seguras de la medicina.\n\n"
-                    "La indicación depende del impacto funcional en la vida del paciente, no solo de la agudeza "
-                    "visual."
-                ),
+                "name": "Iridectomía con Láser",
+                "content": "Principios y preparación de la iridectomía periférica con láser para facilitar el paso del humor acuoso. Se describen la posición del paciente, la protección ocular, el equipo y la vigilancia posterior.",
             },
         ],
     },
     {
-        "name": "Patologías de la retina",
-        "description": "Principales enfermedades de la retina y su abordaje.",
+        "name": "UNIDAD 4. Cirugías del segmento anterior",
+        "description": "Técnicas de microcirugía para el cristalino y la córnea.",
         "subtopics": [
             {
-                "name": "Retinopatía diabética",
-                "content": (
-                    "La retinopatía diabética es una microangiopatía de la retina y la principal causa de pérdida "
-                    "visual en adultos en edad laboral.\n\n"
-                    "Se clasifica en no proliferativa (microaneurismas, hemorragias, exudados) y proliferativa "
-                    "(neovascularización, con riesgo de hemorragia vítrea y desprendimiento traccional de retina). "
-                    "El edema macular diabético puede aparecer en cualquier estadio.\n\n"
-                    "El cribado periódico con fondo de ojo es esencial en todos los pacientes diabéticos."
-                ),
+                "name": "Facoemulsificación",
+                "content": "Fundamentos de la extracción del cristalino mediante ultrasonido, aspiración e implante de lente intraocular. Se revisan la preparación del facoemulsificador, el instrumental, los viscoelásticos y el control de parámetros.",
             },
             {
-                "name": "Degeneración macular asociada a la edad",
-                "content": (
-                    "La DMAE es la principal causa de ceguera irreversible en mayores de 60 años en países "
-                    "desarrollados. Afecta a la mácula y, por tanto, a la visión central.\n\n"
-                    "- **Forma seca (atrófica):** drusas y atrofia geográfica, de evolución lenta.\n"
-                    "- **Forma húmeda (exudativa):** membrana neovascular coroidea, de progresión rápida, tratable "
-                    "con antiangiogénicos intravítreos (anti-VEGF).\n\n"
-                    "La metamorfopsia (visión distorsionada de líneas rectas) es un síntoma de alarma típico."
-                ),
+                "name": "Extracción extracapsular",
+                "content": "Descripción de la extracción extracapsular del cristalino, sus indicaciones, instrumental y fases quirúrgicas. Se enfatizan la conservación de la cápsula posterior, la colocación de la lente y el cierre de la incisión.",
             },
             {
-                "name": "Desprendimiento de retina",
-                "content": (
-                    "El desprendimiento de retina es la separación de la retina neurosensorial del epitelio "
-                    "pigmentario. Es una urgencia oftalmológica.\n\n"
-                    "El tipo más frecuente es el regmatógeno, causado por una rotura retiniana que permite el paso "
-                    "de vítreo licuado bajo la retina.\n\n"
-                    "Síntomas: miodesopsias y fotopsias (moscas volantes y destellos) seguidas de un defecto "
-                    "visual tipo cortina. El tratamiento es quirúrgico (vitrectomía, cerclaje escleral o "
-                    "retinopexia neumática)."
-                ),
+                "name": "Trasplante de córnea",
+                "content": "Preparación e instrumentación del trasplante corneal, desde la recepción y verificación del tejido hasta la trepanación, colocación del injerto y sutura. Se incluyen principios de conservación, asepsia y trazabilidad.",
+            },
+        ],
+    },
+    {
+        "name": "UNIDAD 5. Cirugías vitreorretinales",
+        "description": "Procedimientos sobre el vítreo y la retina, con énfasis en equipos y seguridad intraocular.",
+        "subtopics": [
+            {
+                "name": "Vitrectomías del segmento anterior y posterior",
+                "content": "Principios de la vitrectomía anterior y posterior, selección de trocares, líneas de infusión, sistemas de corte y aspiración. Se revisan el montaje del equipo, los líquidos de intercambio y el control del campo quirúrgico.",
+            },
+            {
+                "name": "Retinopatía simple",
+                "content": "Abordaje general de la retinopatía simple y su relación con la valoración del fondo de ojo. Se estudian la preparación para procedimientos retinianos, la fotocoagulación, la medicación y el seguimiento indicado por el especialista.",
+            },
+        ],
+    },
+    {
+        "name": "UNIDAD 6. Corrección de estrabismo",
+        "description": "Principios de las técnicas quirúrgicas para recuperar la alineación ocular.",
+        "subtopics": [
+            {
+                "name": "Técnicas para Corrección de estrabismo",
+                "content": "Preparación e instrumentación de las principales técnicas de cirugía de estrabismo: debilitamiento y refuerzo de músculos extraoculares, suturas ajustables y cuidados del campo quirúrgico. Se relaciona cada técnica con el músculo y la desviación a corregir.",
+            },
+        ],
+    },
+    {
+        "name": "UNIDAD 7. Cirugía para corrección de patologías refractivas",
+        "description": "Alternativas quirúrgicas para corregir errores refractivos y sus cuidados asociados.",
+        "subtopics": [
+            {
+                "name": "Miopía, Hipermetropía y Astigmatismo",
+                "content": "Características de la miopía, la hipermetropía y el astigmatismo, criterios generales de valoración y opciones de corrección refractiva. Se revisan la preparación del equipo láser, la seguridad del paciente y los cuidados posteriores.",
+            },
+        ],
+    },
+    {
+        "name": "UNIDAD 8. Oculoplastia",
+        "description": "Procedimientos reconstructivos y estéticos de los párpados y estructuras perioculares.",
+        "subtopics": [
+            {
+                "name": "Cirugía en Párpados",
+                "content": "Preparación e instrumentación para cirugía palpebral, incluyendo valoración del tejido, marcación, hemostasia, suturas y protección de la superficie ocular. Se consideran los cuidados de la herida y la vigilancia de complicaciones.",
             },
         ],
     },
 ]
 
 
+def _sync_topic(db: Session, topic_data: dict, topic_order: int) -> Topic:
+    """Actualiza una unidad existente o la crea, conservando sus relaciones."""
+    topic = db.scalar(select(Topic).where(Topic.name == topic_data["name"]))
+    if topic is None:
+        topic = db.scalar(select(Topic).where(Topic.order == topic_order))
+    if topic is None:
+        topic = Topic(name=topic_data["name"], order=topic_order)
+        db.add(topic)
+        db.flush()
+
+    topic.name = topic_data["name"]
+    topic.description = topic_data["description"]
+    topic.order = topic_order
+
+    current_subtopics = sorted(topic.subtopics, key=lambda subtopic: subtopic.order)
+    desired_subtopics = topic_data["subtopics"]
+    for subtopic_order, subtopic_data in enumerate(desired_subtopics):
+        if subtopic_order < len(current_subtopics):
+            subtopic = current_subtopics[subtopic_order]
+        else:
+            subtopic = Subtopic(topic=topic)
+            db.add(subtopic)
+        subtopic.name = subtopic_data["name"]
+        subtopic.content = subtopic_data["content"]
+        subtopic.order = subtopic_order
+
+    stale_subtopics = current_subtopics[len(desired_subtopics):]
+    stale_ids = [subtopic.id for subtopic in stale_subtopics if subtopic.id is not None]
+    if stale_ids:
+        db.execute(delete(Progress).where(Progress.subtopic_id.in_(stale_ids)))
+        for subtopic in stale_subtopics:
+            db.delete(subtopic)
+
+    return topic
+
+
 def seed_official_content(db: Session) -> None:
-    """Crea el contenido oficial si no existe y asegura el Curso General."""
+    """Sincroniza las 8 unidades oficiales y asegura el Curso General."""
     for topic_order, topic_data in enumerate(OFFICIAL_CONTENT):
-        topic = db.scalar(select(Topic).where(Topic.name == topic_data["name"]))
-        if topic is None:
-            topic = Topic(
-                name=topic_data["name"],
-                description=topic_data["description"],
-                order=topic_order,
-            )
-            db.add(topic)
-            db.flush()
-        for sub_order, sub_data in enumerate(topic_data["subtopics"]):
-            exists = db.scalar(
-                select(Subtopic).where(
-                    Subtopic.topic_id == topic.id, Subtopic.name == sub_data["name"]
-                )
-            )
-            if exists is None:
-                db.add(
-                    Subtopic(
-                        topic_id=topic.id,
-                        name=sub_data["name"],
-                        content=sub_data["content"],
-                        order=sub_order,
-                    )
-                )
+        _sync_topic(db, topic_data, topic_order)
     db.commit()
 
-    # Asegurar que el Curso General existe y tiene vinculado todo el contenido.
+    # Asegurar que el Curso General y los cursos de profesores tengan todo el contenido.
     course_service.ensure_general_course(db)

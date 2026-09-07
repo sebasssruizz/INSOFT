@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faCube } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { getSubtopic } from '../services/contentService'
 import { setProgress } from '../services/progressService'
@@ -91,6 +91,8 @@ export default function SubtopicPage() {
   if (loading) return <p className="text-slate-500">Cargando contenido…</p>
   if (error && !subtopic) return <p className="text-red-600">{error}</p>
 
+  const hasInteractiveView = subtopic?.name === 'Inyecciones intravítreas'
+
   return (
     <div className="max-w-3xl">
       <Link to={`/courses/${courseId}`} className="text-sm text-oft-600 hover:text-oft-800 font-medium">
@@ -102,6 +104,16 @@ export default function SubtopicPage() {
       <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <ContentRenderer content={subtopic?.content || ''} />
       </div>
+
+      {hasInteractiveView && (
+        <Link
+          to={`/courses/${courseId}/subtopics/${subtopicId}/interactive`}
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-oft-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-oft-200 transition-all hover:bg-oft-700 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-oft-500 focus-visible:ring-offset-2"
+        >
+          <FontAwesomeIcon icon={faCube} />
+          Entrar a vista interactiva
+        </Link>
+      )}
 
       {isStudent && (
         <div className="mt-6 flex items-center gap-4">

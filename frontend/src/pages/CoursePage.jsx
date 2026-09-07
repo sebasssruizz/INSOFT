@@ -1,58 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCircleCheck } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { getCourseTopics } from '../services/contentService'
 import { getCourse } from '../services/courseService'
 
-function TopicBlock({ topic, courseId, isStudent }) {
-  const percentage =
-    topic.total_subtopics > 0 ? Math.round((topic.completed_subtopics / topic.total_subtopics) * 100) : 0
-
-  return (
-    <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h3 className="font-semibold text-slate-900">{topic.name}</h3>
-          {topic.description && <p className="text-sm text-slate-500 mt-1">{topic.description}</p>}
-        </div>
-        {isStudent && (
-          <span className="text-sm font-medium text-oft-700 whitespace-nowrap">
-            {topic.completed_subtopics}/{topic.total_subtopics} · {percentage}%
-          </span>
-        )}
-      </div>
-
-      <ul className="mt-4 divide-y divide-slate-100">
-        {topic.subtopics.map((sub) => (
-          <li key={sub.id}>
-            <Link
-              to={`/courses/${courseId}/subtopics/${sub.id}`}
-              className="flex items-center justify-between py-2.5 px-2 rounded-lg hover:bg-oft-50 transition-colors group"
-            >
-              <span className="text-sm text-slate-700 group-hover:text-oft-800">{sub.name}</span>
-              {isStudent &&
-                (sub.completed ? (
-                  <span className="text-xs font-medium text-ins-600 flex items-center gap-1">
-                    <FontAwesomeIcon icon={faCircleCheck} />
-                    Completado
-                  </span>
-                ) : (
-                  <span className="text-xs text-slate-400">Pendiente</span>
-                ))}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
 export default function CoursePage() {
   const { courseId } = useParams()
   const { user } = useAuth()
-  const isStudent = user?.role === 'STUDENT'
   const [course, setCourse] = useState(null)
   const [topics, setTopics] = useState([])
   const [loading, setLoading] = useState(true)
@@ -81,20 +35,34 @@ export default function CoursePage() {
 
   return (
     <div>
-      <Link to="/dashboard" className="text-sm text-oft-600 hover:text-oft-800 font-medium">
+      <Link to="/dashboard" className="text-sm font-medium text-oft-600 hover:text-oft-800">
         ← Volver a mis cursos
       </Link>
 
-      <h1 className="text-2xl font-bold text-slate-900 mt-3">{course?.name}</h1>
-      {course?.description && <p className="text-slate-500 mt-1">{course.description}</p>}
+      <header className="mt-5">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-oft-600">Contenido del curso</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900">{course?.name}</h1>
+        {course?.description && <p className="mt-1 text-slate-500">{course.description}</p>}
+      </header>
 
-      <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Contenido oficial de Oftalmología</h2>
-
-      <div className="space-y-4">
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {topics.map((topic) => (
-          <TopicBlock key={topic.id} topic={topic} courseId={courseId} isStudent={isStudent} />
+          <Link
+            key={topic.id}
+            to={`/courses/${courseId}/units/${topic.id}`}
+            aria-label={`Abrir ${topic.name}`}
+            className="group flex aspect-square items-center justify-center rounded-xl border border-surgery-200 bg-white p-5 text-center shadow-ins-sm transition-all duration-200 hover:-translate-y-1 hover:border-oft-300 hover:bg-oft-50 hover:shadow-ins-md focus:outline-none focus-visible:ring-2 focus-visible:ring-oft-500 focus-visible:ring-offset-2"
+          >
+            <h2 className="text-base font-semibold leading-snug text-slate-800 transition-colors group-hover:text-oft-800 sm:text-lg">
+              {topic.name}
+            </h2>
+          </Link>
         ))}
       </div>
+
+      {user?.role === 'TEACHER' && topics.length === 0 && (
+        <p className="mt-6 text-sm text-slate-500">Este curso todavía no tiene unidades disponibles.</p>
+      )}
     </div>
   )
 }

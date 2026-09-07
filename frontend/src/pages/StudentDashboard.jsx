@@ -10,8 +10,10 @@ import { listCourses } from '../services/courseService'
 function CourseCard({ course, index }) {
   const isGeneral = course.type === 'GENERAL'
   return (
-    <article
-      className="animate-fade-in-up group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:shadow-oft-100 hover:border-oft-300 hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col"
+    <Link
+      to={`/courses/${course.id}`}
+      aria-label={`Abrir el curso ${course.name}`}
+      className="animate-fade-in-up group block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:shadow-oft-100 hover:border-oft-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-oft-500 focus-visible:ring-offset-2 transition-all duration-200 overflow-hidden"
       style={{ animationDelay: `${index * 70}ms` }}
     >
       <div
@@ -19,7 +21,7 @@ function CourseCard({ course, index }) {
           isGeneral ? 'bg-ins-500' : 'bg-oft-500'
         } group-hover:h-1.5 transition-all duration-200`}
       />
-      <div className="p-4 flex flex-col flex-1">
+      <div className="p-4 flex flex-col min-h-[178px]">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold text-slate-900 text-sm leading-snug">{course.name}</h3>
           {isGeneral && (
@@ -35,20 +37,17 @@ function CourseCard({ course, index }) {
             <FontAwesomeIcon icon={faCircleCheck} className="text-ins-500" />
             {course.completed_subtopics} de {course.total_subtopics} subtemas
           </p>
-          <Link
-            to={`/courses/${course.id}`}
-            className="mt-1 inline-flex items-center justify-center gap-1.5 bg-ins-600 group-hover:bg-ins-700 text-white text-xs font-medium rounded-lg px-3 py-2 transition-all shadow-sm"
-          >
+          <span className="mt-1 inline-flex items-center justify-center gap-1.5 bg-ins-600 group-hover:bg-ins-700 text-white text-xs font-medium rounded-lg px-3 py-2 transition-all shadow-sm">
             <FontAwesomeIcon icon={faBookOpen} />
             Continuar estudiando
             <FontAwesomeIcon
               icon={faArrowRight}
               className="transition-transform duration-200 group-hover:translate-x-1"
             />
-          </Link>
+          </span>
         </div>
       </div>
-    </article>
+    </Link>
   )
 }
 

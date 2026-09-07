@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faCheck, faCopy, faPlus, faUsers } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
@@ -66,8 +66,10 @@ function CreateCourseForm({ onCreated }) {
 
 function TeacherCourseCard({ course, index }) {
   const [copied, setCopied] = useState(false)
+  const navigate = useNavigate()
 
-  const copyCode = async () => {
+  const copyCode = async (event) => {
+    event.stopPropagation()
     try {
       await navigator.clipboard.writeText(course.code)
       setCopied(true)
@@ -77,9 +79,23 @@ function TeacherCourseCard({ course, index }) {
     }
   }
 
+  const openCourse = () => navigate(`/teacher/courses/${course.id}`)
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      openCourse()
+    }
+  }
+
   return (
     <article
-      className="animate-fade-in-up group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:shadow-oft-100 hover:border-oft-300 hover:-translate-y-1 transition-all duration-200 p-4"
+      role="link"
+      tabIndex="0"
+      onClick={openCourse}
+      onKeyDown={handleKeyDown}
+      aria-label={`Abrir el curso ${course.name}`}
+      className="animate-fade-in-up group cursor-pointer rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-oft-300 hover:shadow-lg hover:shadow-oft-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-oft-500 focus-visible:ring-offset-2"
       style={{ animationDelay: `${index * 70}ms` }}
     >
       <h3 className="font-semibold text-slate-900 text-sm leading-snug">{course.name}</h3>
@@ -89,7 +105,9 @@ function TeacherCourseCard({ course, index }) {
           {course.code}
         </code>
         <button
+          type="button"
           onClick={copyCode}
+          onKeyDown={(event) => event.stopPropagation()}
           className={`text-xs font-medium inline-flex items-center gap-1 transition-colors ${
             copied ? 'text-ins-600' : 'text-slate-400 hover:text-oft-600'
           }`}
@@ -104,13 +122,10 @@ function TeacherCourseCard({ course, index }) {
         <strong className="text-slate-800">{course.student_count}</strong> estudiantes inscritos
       </p>
 
-      <Link
-        to={`/teacher/courses/${course.id}`}
-        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-oft-600 hover:text-oft-800 transition-colors"
-      >
+      <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-oft-600 transition-colors">
         Ver curso
         <FontAwesomeIcon icon={faArrowRight} className="transition-transform duration-200 group-hover:translate-x-1" />
-      </Link>
+      </span>
     </article>
   )
 }
