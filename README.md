@@ -52,6 +52,7 @@ seguimiento del progreso del estudiante.
 ```
 
 > **¿Quieres probar la aplicación paso a paso?** Consulta la [Guía de pruebas](GUIA_DE_PRUEBAS.md).
+> **¿Vas a tocar la interfaz?** Lee antes el [sistema de diseño](DESIGN.md).
 > **¿Quieres activar el login con Google?** Consulta la [Guía de Google OAuth](GUIA_GOOGLE_OAUTH.md).
 
 ## Puesta en marcha con Docker (recomendado)
@@ -77,7 +78,8 @@ seguimiento del progreso del estudiante.
    - API (docs Swagger): http://localhost:8000/docs
 
 Al arrancar, el backend crea las tablas, carga el **contenido oficial de Oftalmología**
-y el **Curso General de Oftalmología** automáticamente.
+(8 unidades, 22 subtemas y 66 preguntas de repaso) y el **Curso General de Oftalmología**
+automáticamente.
 
 ### Rol de profesor
 
@@ -144,6 +146,7 @@ python -m pytest tests/ -v
 | POST | `/api/courses/join` | Unirse a un curso con código | estudiante |
 | GET | `/api/courses/{id}/students` | Estudiantes inscritos | profesor dueño |
 | GET | `/api/courses/{id}/topics` | Temas y subtemas del curso | miembro/profesor |
+| GET | `/api/topics/{id}/questions?course_id=` | Preguntas de repaso de una unidad | miembro/profesor |
 | GET | `/api/subtopics/{id}?course_id=` | Contenido de un subtema | miembro/profesor |
 | POST | `/api/progress` | Marcar subtema completado | estudiante |
 | GET | `/api/progress` | Progreso en todos mis cursos | estudiante |
@@ -155,12 +158,13 @@ python -m pytest tests/ -v
 
 ```text
 users ──────────────┐
-                    ├──< course_memberships >── courses ──< course_topics >── topics ──< subtopics
+                    ├──< course_memberships >── courses ──< course_topics >── topics ──< subtopics ──< questions
 users ──< progress (user_id, course_id, subtopic_id, completed)
 ```
 
-- El **contenido oficial** (`topics`/`subtopics`) existe una sola vez y es compartido
-  por todos los cursos mediante `course_topics` (sin duplicación).
+- El **contenido oficial** (`topics`/`subtopics`/`questions`) existe una sola vez y es
+  compartido por todos los cursos mediante `course_topics` (sin duplicación). El temario
+  vive en `app/seed/seed_content.py` y el banco de preguntas en `app/seed/seed_questions.py`.
 - El **Curso General de Oftalmología** tiene `type=GENERAL` y `teacher_id=NULL`;
   todo estudiante nuevo se inscribe automáticamente.
 - Los cursos de profesor tienen `type=TEACHER` y un código único `OFT-XXXX`.

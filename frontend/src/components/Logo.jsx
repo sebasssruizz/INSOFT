@@ -1,29 +1,52 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEye } from '@fortawesome/free-solid-svg-icons'
+import { cn } from '../lib/utils'
+
+const SIZES = {
+  sm: { mark: 26, text: 'text-lg' },
+  md: { mark: 32, text: 'text-xl' },
+  lg: { mark: 40, text: 'text-2xl' },
+  xl: { mark: 52, text: 'text-3xl' },
+}
 
 /**
- * Logo de INSOFT con diferenciador de color:
- *  INS (Instrumentación Quirúrgica) en verde · OFT (Oftalmología) en rojo
+ * Marca INSOFT. El ojo está dibujado a medida (almendra + iris + reflejo) en
+ * lugar de un icono genérico, y las dos mitades del nombre se distinguen por
+ * profundidad de tono dentro de la misma escala azul.
  */
-export default function Logo({ size = 'text-xl', withIcon = true, light = false }) {
-  const iconSize =
-    size === 'text-4xl' ? 'w-12 h-12 text-xl' : size === 'text-2xl' ? 'w-10 h-10 text-base' : 'w-8 h-8 text-sm'
+export default function Logo({ size = 'md', light = false, withText = true, className }) {
+  const { mark, text } = SIZES[size] || SIZES.md
+
   return (
-    <span className="inline-flex items-center gap-2 select-none">
-      {withIcon && (
-        <span
-          className={`${iconSize} rounded-xl bg-ins-600 text-white flex items-center justify-center shadow-md ${
-            light ? 'shadow-black/30' : 'shadow-oft-200'
-          }`}
-          aria-hidden="true"
-        >
-          <FontAwesomeIcon icon={faEye} />
+    <span className={cn('inline-flex items-center gap-2.5 select-none', className)}>
+      <svg
+        width={mark}
+        height={mark}
+        viewBox="0 0 40 40"
+        fill="none"
+        aria-hidden="true"
+        className="shrink-0"
+      >
+        <rect width="40" height="40" rx="11" className={light ? 'fill-white' : 'fill-blue-700'} />
+        <path
+          d="M8 20c3.4-5.4 7.4-8.1 12-8.1S28.6 14.6 32 20c-3.4 5.4-7.4 8.1-12 8.1S11.4 25.4 8 20Z"
+          className={light ? 'fill-blue-700' : 'fill-white'}
+          fillOpacity={light ? 0.16 : 0.22}
+        />
+        <path
+          d="M8 20c3.4-5.4 7.4-8.1 12-8.1S28.6 14.6 32 20c-3.4 5.4-7.4 8.1-12 8.1S11.4 25.4 8 20Z"
+          className={light ? 'stroke-blue-700' : 'stroke-white'}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <circle cx="20" cy="20" r="4.4" className={light ? 'fill-blue-700' : 'fill-white'} />
+        <circle cx="21.7" cy="18.3" r="1.35" className={light ? 'fill-white' : 'fill-blue-700'} />
+      </svg>
+
+      {withText && (
+        <span className={cn('font-display font-semibold tracking-[-0.015em]', text)}>
+          <span className={light ? 'text-white' : 'text-ink-900'}>INS</span>
+          <span className={light ? 'text-blue-300' : 'text-blue-700'}>OFT</span>
         </span>
       )}
-      <span className={`font-extrabold tracking-tight ${size}`}>
-        <span className={light ? 'text-ins-300' : 'text-ins-600'}>INS</span>
-        <span className={light ? 'text-oft-300' : 'text-oft-600'}>OFT</span>
-      </span>
     </span>
   )
 }

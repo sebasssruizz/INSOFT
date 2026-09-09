@@ -10,6 +10,7 @@ from app.repositories import content_repository as content_repo
 from app.repositories import course_repository as course_repo
 from app.repositories import progress_repository as progress_repo
 from app.services.exceptions import ConflictError, ForbiddenError, NotFoundError
+from app.services.study_time import estimate_minutes
 
 GENERAL_COURSE_NAME = "Curso General de Oftalmología"
 GENERAL_COURSE_DESCRIPTION = (
@@ -85,7 +86,8 @@ def join_course_by_code(db: Session, student: User, code: str) -> Course:
 
 
 def _student_course_summary(db: Session, student: User, course: Course) -> dict:
-    subtopic_ids = content_repo.get_subtopic_ids_for_course(db, course.id)
+    subtopics = content_repo.get_subtopics_for_course(db, course.id)
+    subtopic_ids = [subtopic.id for subtopic in subtopics]
     total = len(subtopic_ids)
     completed = progress_repo.count_completed_in_course(db, student.id, course.id, subtopic_ids)
     percentage = round((completed / total) * 100, 1) if total > 0 else 0.0
@@ -94,6 +96,9 @@ def _student_course_summary(db: Session, student: User, course: Course) -> dict:
         "progress_percentage": percentage,
         "completed_subtopics": completed,
         "total_subtopics": total,
+        "total_units": content_repo.count_course_topics(db, course.id),
+        "estimated_minutes": sum(estimate_minutes(subtopic) for subtopic in subtopics),
+        "question_count": sum(len(subtopic.questions) for subtopic in subtopics),
     }
 
 

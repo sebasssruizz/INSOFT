@@ -29,6 +29,9 @@ class StudentCourseRead(CourseRead):
     progress_percentage: float = 0.0
     completed_subtopics: int = 0
     total_subtopics: int = 0
+    total_units: int = 0
+    estimated_minutes: int = 0
+    question_count: int = 0
 
 
 class TeacherCourseRead(CourseRead):

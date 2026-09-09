@@ -6,8 +6,9 @@ unidades y subtemas mediante CourseTopic, sin duplicar contenido.
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.models.content import Subtopic, Topic
+from app.models.content import Question, Subtopic, Topic
 from app.models.progress import Progress
+from app.seed.seed_questions import OFFICIAL_QUESTIONS
 from app.services import course_service
 
 
@@ -151,6 +152,27 @@ OFFICIAL_CONTENT = [
 ]
 
 
+def _sync_questions(db: Session, subtopic: Subtopic) -> None:
+    """Alinea las preguntas del subtema con el banco oficial, sin duplicar."""
+    desired = OFFICIAL_QUESTIONS.get(subtopic.name, [])
+    current = sorted(subtopic.questions, key=lambda question: question.order)
+
+    for question_order, question_data in enumerate(desired):
+        if question_order < len(current):
+            question = current[question_order]
+        else:
+            question = Question(subtopic=subtopic)
+            db.add(question)
+        question.prompt = question_data["prompt"]
+        question.options = question_data["options"]
+        question.correct_index = question_data["correct_index"]
+        question.explanation = question_data["explanation"]
+        question.order = question_order
+
+    for stale in current[len(desired):]:
+        db.delete(stale)
+
+
 def _sync_topic(db: Session, topic_data: dict, topic_order: int) -> Topic:
     """Actualiza una unidad existente o la crea, conservando sus relaciones."""
     topic = db.scalar(select(Topic).where(Topic.name == topic_data["name"]))
@@ -176,6 +198,8 @@ def _sync_topic(db: Session, topic_data: dict, topic_order: int) -> Topic:
         subtopic.name = subtopic_data["name"]
         subtopic.content = subtopic_data["content"]
         subtopic.order = subtopic_order
+        db.flush()
+        _sync_questions(db, subtopic)
 
     stale_subtopics = current_subtopics[len(desired_subtopics):]
     stale_ids = [subtopic.id for subtopic in stale_subtopics if subtopic.id is not None]

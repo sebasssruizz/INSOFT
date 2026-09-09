@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -32,6 +32,29 @@ class Subtopic(Base):
     order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     topic = relationship("Topic", back_populates="subtopics")
+    questions = relationship(
+        "Question", back_populates="subtopic", cascade="all, delete-orphan", order_by="Question.order"
+    )
+
+
+class Question(Base):
+    """Pregunta de repaso asociada a un subtema del contenido oficial.
+
+    Igual que el resto del contenido académico, es única y centralizada: la
+    comparten todos los cursos que habilitan el subtema.
+    """
+
+    __tablename__ = "questions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    subtopic_id: Mapped[int] = mapped_column(ForeignKey("subtopics.id"), nullable=False)
+    prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    options: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    correct_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    subtopic = relationship("Subtopic", back_populates="questions")
 
 
 class CourseTopic(Base):

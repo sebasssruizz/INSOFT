@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.database.session import get_db
 from app.models.user import User
-from app.schemas.content import SubtopicRead, TopicWithSubtopics
+from app.schemas.content import QuestionRead, SubtopicRead, TopicWithSubtopics
 from app.services import content_service
 
 router = APIRouter(tags=["content"])
@@ -18,6 +18,17 @@ def get_course_topics(
 ):
     """Temas y subtemas del contenido oficial habilitados en el curso."""
     return content_service.get_course_content(db, current_user, course_id)
+
+
+@router.get("/topics/{topic_id}/questions", response_model=list[QuestionRead])
+def get_topic_questions(
+    topic_id: int,
+    course_id: int = Query(..., description="Curso desde el que se consulta el contenido"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Preguntas de repaso de todos los subtemas de una unidad."""
+    return content_service.get_topic_questions(db, current_user, course_id, topic_id)
 
 
 @router.get("/subtopics/{subtopic_id}", response_model=SubtopicRead)

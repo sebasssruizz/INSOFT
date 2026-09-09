@@ -1,109 +1,229 @@
-import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight, faBookOpen, faCircleCheck } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowRight,
+  faCircleCheck,
+  faClock,
+  faLayerGroup,
+  faListCheck,
+} from '@fortawesome/free-solid-svg-icons'
+
+import EyeScene from '../components/three/LazyEyeScene'
 import JoinCourseForm from '../components/JoinCourseForm'
-import ProgressBar from '../components/ProgressBar'
+import { Badge, Meta } from '../components/ui/Meta'
+import { Button } from '../components/ui/Button'
+import { Counter } from '../components/ui/Counter'
+import { ProgressBar } from '../components/ui/Progress'
+import { formatDuration } from '../lib/curriculum'
+import { cn } from '../lib/utils'
 import { useAuth } from '../hooks/useAuth'
-import { listCourses } from '../services/courseService'
+import { useCourses } from '../hooks/useCourses'
+
+function greeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Buenos días'
+  if (hour < 20) return 'Buenas tardes'
+  return 'Buenas noches'
+}
 
 function CourseCard({ course, index }) {
+  const percentage = Math.round(course.progress_percentage || 0)
   const isGeneral = course.type === 'GENERAL'
+  const isDone = percentage >= 100
+  const isStarted = percentage > 0
+
   return (
     <Link
       to={`/courses/${course.id}`}
-      aria-label={`Abrir el curso ${course.name}`}
-      className="animate-fade-in-up group block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:shadow-oft-100 hover:border-oft-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-oft-500 focus-visible:ring-offset-2 transition-all duration-200 overflow-hidden"
+      className={cn(
+        'group animate-rise-in relative flex flex-col rounded-2xl border border-ink-200 bg-white p-6',
+        'shadow-e1 transition-[transform,box-shadow,border-color] duration-200 ease-out',
+        'hover:-translate-y-1 hover:border-blue-300 hover:shadow-e3',
+      )}
       style={{ animationDelay: `${index * 70}ms` }}
     >
-      <div
-        className={`h-1 ${
-          isGeneral ? 'bg-ins-500' : 'bg-oft-500'
-        } group-hover:h-1.5 transition-all duration-200`}
-      />
-      <div className="p-4 flex flex-col min-h-[178px]">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-slate-900 text-sm leading-snug">{course.name}</h3>
-          {isGeneral && (
-            <span className="shrink-0 text-[10px] font-semibold bg-ins-50 text-ins-700 border border-ins-200 rounded-full px-2 py-0.5">
-              Oficial
-            </span>
+      <div className="flex items-start justify-between gap-4">
+        <span
+          className={cn(
+            'flex h-12 w-12 items-center justify-center rounded-2xl text-lg transition-transform duration-200 ease-out group-hover:scale-105',
+            isDone ? 'bg-soft-mint text-deep-mint' : 'bg-soft-sky text-deep-sky',
           )}
-        </div>
+          aria-hidden="true"
+        >
+          <FontAwesomeIcon icon={isDone ? faCircleCheck : faLayerGroup} />
+        </span>
+        {isGeneral ? (
+          <Badge tone="official">Oficial</Badge>
+        ) : (
+          course.code && <Badge tone="quiet">{course.code}</Badge>
+        )}
+      </div>
 
-        <div className="mt-3 flex-1 flex flex-col justify-end gap-2">
-          <ProgressBar percentage={course.progress_percentage} />
-          <p className="text-[11px] text-slate-400 flex items-center gap-1">
-            <FontAwesomeIcon icon={faCircleCheck} className="text-ins-500" />
-            {course.completed_subtopics} de {course.total_subtopics} subtemas
+      <h3 className="mt-5 text-[1.375rem] font-semibold leading-snug tracking-[-0.01em] text-ink-900">
+        {course.name}
+      </h3>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <Meta icon={faLayerGroup}>{course.total_units} unidades</Meta>
+        <Meta icon={faListCheck}>{course.total_subtopics} subtemas</Meta>
+        <Meta icon={faClock}>{formatDuration(course.estimated_minutes)}</Meta>
+      </div>
+
+      <div className="mt-auto pt-6">
+        {isDone ? (
+          <p className="flex items-center gap-2 text-sm font-semibold text-deep-mint">
+            <FontAwesomeIcon icon={faCircleCheck} aria-hidden="true" />
+            Temario completado
           </p>
-          <span className="mt-1 inline-flex items-center justify-center gap-1.5 bg-ins-600 group-hover:bg-ins-700 text-white text-xs font-medium rounded-lg px-3 py-2 transition-all shadow-sm">
-            <FontAwesomeIcon icon={faBookOpen} />
-            Continuar estudiando
-            <FontAwesomeIcon
-              icon={faArrowRight}
-              className="transition-transform duration-200 group-hover:translate-x-1"
-            />
-          </span>
-        </div>
+        ) : (
+          <ProgressBar
+            value={percentage}
+            label={`${course.completed_subtopics} de ${course.total_subtopics} subtemas`}
+          />
+        )}
+
+        <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800">
+          {isDone ? 'Repasar el curso' : isStarted ? 'Continuar estudiando' : 'Empezar el curso'}
+          <FontAwesomeIcon
+            icon={faArrowRight}
+            className="transition-transform duration-200 ease-out group-hover:translate-x-1"
+            aria-hidden="true"
+          />
+        </span>
       </div>
     </Link>
   )
 }
 
+function CourseCardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-ink-200 bg-white p-6">
+      <div className="skeleton h-12 w-12 rounded-xl" />
+      <div className="skeleton mt-5 h-6 w-3/4 rounded" />
+      <div className="skeleton mt-3 h-3 w-1/2 rounded" />
+      <div className="skeleton mt-10 h-1.5 w-full rounded-full" />
+    </div>
+  )
+}
+
 export default function StudentDashboard() {
   const { user } = useAuth()
-  const [courses, setCourses] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { courses, loading, error, refresh } = useCourses()
 
-  const loadCourses = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      setCourses(await listCourses())
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadCourses()
-  }, [loadCourses])
+  const totals = courses.reduce(
+    (acc, course) => ({
+      completed: acc.completed + (course.completed_subtopics || 0),
+      subtopics: acc.subtopics + (course.total_subtopics || 0),
+      minutes: acc.minutes + (course.estimated_minutes || 0),
+    }),
+    { completed: 0, subtopics: 0, minutes: 0 },
+  )
+  const overall = totals.subtopics ? Math.round((totals.completed / totals.subtopics) * 100) : 0
+  const remaining = Math.max(0, totals.subtopics - totals.completed)
 
   return (
-    <div className="animate-fade-in-up">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Bienvenido, <span className="text-oft-600">{user?.name}</span>
-          </h1>
-          <p className="text-slate-500 mt-1 text-sm">Estos son tus cursos de Oftalmología.</p>
+    <div>
+      {/* Cabecera: estado global de estudio sobre una superficie tranquila */}
+      <header className="relative overflow-hidden border-b border-ink-200 bg-gradient-to-br from-soft-sky via-ink-50 to-soft-lavender">
+        <div className="relative mx-auto flex max-w-[78rem] items-center gap-12 px-6 py-12 lg:px-10 lg:py-16">
+          <div className="min-w-0 flex-1">
+            <p className="eyebrow text-deep-sky">Panel del estudiante</p>
+            <h1 className="mt-3.5 text-[2rem] font-semibold leading-[1.12] tracking-[-0.02em] text-ink-900 lg:text-[2.75rem]">
+              {greeting()}, {user?.name?.split(' ')[0]}
+            </h1>
+
+            {!loading && totals.subtopics > 0 && (
+              <>
+                <p className="mt-4 max-w-[46ch] text-[0.9375rem] leading-relaxed text-ink-600">
+                  {remaining === 0
+                    ? 'Has completado todo el temario disponible. Repasa cuando quieras.'
+                    : `Te quedan ${remaining} ${remaining === 1 ? 'subtema' : 'subtemas'} por estudiar.`}
+                </p>
+
+                <div className="mt-9 flex flex-wrap items-end gap-x-12 gap-y-6">
+                  <div>
+                    <p className="font-display text-[2.75rem] font-semibold leading-none text-blue-900">
+                      <Counter to={overall} suffix="%" />
+                    </p>
+                    <p className="eyebrow mt-2 text-ink-500">Del temario</p>
+                  </div>
+                  <div>
+                    <p className="font-display text-[2.75rem] font-semibold leading-none text-deep-mint">
+                      <Counter to={totals.completed} />
+                    </p>
+                    <p className="eyebrow mt-2 text-ink-500">Subtemas hechos</p>
+                  </div>
+                  <div>
+                    <p className="font-display text-[2.75rem] font-semibold leading-none text-deep-lavender">
+                      <Counter to={courses.length} />
+                    </p>
+                    <p className="eyebrow mt-2 text-ink-500">
+                      {courses.length === 1 ? 'Curso' : 'Cursos'}
+                    </p>
+                  </div>
+                </div>
+
+                <ProgressBar value={overall} className="mt-9 max-w-md" />
+              </>
+            )}
+          </div>
+
+          {/* Halo pastel: el ojo es casi blanco y necesita separarse del fondo. */}
+          <div className="relative hidden h-64 w-64 shrink-0 lg:block xl:h-72 xl:w-72">
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgb(255_255_255_/_0.9)_38%,transparent_70%)]"
+            />
+            <EyeScene className="relative h-full w-full" />
+          </div>
         </div>
       </header>
 
-      <div className="mt-6 grid lg:grid-cols-3 gap-6 items-start">
-        {/* Cursos: ocupan 2/3 del ancho */}
-        <section className="lg:col-span-2">
-          <h2 className="text-base font-semibold text-slate-900 mb-3">Mis cursos</h2>
+      <main className="mx-auto max-w-[78rem] px-6 py-12 lg:px-10 lg:py-16">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <section>
+            <div className="flex items-baseline justify-between gap-4">
+              <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">Mis cursos</h2>
+              {!loading && courses.length > 0 && (
+                <span className="tabular text-xs font-medium text-ink-500">
+                  {formatDuration(totals.minutes)} de estudio en total
+                </span>
+              )}
+            </div>
 
-          {loading && <p className="text-slate-500 text-sm">Cargando cursos…</p>}
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+            {error && (
+              <p className="mt-4 rounded-xl border border-wrong-200 bg-wrong-50 px-4 py-3 text-sm text-wrong-700">
+                {error}
+              </p>
+            )}
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            {courses.map((course, i) => (
-              <CourseCard key={course.id} course={course} index={i} />
-            ))}
-          </div>
-        </section>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              {loading && [0, 1].map((i) => <CourseCardSkeleton key={i} />)}
+              {!loading &&
+                courses.map((course, index) => (
+                  <CourseCard key={course.id} course={course} index={index} />
+                ))}
+            </div>
 
-        {/* Barra lateral: unirse a un curso */}
-        <aside className="lg:sticky lg:top-24">
-          <JoinCourseForm onJoined={loadCourses} />
-        </aside>
-      </div>
+            {!loading && courses.length === 0 && !error && (
+              <div className="mt-5 rounded-2xl border border-dashed border-ink-300 bg-white px-6 py-12 text-center">
+                <h3 className="text-lg font-semibold text-ink-900">Todavía no tienes cursos</h3>
+                <p className="mx-auto mt-2 max-w-[42ch] text-sm leading-relaxed text-ink-500">
+                  Al registrarte deberías tener acceso al Curso General de Oftalmología. Si no
+                  aparece, vuelve a cargar la página o únete con el código de tu facultad.
+                </p>
+                <Button onClick={refresh} variant="secondary" size="sm" className="mt-5">
+                  Volver a cargar
+                </Button>
+              </div>
+            )}
+          </section>
+
+          <aside className="lg:sticky lg:top-8 lg:self-start">
+            <JoinCourseForm onJoined={refresh} />
+          </aside>
+        </div>
+      </main>
     </div>
   )
 }
