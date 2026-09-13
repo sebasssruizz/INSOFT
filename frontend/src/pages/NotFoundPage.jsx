@@ -1,21 +1,28 @@
 import { Link } from 'react-router-dom'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEyeSlash } from '@fortawesome/free-solid-svg-icons'
+
+import Logo from '../components/Logo'
+import { Button } from '../components/ui/Button'
 
 export default function NotFoundPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4">
-      <span className="w-16 h-16 rounded-2xl bg-oft-600 text-white flex items-center justify-center text-2xl shadow-lg">
-        <FontAwesomeIcon icon={faEyeSlash} />
-      </span>
-      <h1 className="mt-4 text-2xl font-bold text-slate-900">Página no encontrada</h1>
-      <p className="mt-2 text-slate-500">La ruta que buscas no existe en INSOFT.</p>
-      <Link
-        to="/"
-        className="mt-6 bg-ins-600 hover:bg-ins-700 text-white text-sm font-medium rounded-lg px-5 py-2.5 transition-all shadow-md shadow-oft-200"
-      >
-        Volver al inicio
-      </Link>
-    </div>
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-soft-sky via-ink-50 to-soft-peach px-6 text-center">
+      <div className="relative">
+        <Logo size="lg" className="justify-center" />
+
+        <p className="tabular mt-14 font-display text-[7rem] font-semibold leading-none text-blue-900">
+          404
+        </p>
+        <h1 className="mt-4 text-[1.75rem] font-semibold tracking-[-0.02em] text-ink-900">
+          Esta página no existe
+        </h1>
+        <p className="mx-auto mt-3 max-w-[42ch] text-[0.9375rem] leading-relaxed text-ink-600">
+          La dirección que has abierto no corresponde a ninguna sección de INSOFT.
+        </p>
+
+        <Button as={Link} to="/" className="mt-9">
+          Volver al inicio
+        </Button>
+      </div>
+    </main>
   )
 }

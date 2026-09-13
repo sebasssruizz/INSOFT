@@ -4,3 +4,6 @@ export const getCourseTopics = (courseId) => apiFetch(`/courses/${courseId}/topi
 
 export const getSubtopic = (subtopicId, courseId) =>
   apiFetch(`/subtopics/${subtopicId}?course_id=${courseId}`)
+
+export const getTopicQuestions = (topicId, courseId) =>
+  apiFetch(`/topics/${topicId}/questions?course_id=${courseId}`)

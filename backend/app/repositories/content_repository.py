@@ -24,7 +24,11 @@ def get_course_topics(db: Session, course_id: int) -> list[CourseTopic]:
     """Temas habilitados de un curso, con sus subtemas cargados."""
     stmt = (
         select(CourseTopic)
-        .options(selectinload(CourseTopic.topic).selectinload(Topic.subtopics))
+        .options(
+            selectinload(CourseTopic.topic)
+            .selectinload(Topic.subtopics)
+            .selectinload(Subtopic.questions)
+        )
         .where(CourseTopic.course_id == course_id, CourseTopic.enabled.is_(True))
         .order_by(CourseTopic.order)
     )
@@ -43,6 +47,25 @@ def link_all_topics_to_course(db: Session, course_id: int) -> None:
         if not exists:
             db.add(CourseTopic(course_id=course_id, topic_id=topic.id, enabled=True, order=topic.order))
     db.commit()
+
+
+def get_subtopics_for_course(db: Session, course_id: int) -> list[Subtopic]:
+    """Subtemas habilitados del curso, con sus preguntas cargadas."""
+    stmt = (
+        select(Subtopic)
+        .options(selectinload(Subtopic.questions))
+        .join(CourseTopic, CourseTopic.topic_id == Subtopic.topic_id)
+        .where(CourseTopic.course_id == course_id, CourseTopic.enabled.is_(True))
+        .order_by(Subtopic.topic_id, Subtopic.order)
+    )
+    return list(db.scalars(stmt).all())
+
+
+def count_course_topics(db: Session, course_id: int) -> int:
+    stmt = select(CourseTopic.id).where(
+        CourseTopic.course_id == course_id, CourseTopic.enabled.is_(True)
+    )
+    return len(list(db.scalars(stmt).all()))
 
 
 def get_subtopic_ids_for_course(db: Session, course_id: int) -> list[int]:

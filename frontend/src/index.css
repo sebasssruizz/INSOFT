@@ -1,50 +1,101 @@
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/newsreader";
+@import "@fontsource-variable/newsreader/wght-italic.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  @apply bg-white text-slate-700 antialiased;
-}
-
-.prose-content h1,
-.prose-content h2,
-.prose-content h3 {
-  @apply font-semibold text-slate-900 mt-6 mb-2;
-}
-
-.prose-content p {
-  @apply mb-3 leading-relaxed;
-}
-
-.prose-content strong {
-  @apply font-semibold text-slate-900;
-}
-
-/* ── Animación de entrada suave para tarjetas ─────────────────────── */
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  body {
+    @apply bg-ink-50 text-ink-700 antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Titulares con la serif: escala fija, contraste por peso y tamaño.
+     El color es fijo, no heredado: todo titular sobre fondo oscuro
+     (bg-blue-950 y similares) debe declarar `text-white` explícitamente. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-ink-900;
+    font-optical-sizing: auto;
+  }
+
+  ::selection {
+    @apply bg-blue-200 text-blue-950;
+  }
+
+  /* Foco visible y consistente en toda la aplicación. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-blue-700 ring-offset-2 ring-offset-ink-50;
   }
 }
 
-.animate-fade-in-up {
-  animation: fade-in-up 0.5s ease-out both;
+@layer components {
+  /* Superficie de lectura del contenido académico. */
+  .prose-lesson {
+    @apply font-display text-[1.1875rem] leading-[1.72] text-ink-800;
+    max-width: 68ch;
+    font-optical-sizing: auto;
+  }
+
+  .prose-lesson p {
+    @apply mb-5;
+  }
+
+  .prose-lesson strong {
+    @apply font-semibold text-ink-950;
+  }
+
+  .prose-lesson em {
+    @apply italic;
+  }
+
+  /* Cifras que deben alinearse en columnas (contadores, progreso, tiempos). */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Etiqueta breve en versalitas para secciones y metadatos. */
+  .eyebrow {
+    @apply font-sans text-[0.6875rem] font-bold uppercase tracking-[0.14em];
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-ink-200/70;
+  }
+
+  .skeleton::after {
+    @apply absolute inset-0 animate-shimmer;
+    content: "";
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      theme("colors.ink.100 / 80%"),
+      transparent
+    );
+    transform: translateX(-100%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  .animate-fade-in-up {
-    animation: none;
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
