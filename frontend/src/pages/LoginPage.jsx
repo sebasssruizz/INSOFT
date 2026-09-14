@@ -10,7 +10,11 @@ import { CURRICULUM_FACTS } from '../lib/curriculum'
 import { useAuth } from '../hooks/useAuth'
 
 const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
-const devLoginEnabled = import.meta.env.VITE_ENABLE_DEV_LOGIN === 'true'
+// El acceso de desarrollo (estudiante/profesor) está disponible siempre que se
+// indique explícitamente o cuando se ejecuta el servidor de desarrollo, para
+// poder probar desde el móvil por IP aunque Google OAuth no acepte el origen.
+const devLoginEnabled =
+  import.meta.env.VITE_ENABLE_DEV_LOGIN === 'true' || import.meta.env.DEV
 
 export default function LoginPage() {
   const { loginGoogle, loginDevelopment } = useAuth()

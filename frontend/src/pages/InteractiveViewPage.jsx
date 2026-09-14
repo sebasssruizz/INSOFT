@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faComputerMouse, faKeyboard, faPause, faPersonWalking } from '@fortawesome/free-solid-svg-icons'
+import {
+  faComputerMouse,
+  faGamepad,
+  faHandPointer,
+  faKeyboard,
+  faPause,
+  faPersonRunning,
+  faPersonWalking,
+} from '@fortawesome/free-solid-svg-icons'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
@@ -42,10 +50,25 @@ export default function InteractiveViewPage() {
   const cameraReadoutRef = useRef(null)
   const startGameRef = useRef(() => {})
   const closeInspectionRef = useRef(() => {})
+  const pauseGameRef = useRef(() => {})
+  const joystickBaseRef = useRef(null)
+  const joystickKnobRef = useRef(null)
+  const runRef = useRef(false)
   const [status, setStatus] = useState('loading')
   const [paused, setPaused] = useState(true)
   const [hasStarted, setHasStarted] = useState(false)
   const [inspectedId, setInspectedId] = useState(null)
+  const [running, setRunning] = useState(false)
+  // Detección de pantalla táctil (móvil/tablet) para habilitar los controles
+  // en pantalla en lugar de teclado y mouse.
+  const [isTouchDevice] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches,
+  )
+
+  const toggleRun = () => {
+    runRef.current = !runRef.current
+    setRunning(runRef.current)
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -60,7 +83,7 @@ export default function InteractiveViewPage() {
     camera.lookAt(0, 1, 0)
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouchDevice ? 1.75 : 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
@@ -68,6 +91,8 @@ export default function InteractiveViewPage() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
     const keys = new Set()
+    // Entrada del joystick táctil: x = desplazamiento lateral, y = avance.
+    const moveInput = { x: 0, y: 0 }
     const yaw = { value: camera.rotation.y }
     const pitch = { value: camera.rotation.x }
     const pausedRef = { value: true }
@@ -103,9 +128,10 @@ export default function InteractiveViewPage() {
       pausedRef.value = false
       setHasStarted(true)
       setPaused(false)
-      canvas.requestPointerLock?.()
+      if (!isTouchDevice) canvas.requestPointerLock?.()
     }
     startGameRef.current = startGame
+    pauseGameRef.current = pauseGame
 
     const onKeyDown = (event) => {
       if (event.code === 'Escape') {
@@ -113,7 +139,8 @@ export default function InteractiveViewPage() {
         return
       }
 
-      if (!pausedRef.value && ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'ShiftLeft', 'ShiftRight'].includes(event.code)) {
+      // Durante la inspección de un objeto la cámara queda fija mirándolo.
+      if (!pausedRef.value && !inspectionRef.current.id && ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'ShiftLeft', 'ShiftRight'].includes(event.code)) {
         event.preventDefault()
         keys.add(event.code)
       }
@@ -122,7 +149,9 @@ export default function InteractiveViewPage() {
     const onKeyUp = (event) => keys.delete(event.code)
 
     const onMouseMove = (event) => {
-      if (pausedRef.value || document.pointerLockElement !== canvas) return
+      // Durante la inspección no se permite girar la vista: la cámara se
+      // mantiene fija y es el objeto el que rota.
+      if (pausedRef.value || inspectionRef.current.id || document.pointerLockElement !== canvas) return
       const sensitivity = 0.0022
       yaw.value -= event.movementX * sensitivity
       pitch.value -= event.movementY * sensitivity
@@ -180,6 +209,12 @@ export default function InteractiveViewPage() {
       inspectionGroup.visible = true
     }
 
+    const resetTouchInput = () => {
+      moveInput.x = 0
+      moveInput.y = 0
+      if (joystickKnobRef.current) joystickKnobRef.current.style.transform = 'translate(0px, 0px)'
+    }
+
     const closeInspection = () => {
       if (!inspectionRef.current.id) return
       inspectionGroup.clear()
@@ -193,7 +228,8 @@ export default function InteractiveViewPage() {
       transitionCamera(savedPosition, savedQuaternion)
       pausedRef.value = false
       setPaused(false)
-      canvas.requestPointerLock?.()
+      resetTouchInput()
+      if (!isTouchDevice) canvas.requestPointerLock?.()
     }
     closeInspectionRef.current = closeInspection
 
@@ -207,13 +243,18 @@ export default function InteractiveViewPage() {
       pausedRef.value = false
       setHasStarted(true)
       setPaused(false)
-      canvas.requestPointerLock?.()
+      resetTouchInput()
+      // No se bloquea el puntero durante la inspección: la cámara queda fija y
+      // el cursor debe poder llegar al botón "Volver a la sala".
       if (mainModelRef.current) mainModelRef.current.visible = false
       roomGroup.visible = false
       mountInspectionObject(sourceObject)
 
-      const inspectionPosition = new THREE.Vector3(0, 1.55, 6.2)
-      const inspectionTarget = new THREE.Vector3(0, 0.95, 0)
+      // En móvil el panel de información ocupa la parte inferior, así que la
+      // cámara se aleja y enfoca más abajo para que el objeto quede en la zona
+      // superior visible mientras gira.
+      const inspectionPosition = new THREE.Vector3(0, 1.55, isTouchDevice ? 7.2 : 6.2)
+      const inspectionTarget = new THREE.Vector3(0, isTouchDevice ? -0.3 : 0.95, 0)
       transitionCamera(inspectionPosition, getInspectionQuaternion(inspectionPosition, inspectionTarget))
 
       // If the individual GLB is added later, use it automatically; otherwise keep the embedded mesh.
@@ -222,21 +263,131 @@ export default function InteractiveViewPage() {
       }, undefined, () => {})
     }
 
-    const onCanvasClick = (event) => {
-      if (pausedRef.value) return
+    const inspectAt = (clientX, clientY) => {
       const rect = canvas.getBoundingClientRect()
-      if (document.pointerLockElement === canvas) {
-        pointer.set(0, 0)
-      } else {
-        pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1)
-      }
+      pointer.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
       raycaster.setFromCamera(pointer, camera)
       const hit = raycaster.intersectObjects(interactiveMeshes, true).find((item) => item.object.userData.inspectId)
-      if (hit) {
-        openInspection(hit.object.userData.inspectId, hit.object)
+      if (!hit) return false
+      openInspection(hit.object.userData.inspectId, hit.object)
+      return true
+    }
+
+    const onCanvasClick = (event) => {
+      if (suppressClick || pausedRef.value || inspectionRef.current.id) return
+      if (document.pointerLockElement === canvas) {
+        pointer.set(0, 0)
+        raycaster.setFromCamera(pointer, camera)
+        const hit = raycaster.intersectObjects(interactiveMeshes, true).find((item) => item.object.userData.inspectId)
+        if (hit) {
+          openInspection(hit.object.userData.inspectId, hit.object)
+          return
+        }
+      } else if (inspectAt(event.clientX, event.clientY)) {
         return
       }
       canvas.requestPointerLock?.()
+    }
+
+    // ── Controles táctiles (móvil) ─────────────────────────────────────────
+    const joystickBase = joystickBaseRef.current
+    const joystickKnob = joystickKnobRef.current
+    let joystickPointerId = null
+    let lookPointerId = null
+    let lookStartX = 0
+    let lookStartY = 0
+    let lookLastX = 0
+    let lookLastY = 0
+    // Un toque solo cuenta como tap si el dedo no se desplaza más de esto;
+    // así se distingue con claridad entre inspeccionar y arrastrar para mirar.
+    let lookDragging = false
+    let suppressClick = false
+    const TAP_THRESHOLD = 12
+
+    const setKnob = (dx, dy) => {
+      if (joystickKnob) joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`
+    }
+
+    const updateJoystick = (clientX, clientY) => {
+      if (!joystickBase) return
+      const rect = joystickBase.getBoundingClientRect()
+      const centerX = rect.left + rect.width / 2
+      const centerY = rect.top + rect.height / 2
+      const max = rect.width / 2 - 16
+      let dx = clientX - centerX
+      let dy = clientY - centerY
+      const length = Math.hypot(dx, dy)
+      if (length > max) {
+        dx = (dx / length) * max
+        dy = (dy / length) * max
+      }
+      setKnob(dx, dy)
+      moveInput.x = dx / max
+      moveInput.y = -dy / max
+    }
+
+    const onJoystickDown = (event) => {
+      if (event.pointerType !== 'touch' || pausedRef.value) return
+      joystickPointerId = event.pointerId
+      joystickBase.setPointerCapture?.(event.pointerId)
+      updateJoystick(event.clientX, event.clientY)
+      event.preventDefault()
+    }
+
+    const onJoystickMove = (event) => {
+      if (event.pointerId !== joystickPointerId) return
+      updateJoystick(event.clientX, event.clientY)
+      event.preventDefault()
+    }
+
+    const onJoystickUp = (event) => {
+      if (event.pointerId !== joystickPointerId) return
+      joystickPointerId = null
+      resetTouchInput()
+    }
+
+    const onCanvasPointerDown = (event) => {
+      if (event.pointerType !== 'touch' || pausedRef.value || inspectionRef.current.id) return
+      lookPointerId = event.pointerId
+      lookStartX = event.clientX
+      lookStartY = event.clientY
+      lookLastX = event.clientX
+      lookLastY = event.clientY
+      lookDragging = false
+      canvas.setPointerCapture?.(event.pointerId)
+    }
+
+    const onCanvasPointerMove = (event) => {
+      if (event.pointerId !== lookPointerId) return
+      // Mientras el dedo no supere el umbral, se considera un tap: no se gira.
+      if (!lookDragging) {
+        const travelled = Math.hypot(event.clientX - lookStartX, event.clientY - lookStartY)
+        if (travelled <= TAP_THRESHOLD) return
+        lookDragging = true
+      }
+      const dx = event.clientX - lookLastX
+      const dy = event.clientY - lookLastY
+      lookLastX = event.clientX
+      lookLastY = event.clientY
+      const sensitivity = 0.005
+      yaw.value -= dx * sensitivity
+      pitch.value -= dy * sensitivity
+      pitch.value = THREE.MathUtils.clamp(pitch.value, -Math.PI / 2.15, Math.PI / 2.15)
+      updateCameraRotation()
+      event.preventDefault()
+    }
+
+    const onCanvasPointerUp = (event) => {
+      if (event.pointerId !== lookPointerId) return
+      lookPointerId = null
+      // Siempre se ignora el click sintético posterior: si fue un toque se
+      // inspecciona aquí y si fue un arrastre no debe abrir nada.
+      suppressClick = true
+      if (!lookDragging) inspectAt(event.clientX, event.clientY)
+      lookDragging = false
+      window.setTimeout(() => {
+        suppressClick = false
+      }, 350)
     }
 
     const resize = () => {
@@ -252,7 +403,8 @@ export default function InteractiveViewPage() {
     const surgicalLight = new THREE.SpotLight(0xffffff, 90, 24, Math.PI / 5, 0.5, 1.2)
     surgicalLight.position.set(0, 9, 1)
     surgicalLight.castShadow = true
-    surgicalLight.shadow.mapSize.set(2048, 2048)
+    const shadowMapSize = isTouchDevice ? 1024 : 2048
+    surgicalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
     const surgicalTarget = new THREE.Object3D()
     surgicalTarget.position.set(0, 0, 0)
     scene.add(surgicalLight, surgicalTarget)
@@ -403,12 +555,13 @@ export default function InteractiveViewPage() {
         }
       }
 
-      if (inspectionRef.current.id && !pausedRef.value) {
+      // El objeto inspeccionado gira siempre; la cámara permanece fija.
+      if (inspectionRef.current.id) {
         inspectionGroup.rotation.y += delta * 0.7
         inspectionGroup.position.y = Math.sin(clock.elapsedTime * 1.4) * 0.035
       }
 
-      if (!pausedRef.value && !cameraTransition.active) {
+      if (!pausedRef.value && !inspectionRef.current.id && !cameraTransition.active) {
         const forward = new THREE.Vector3(-Math.sin(yaw.value), 0, -Math.cos(yaw.value))
         const right = new THREE.Vector3(Math.cos(yaw.value), 0, -Math.sin(yaw.value))
         const direction = new THREE.Vector3()
@@ -418,9 +571,14 @@ export default function InteractiveViewPage() {
         if (keys.has('KeyD') || keys.has('ArrowRight')) direction.add(right)
         if (keys.has('KeyA') || keys.has('ArrowLeft')) direction.sub(right)
 
+        // Entrada del joystick táctil (avance y desplazamiento lateral).
+        direction.addScaledVector(forward, moveInput.y)
+        direction.addScaledVector(right, moveInput.x)
+
         if (direction.lengthSq() > 0) {
           direction.normalize()
-          const speed = keys.has('ShiftLeft') || keys.has('ShiftRight') ? 4.8 : 2.4
+          const isRunning = keys.has('ShiftLeft') || keys.has('ShiftRight') || runRef.current
+          const speed = isRunning ? 4.8 : 2.4
           camera.position.addScaledVector(direction, speed * delta)
         }
       }
@@ -438,6 +596,16 @@ export default function InteractiveViewPage() {
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('pointerlockchange', onPointerLockChange)
     canvas.addEventListener('click', onCanvasClick)
+    canvas.addEventListener('pointerdown', onCanvasPointerDown)
+    canvas.addEventListener('pointermove', onCanvasPointerMove)
+    canvas.addEventListener('pointerup', onCanvasPointerUp)
+    canvas.addEventListener('pointercancel', onCanvasPointerUp)
+    if (joystickBase) {
+      joystickBase.addEventListener('pointerdown', onJoystickDown)
+      joystickBase.addEventListener('pointermove', onJoystickMove)
+      joystickBase.addEventListener('pointerup', onJoystickUp)
+      joystickBase.addEventListener('pointercancel', onJoystickUp)
+    }
     resize()
     window.addEventListener('resize', resize)
     animate()
@@ -450,9 +618,20 @@ export default function InteractiveViewPage() {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('pointerlockchange', onPointerLockChange)
       canvas.removeEventListener('click', onCanvasClick)
+      canvas.removeEventListener('pointerdown', onCanvasPointerDown)
+      canvas.removeEventListener('pointermove', onCanvasPointerMove)
+      canvas.removeEventListener('pointerup', onCanvasPointerUp)
+      canvas.removeEventListener('pointercancel', onCanvasPointerUp)
+      if (joystickBase) {
+        joystickBase.removeEventListener('pointerdown', onJoystickDown)
+        joystickBase.removeEventListener('pointermove', onJoystickMove)
+        joystickBase.removeEventListener('pointerup', onJoystickUp)
+        joystickBase.removeEventListener('pointercancel', onJoystickUp)
+      }
       window.removeEventListener('resize', resize)
       if (document.pointerLockElement === canvas) document.exitPointerLock()
       startGameRef.current = () => {}
+      pauseGameRef.current = () => {}
       renderer.dispose()
       floorTexture.dispose()
       scene.traverse((object) => {
@@ -468,24 +647,55 @@ export default function InteractiveViewPage() {
     <main className="fixed inset-0 overflow-hidden bg-blue-950 text-white">
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 h-full w-full cursor-crosshair"
+        className="absolute inset-0 h-full w-full touch-none select-none cursor-crosshair"
         aria-label="Mesa quirúrgica interactiva en 3D"
       />
 
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,transparent_20%,rgba(6,10,32,0.35)_100%)]" />
 
-      <header className="pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between gap-4 bg-gradient-to-b from-blue-950/90 to-transparent px-5 py-5 sm:px-8 sm:py-7">
-        <div>
+      <header className="pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between gap-3 bg-gradient-to-b from-blue-950/90 to-transparent px-4 pb-6 pt-[calc(0.9rem+env(safe-area-inset-top))] sm:gap-4 sm:px-8 sm:py-7 sm:pt-7">
+        <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-300">Vista interactiva</p>
-          <h1 className="mt-1 font-display text-xl font-semibold text-white sm:text-2xl">Armado de la mesa quirúrgica</h1>
-          <p className="mt-1 text-xs text-blue-200 sm:text-sm">WASD o flechas para moverte · mouse para mirar</p>
+          <h1 className="mt-1 font-display text-base font-semibold leading-tight text-white sm:text-2xl">Armado de la mesa quirúrgica</h1>
+          <p className="mt-1 hidden text-xs text-blue-200 sm:block sm:text-sm">WASD o flechas para moverte · mouse para mirar</p>
+          <p className="mt-1 text-[11px] text-blue-200 sm:hidden">Joystick para moverte · arrastra para mirar</p>
         </div>
-        <Link
-          to={`/courses/${courseId}/subtopics/${subtopicId}`}
-          className="pointer-events-auto rounded-lg border border-white/20 bg-blue-950/60 px-3 py-2 text-xs font-semibold text-white backdrop-blur transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
-        >
-          Salir de la vista
-        </Link>
+        <div className="pointer-events-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {isTouchDevice && !paused && !inspectedId && (
+            <>
+              <button
+                type="button"
+                onClick={toggleRun}
+                aria-pressed={running}
+                aria-label="Correr"
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-semibold backdrop-blur transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 ${
+                  running
+                    ? 'border-blue-300/60 bg-blue-500 text-white'
+                    : 'border-white/20 bg-blue-950/60 text-white hover:bg-white/15'
+                }`}
+              >
+                <FontAwesomeIcon icon={faPersonRunning} aria-hidden="true" />
+                <span className="hidden sm:inline">Correr</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => pauseGameRef.current()}
+                aria-label="Pausar"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-blue-950/60 px-2.5 py-2 text-xs font-semibold text-white backdrop-blur transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+              >
+                <FontAwesomeIcon icon={faPause} aria-hidden="true" />
+                <span className="hidden sm:inline">Pausa</span>
+              </button>
+            </>
+          )}
+          <Link
+            to={`/courses/${courseId}/subtopics/${subtopicId}`}
+            className="rounded-lg border border-white/20 bg-blue-950/60 px-3 py-2 text-xs font-semibold text-white backdrop-blur transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+          >
+            <span className="sm:hidden">Salir</span>
+            <span className="hidden sm:inline">Salir de la vista</span>
+          </Link>
+        </div>
       </header>
 
       {!paused && !inspectedId && (
@@ -494,20 +704,51 @@ export default function InteractiveViewPage() {
         </div>
       )}
 
+      {/* Joystick táctil: siempre montado en móvil para que el visor 3D pueda
+          enganchar sus eventos; se oculta durante la pausa y la inspección. */}
+      {isTouchDevice && (
+        <div
+          ref={joystickBaseRef}
+          aria-hidden="true"
+          style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+          className={`absolute left-5 z-30 flex h-28 w-28 touch-none select-none items-center justify-center rounded-full border border-white/25 bg-blue-950/45 backdrop-blur transition-opacity duration-200 ${
+            !paused && !inspectedId ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          <span className="pointer-events-none absolute inset-0 rounded-full border border-white/10" />
+          <span className="pointer-events-none absolute inset-x-0 top-1.5 text-center text-[9px] font-bold uppercase tracking-widest text-blue-200/60">
+            Mover
+          </span>
+          <div
+            ref={joystickKnobRef}
+            className="pointer-events-none h-12 w-12 rounded-full border border-white/40 bg-white/25 shadow-lg shadow-black/40"
+          />
+        </div>
+      )}
+
       {inspectedId && (
         <div className="pointer-events-none absolute inset-0 z-20">
-          <section className="pointer-events-auto absolute bottom-5 left-5 w-[min(90%,24rem)] rounded-2xl border border-blue-300/25 bg-[#102a3b] p-6 shadow-2xl shadow-black/50 sm:bottom-8 sm:left-8 sm:p-7">
+          <section className="pointer-events-auto absolute inset-x-0 bottom-0 max-h-[48vh] overflow-y-auto rounded-t-3xl border border-blue-300/25 bg-[#102a3b] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 sm:inset-x-auto sm:bottom-8 sm:left-8 sm:max-h-none sm:w-[min(90%,24rem)] sm:rounded-2xl sm:p-7">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/20 sm:hidden" />
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-300">
               {TOOL_INFO[inspectedId].eyebrow}
             </p>
-            <h2 className="mt-2 font-display text-3xl font-semibold text-white">
+            <h2 className="mt-2 font-display text-2xl font-semibold text-white sm:text-3xl">
               {TOOL_INFO[inspectedId].title}
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-blue-100">
+            <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:mt-4">
               {TOOL_INFO[inspectedId].description}
             </p>
             <div className="mt-4 rounded-lg border border-blue-200/15 bg-blue-950/60 px-3 py-2 text-[11px] leading-relaxed text-blue-200">
-              Ajusta la vista con <strong className="text-white">WASD/flechas</strong>, mira con el <strong className="text-white">mouse</strong> y usa <strong className="text-white">Shift</strong> para acercarte más rápido. Las coordenadas aparecen abajo a la derecha.
+              {isTouchDevice ? (
+                <>
+                  El modelo gira automáticamente. Toca <strong className="text-white">Volver a la sala</strong> para seguir explorando.
+                </>
+              ) : (
+                <>
+                  Ajusta la vista con <strong className="text-white">WASD/flechas</strong>, mira con el <strong className="text-white">mouse</strong> y usa <strong className="text-white">Shift</strong> para acercarte más rápido. Las coordenadas aparecen abajo a la derecha.
+                </>
+              )}
             </div>
             <ul className="mt-5 space-y-2 text-xs text-blue-200">
               {TOOL_INFO[inspectedId].details.map((detail) => (
@@ -520,7 +761,7 @@ export default function InteractiveViewPage() {
             <button
               type="button"
               onClick={() => closeInspectionRef.current()}
-              className="mt-7 rounded-lg bg-blue-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#102a3b]"
+              className="mt-6 w-full rounded-lg bg-blue-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#102a3b] sm:mt-7 sm:w-auto"
             >
               Volver a la sala
             </button>
@@ -529,60 +770,92 @@ export default function InteractiveViewPage() {
       )}
 
       {paused && !inspectedId && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#07131f] px-5">
-          <section className="w-full max-w-lg rounded-2xl border border-blue-300/25 bg-[#102a3b] p-6 shadow-2xl shadow-black/40 sm:p-7">
+        <div className="absolute inset-0 z-20 flex items-center justify-center overflow-y-auto bg-[#07131f] px-4 py-6 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-5">
+          <section className="my-auto w-full max-w-lg rounded-2xl border border-blue-300/25 bg-[#102a3b] p-5 shadow-2xl shadow-black/40 sm:p-7">
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-300">
-                <FontAwesomeIcon icon={hasStarted ? faPause : faKeyboard} />
+                <FontAwesomeIcon icon={hasStarted ? faPause : isTouchDevice ? faGamepad : faKeyboard} />
               </span>
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-300">{hasStarted ? 'Pausa' : 'Cómo explorar'}</p>
-                <h2 className="mt-1 font-display text-2xl font-semibold text-white">
+                <h2 className="mt-1 font-display text-xl font-semibold text-white sm:text-2xl">
                   {hasStarted ? 'La vista está en pausa' : 'Recorre la sala quirúrgica'}
                 </h2>
               </div>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-200">
-                  <FontAwesomeIcon icon={faPersonWalking} /> Movimiento
-                </div>
-                <div className="mt-3 flex items-center justify-center gap-4">
-                  <div className="grid w-fit grid-cols-3 gap-1">
-                    <span />
-                    <KeyCap>W</KeyCap>
-                    <span />
-                    <KeyCap>A</KeyCap>
-                    <KeyCap>S</KeyCap>
-                    <KeyCap>D</KeyCap>
+            {isTouchDevice ? (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-200">
+                    <FontAwesomeIcon icon={faGamepad} /> Movimiento
                   </div>
-                  <div className="grid w-fit grid-cols-3 gap-1">
-                    <span />
-                    <KeyCap>↑</KeyCap>
-                    <span />
-                    <KeyCap>←</KeyCap>
-                    <KeyCap>↓</KeyCap>
-                    <KeyCap>→</KeyCap>
-                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-blue-100">
+                    Usa el <strong className="text-white">joystick</strong> de la esquina inferior izquierda para desplazarte por la sala.
+                  </p>
                 </div>
-                <p className="mt-3 text-center text-[11px] text-blue-200">WASD o flechas</p>
-              </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
-                  <FontAwesomeIcon icon={faComputerMouse} className="w-5 text-blue-300" />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-blue-200">Mirada</p>
-                    <p className="mt-1 text-xs text-blue-100">Mueve el mouse para mirar</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <FontAwesomeIcon icon={faHandPointer} className="w-5 shrink-0 text-blue-300" />
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-blue-200">Mirada</p>
+                      <p className="mt-1 text-xs text-blue-100">Arrastra el dedo sobre la escena para mirar</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <FontAwesomeIcon icon={faPersonRunning} className="w-5 shrink-0 text-blue-300" />
+                    <p className="text-xs text-blue-100">Activa <strong className="text-white">Correr</strong> para moverte más rápido.</p>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <FontAwesomeIcon icon={faHandPointer} className="w-5 shrink-0 text-blue-300" />
+                    <p className="text-xs text-blue-100">Toca un instrumento para ver su información.</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4">
-                  <span className="flex items-center gap-2 text-xs text-blue-100"><KeyCap className="h-7 min-w-12">Shift</KeyCap> Correr</span>
-                  <span className="flex items-center gap-2 text-xs text-blue-100"><KeyCap className="h-7 min-w-12">Esc</KeyCap> Pausa</span>
+              </div>
+            ) : (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-200">
+                    <FontAwesomeIcon icon={faPersonWalking} /> Movimiento
+                  </div>
+                  <div className="mt-3 flex items-center justify-center gap-4">
+                    <div className="grid w-fit grid-cols-3 gap-1">
+                      <span />
+                      <KeyCap>W</KeyCap>
+                      <span />
+                      <KeyCap>A</KeyCap>
+                      <KeyCap>S</KeyCap>
+                      <KeyCap>D</KeyCap>
+                    </div>
+                    <div className="grid w-fit grid-cols-3 gap-1">
+                      <span />
+                      <KeyCap>↑</KeyCap>
+                      <span />
+                      <KeyCap>←</KeyCap>
+                      <KeyCap>↓</KeyCap>
+                      <KeyCap>→</KeyCap>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-center text-[11px] text-blue-200">WASD o flechas</p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <FontAwesomeIcon icon={faComputerMouse} className="w-5 text-blue-300" />
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-blue-200">Mirada</p>
+                      <p className="mt-1 text-xs text-blue-100">Mueve el mouse para mirar</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4">
+                    <span className="flex items-center gap-2 text-xs text-blue-100"><KeyCap className="h-7 min-w-12">Shift</KeyCap> Correr</span>
+                    <span className="flex items-center gap-2 text-xs text-blue-100"><KeyCap className="h-7 min-w-12">Esc</KeyCap> Pausa</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
             <button
               type="button"
               onClick={() => startGameRef.current()}
@@ -606,13 +879,13 @@ export default function InteractiveViewPage() {
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-5 left-5 rounded-lg border border-white/10 bg-blue-950/60 px-3 py-2 text-[11px] text-blue-200 backdrop-blur sm:bottom-7 sm:left-8">
+      <div className="pointer-events-none absolute bottom-5 left-5 hidden rounded-lg border border-white/10 bg-blue-950/60 px-3 py-2 text-[11px] text-blue-200 backdrop-blur sm:bottom-7 sm:left-8 sm:block">
         Modelo: Prueba_12.glb · Sala quirúrgica 3D
       </div>
 
       <div
         ref={cameraReadoutRef}
-        className="pointer-events-none absolute bottom-5 right-5 rounded-lg border border-blue-300/30 bg-blue-950/70 px-3 py-2 font-mono text-[11px] text-blue-100 backdrop-blur sm:bottom-7 sm:right-8"
+        className="pointer-events-none absolute bottom-5 right-5 hidden rounded-lg border border-blue-300/30 bg-blue-950/70 px-3 py-2 font-mono text-[11px] text-blue-100 backdrop-blur sm:bottom-7 sm:right-8 sm:block"
       >
         Cámara · X -0.50 · Y 5.18 · Z -2.63
       </div>
