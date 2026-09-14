@@ -1,5 +1,6 @@
 # Entorno
 .env
+.env.bak
 *.local
 credenciales-google.txt
 
