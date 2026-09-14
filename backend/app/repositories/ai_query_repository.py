@@ -10,12 +10,16 @@ def create(
     user_id: int,
     question_original: str,
     subtopic_id: int | None = None,
+    question_normalizada: str | None = None,
+    respuesta: str | None = None,
 ) -> AiQuery:
     """Registra una pregunta del estudiante (y su subtema asociado si aplica)."""
     query = AiQuery(
         user_id=user_id,
         subtopic_id=subtopic_id,
         question_original=question_original,
+        question_normalizada=question_normalizada,
+        respuesta=respuesta,
     )
     db.add(query)
     db.commit()

@@ -1,7 +1,14 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight, faCheck, faCopy, faPlus, faUsers } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowRight,
+  faCheck,
+  faCopy,
+  faFileArrowUp,
+  faPlus,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons'
 
 import { Badge } from '../components/ui/Meta'
 import { Button } from '../components/ui/Button'
@@ -261,7 +268,34 @@ export default function TeacherDashboard() {
             </div>
           </section>
 
-          <aside className="lg:sticky lg:top-8 lg:self-start">
+          <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
+            <Link
+              to="/teacher/import"
+              className="group block rounded-2xl border border-ink-200 bg-white p-6 shadow-e1 transition-[border-color,box-shadow] duration-150 hover:border-blue-300 hover:shadow-e2"
+            >
+              <span
+                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-soft-butter text-deep-butter"
+                aria-hidden="true"
+              >
+                <FontAwesomeIcon icon={faFileArrowUp} />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold tracking-[-0.01em] text-ink-900">
+                Importar un documento
+              </h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-500">
+                Subí contenido con preguntas y respuestas: se indexa de inmediato para el
+                asistente de IA.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800">
+                Abrir
+                <FontAwesomeIcon
+                  icon={faArrowRight}
+                  className="transition-transform duration-200 ease-out group-hover:translate-x-1"
+                  aria-hidden="true"
+                />
+              </span>
+            </Link>
+
             <CreateCourseForm onCreated={refresh} />
           </aside>
         </div>

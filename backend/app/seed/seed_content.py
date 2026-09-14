@@ -3,13 +3,11 @@
 Fuente única y centralizada: todos los cursos referencian estas mismas
 unidades y subtemas mediante CourseTopic, sin duplicar contenido.
 """
-from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.models.content import Question, Subtopic, Topic
-from app.models.progress import Progress
 from app.seed.seed_questions import OFFICIAL_QUESTIONS
 from app.services import course_service
+from app.services.content_import import sync_topic
 
 
 OFFICIAL_CONTENT = [
@@ -152,69 +150,17 @@ OFFICIAL_CONTENT = [
 ]
 
 
-def _sync_questions(db: Session, subtopic: Subtopic) -> None:
-    """Alinea las preguntas del subtema con el banco oficial, sin duplicar."""
-    desired = OFFICIAL_QUESTIONS.get(subtopic.name, [])
-    current = sorted(subtopic.questions, key=lambda question: question.order)
-
-    for question_order, question_data in enumerate(desired):
-        if question_order < len(current):
-            question = current[question_order]
-        else:
-            question = Question(subtopic=subtopic)
-            db.add(question)
-        question.prompt = question_data["prompt"]
-        question.options = question_data["options"]
-        question.correct_index = question_data["correct_index"]
-        question.explanation = question_data["explanation"]
-        question.order = question_order
-
-    for stale in current[len(desired):]:
-        db.delete(stale)
-
-
-def _sync_topic(db: Session, topic_data: dict, topic_order: int) -> Topic:
-    """Actualiza una unidad existente o la crea, conservando sus relaciones."""
-    topic = db.scalar(select(Topic).where(Topic.name == topic_data["name"]))
-    if topic is None:
-        topic = db.scalar(select(Topic).where(Topic.order == topic_order))
-    if topic is None:
-        topic = Topic(name=topic_data["name"], order=topic_order)
-        db.add(topic)
-        db.flush()
-
-    topic.name = topic_data["name"]
-    topic.description = topic_data["description"]
-    topic.order = topic_order
-
-    current_subtopics = sorted(topic.subtopics, key=lambda subtopic: subtopic.order)
-    desired_subtopics = topic_data["subtopics"]
-    for subtopic_order, subtopic_data in enumerate(desired_subtopics):
-        if subtopic_order < len(current_subtopics):
-            subtopic = current_subtopics[subtopic_order]
-        else:
-            subtopic = Subtopic(topic=topic)
-            db.add(subtopic)
-        subtopic.name = subtopic_data["name"]
-        subtopic.content = subtopic_data["content"]
-        subtopic.order = subtopic_order
-        db.flush()
-        _sync_questions(db, subtopic)
-
-    stale_subtopics = current_subtopics[len(desired_subtopics):]
-    stale_ids = [subtopic.id for subtopic in stale_subtopics if subtopic.id is not None]
-    if stale_ids:
-        db.execute(delete(Progress).where(Progress.subtopic_id.in_(stale_ids)))
-        for subtopic in stale_subtopics:
-            db.delete(subtopic)
-
-    return topic
-
-
 def seed_official_content(db: Session) -> None:
     """Sincroniza las 8 unidades oficiales y asegura el Curso General."""
     for topic_order, topic_data in enumerate(OFFICIAL_CONTENT):
-        _sync_topic(db, topic_data, topic_order)
+        with_questions = {
+            **topic_data,
+            "subtopics": [
+                {**subtopic, "questions": OFFICIAL_QUESTIONS.get(subtopic["name"], [])}
+                for subtopic in topic_data["subtopics"]
+            ],
+        }
+        sync_topic(db, with_questions, topic_order)
     db.commit()
 
     # Asegurar que el Curso General y los cursos de profesores tengan todo el contenido.

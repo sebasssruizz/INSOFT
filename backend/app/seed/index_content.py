@@ -122,6 +122,31 @@ def chunk_subtopic_content(
     return chunks
 
 
+def index_subtopics(db: Session, subtopic_ids: list[int]) -> int:
+    """Indexa (o reindexa) solo los subtemas indicados en `subtopic_chunks`.
+
+    Idempotente: borra los chunks previos de cada subtema antes de reindexarlo.
+    Devuelve el número total de chunks insertados.
+    """
+    total_chunks = 0
+    for subtopic_id in subtopic_ids:
+        subtopic = db.get(Subtopic, subtopic_id)
+        if subtopic is None or not subtopic.content.strip():
+            continue
+        chunks = chunk_subtopic_content(subtopic.content)
+        if not chunks:
+            continue
+        vectors = embed_batch(chunks)
+        chunk_repo.delete_chunks_for_subtopic(db, subtopic_id)
+        for chunk_text, vector in zip(chunks, vectors):
+            chunk_repo.create(
+                db, subtopic_id=subtopic_id, content=chunk_text, embedding=vector
+            )
+        total_chunks += len(chunks)
+        print(f"[index] subtopic {subtopic_id} ({subtopic.name}): {len(chunks)} chunks")
+    return total_chunks
+
+
 def index_all_content(db: Session) -> tuple[int, int]:
     """Indexa todo el contenido oficial en `subtopic_chunks`.
 
@@ -129,22 +154,9 @@ def index_all_content(db: Session) -> tuple[int, int]:
     elimina los chunks previos de cada subtema antes de reindexarlo.
     """
     subtopics = list(db.scalars(select(Subtopic).order_by(Subtopic.id)).all())
-    total_subtopics = 0
-    total_chunks = 0
-    for subtopic in subtopics:
-        chunks = chunk_subtopic_content(subtopic.content)
-        if not chunks:
-            continue
-        vectors = embed_batch(chunks)
-        chunk_repo.delete_chunks_for_subtopic(db, subtopic.id)
-        for chunk_text, vector in zip(chunks, vectors):
-            chunk_repo.create(
-                db, subtopic_id=subtopic.id, content=chunk_text, embedding=vector
-            )
-        total_subtopics += 1
-        total_chunks += len(chunks)
-        print(f"[index] subtopic {subtopic.id} ({subtopic.name}): {len(chunks)} chunks")
-    return total_subtopics, total_chunks
+    ids = [subtopic.id for subtopic in subtopics]
+    total_chunks = index_subtopics(db, ids)
+    return len(ids), total_chunks
 
 
 if __name__ == "__main__":
