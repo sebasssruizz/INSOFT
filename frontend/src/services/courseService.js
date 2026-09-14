@@ -10,3 +10,6 @@ export const createCourse = (name, description) =>
 export const joinCourse = (code) => apiFetch('/courses/join', { method: 'POST', body: { code } })
 
 export const getCourseStudents = (courseId) => apiFetch(`/courses/${courseId}/students`)
+
+export const importCourseContent = (document) =>
+  apiFetch('/content/import', { method: 'POST', body: { document } })

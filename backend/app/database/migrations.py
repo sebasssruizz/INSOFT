@@ -18,6 +18,10 @@ def ensure_schema_compatibility() -> None:
     inspector = inspect(engine)
     existing_tables = set(inspector.get_table_names())
     with engine.begin() as conn:
+        # Habilita la extensión pgvector en PostgreSQL (requerida por las
+        # columnas `vector` de subtopic_chunks). No-op en SQLite/tests.
+        if engine.dialect.name == "postgresql":
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         for (table, column), ddl in NEW_COLUMNS.items():
             if table not in existing_tables:
                 continue

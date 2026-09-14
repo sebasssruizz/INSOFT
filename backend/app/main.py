@@ -4,9 +4,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy.exc import OperationalError
 
 from app.api.router import api_router
+from app.api.routes.ai import limiter
 from app.core.config import settings
 from app.database.base import Base
 from app.database.migrations import ensure_schema_compatibility
@@ -25,8 +28,10 @@ async def lifespan(app: FastAPI):
     attempts = 30
     while True:
         try:
-            Base.metadata.create_all(bind=engine)
+            # Migraciones antes de create_all: habilita pgvector (lo necesitan
+            # las columnas `vector`) y añade columnas faltantes en tablas viejas.
             ensure_schema_compatibility()
+            Base.metadata.create_all(bind=engine)
             break
         except OperationalError:
             attempts -= 1
@@ -48,6 +53,9 @@ def create_app() -> FastAPI:
         version="1.0.0",
         lifespan=lifespan,
     )
+
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     app.add_middleware(
         CORSMiddleware,

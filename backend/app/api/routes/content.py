@@ -1,13 +1,33 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_teacher
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.content import QuestionRead, SubtopicRead, TopicWithSubtopics
+from app.schemas.content_import import ImportDocumentRequest, ImportDocumentResponse
 from app.services import content_service
+from app.services.content_import import import_document
 
 router = APIRouter(tags=["content"])
+
+
+@router.post("/content/import", response_model=ImportDocumentResponse)
+def import_content(
+    payload: ImportDocumentRequest,
+    current_user: User = Depends(require_teacher),
+    db: Session = Depends(get_db),
+):
+    """Solo profesores. Importa un documento Markdown como contenido centralizado.
+
+    Actualiza por nombre de unidad/subtema y crea lo que falte. Al terminar,
+    indexa el contenido en el RAG y lo enlaza a todos los cursos. Nunca borra
+    contenido que el documento no mencione.
+    """
+    try:
+        return import_document(db, payload.document)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
 
 @router.get("/courses/{course_id}/topics", response_model=list[TopicWithSubtopics])

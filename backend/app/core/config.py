@@ -46,6 +46,17 @@ class Settings(BaseSettings):
     # Login de desarrollo (sin Google). SOLO para pruebas locales. Desactivado por defecto.
     DEV_AUTH_ENABLED: bool = False
 
+    # Modelo local de embeddings para el RAG (sentence-transformers, corre en CPU).
+    # Multilingüe (español incluido), 384 dimensiones y liviano para CPU.
+    EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+    # OpenRouter (IA)
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_NORMALIZE_MODEL: str = "liquid/lfm-2.5-2.6b:free"
+    OPENROUTER_ANSWER_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    AI_ASK_RATE_LIMIT: str = "10/hour"
+    OPENROUTER_GLOBAL_LIMIT_PER_MIN: int = 18
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:
