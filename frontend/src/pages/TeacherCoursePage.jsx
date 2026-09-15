@@ -47,7 +47,7 @@ export default function TeacherCoursePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[72rem] px-6 py-10 lg:px-10">
+    <div className="mx-auto max-w-[72rem] px-5 py-10 pb-28 sm:px-6 lg:px-10 lg:pb-16">
       <Link
         to="/dashboard"
         className="inline-flex items-center gap-2 text-[0.8125rem] font-medium text-ink-500 transition-colors duration-150 hover:text-blue-800"
@@ -76,7 +76,7 @@ export default function TeacherCoursePage() {
       {!loading && !error && (
         <>
           <header className="mt-4">
-            <h1 className="text-[2rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900">
+            <h1 className="text-[1.5rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900 sm:text-[2rem]">
               {course?.name}
             </h1>
             {course?.description && (
@@ -87,14 +87,18 @@ export default function TeacherCoursePage() {
           </header>
 
           {/* Código de acceso: el dato que el profesor viene a buscar */}
-          <div className="mt-7 flex flex-wrap items-center gap-x-8 gap-y-5 rounded-2xl bg-soft-lavender px-7 py-7">
-            <div>
+          <div className="mt-7 flex flex-wrap items-center gap-x-8 gap-y-5 rounded-2xl bg-soft-lavender px-5 py-6 sm:px-7 sm:py-7">
+            <div className="min-w-0">
               <p className="eyebrow text-deep-lavender">Código de acceso</p>
-              <p className="tabular mt-2 font-display text-[2.25rem] font-semibold leading-none tracking-[0.08em] text-ink-900">
+              <p className="tabular mt-2 break-all font-display text-[1.75rem] font-semibold leading-none tracking-[0.08em] text-ink-900 sm:text-[2.25rem]">
                 {course?.code}
               </p>
             </div>
-            <Button onClick={copyCode} icon={copied ? faCheck : faCopy}>
+            <Button
+              onClick={copyCode}
+              icon={copied ? faCheck : faCopy}
+              className="w-full sm:w-auto"
+            >
               {copied ? 'Copiado' : 'Copiar código'}
             </Button>
             <p className="max-w-[32ch] text-[0.8125rem] leading-relaxed text-ink-600">

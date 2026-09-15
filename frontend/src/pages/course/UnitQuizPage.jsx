@@ -61,7 +61,7 @@ export default function UnitQuizPage() {
         <p className="eyebrow text-blue-700">
           Repaso · Unidad {number ?? (topic ? topic.order + 1 : '')}
         </p>
-        <h1 className="mt-1.5 text-[1.75rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900">
+        <h1 className="mt-1.5 text-[1.375rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900 sm:text-[1.75rem]">
           {title || 'Repaso de la unidad'}
         </h1>
         <p className="mt-2 max-w-[58ch] text-sm leading-relaxed text-ink-500">
@@ -70,7 +70,7 @@ export default function UnitQuizPage() {
         </p>
       </header>
 
-      <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 lg:p-8">
+      <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-4 sm:p-6 lg:p-8">
         {loading && (
           <div className="space-y-3">
             <div className="skeleton h-6 w-3/4 rounded" />

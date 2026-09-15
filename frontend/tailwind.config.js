@@ -4,9 +4,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // Newsreader: titulares y prosa académica. Manrope: interfaz y datos.
-        display: ['"Newsreader Variable"', 'Newsreader', 'Georgia', 'serif'],
-        sans: ['"Manrope Variable"', 'Manrope', 'system-ui', '-apple-system', 'sans-serif'],
+        // Una sola familia. La jerarquía la hacen el peso, el tamaño y el
+        // interletrado, no el contraste entre dos tipografías.
+        display: ['"Roboto Variable"', 'Roboto', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"Roboto Variable"', 'Roboto', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         // Escala primaria de marca.

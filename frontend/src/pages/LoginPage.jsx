@@ -8,6 +8,7 @@ import Logo from '../components/Logo'
 import { Button } from '../components/ui/Button'
 import { CURRICULUM_FACTS } from '../lib/curriculum'
 import { useAuth } from '../hooks/useAuth'
+import { useMeasure } from '../hooks/useMeasure'
 
 const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
 // El acceso de desarrollo (estudiante/profesor) está disponible siempre que se
@@ -20,6 +21,10 @@ export default function LoginPage() {
   const { loginGoogle, loginDevelopment } = useAuth()
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(null)
+  // El iframe de Google no se encoge solo: se le pasa un ancho en píxeles que
+  // nunca supere el del hueco. Google admite 400 px como máximo.
+  const [googleSlotRef, googleSlot] = useMeasure()
+  const googleWidth = Math.min(400, Math.floor(googleSlot.width))
 
   const handleGoogleSuccess = async (response) => {
     setError(null)
@@ -124,16 +129,21 @@ export default function LoginPage() {
 
           <div className="mt-8 space-y-4">
             {googleConfigured ? (
-              <div className="flex justify-center [color-scheme:light]">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => setError('Error al autenticar con Google.')}
-                  text="continue_with"
-                  shape="rectangular"
-                  size="large"
-                  width="360"
-                  locale="es"
-                />
+              <div
+                ref={googleSlotRef}
+                className="flex justify-center overflow-hidden [color-scheme:light]"
+              >
+                {googleWidth > 0 && (
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setError('Error al autenticar con Google.')}
+                    text="continue_with"
+                    shape="rectangular"
+                    size="large"
+                    width={String(googleWidth)}
+                    locale="es"
+                  />
+                )}
               </div>
             ) : (
               !devLoginEnabled && (

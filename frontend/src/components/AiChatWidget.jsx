@@ -167,7 +167,7 @@ export default function AiChatWidget() {
         <div
           role="dialog"
           aria-label="Asistente de IA"
-          className="fixed bottom-24 right-4 z-40 flex h-[min(30rem,calc(100dvh-8rem))] w-[calc(100vw-2rem)] max-w-[24rem] animate-scale-in flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-e4 sm:right-6"
+          className="fixed inset-x-4 bottom-24 z-40 flex h-[min(30rem,calc(100dvh-8rem))] animate-scale-in flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-e4 sm:left-auto sm:right-6 sm:w-[24rem]"
         >
           <header className="flex items-center gap-3 border-b border-ink-200 bg-soft-sky px-4 py-3.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-900 text-white">

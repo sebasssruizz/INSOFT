@@ -36,7 +36,7 @@ function CourseCard({ course, index }) {
     <Link
       to={`/courses/${course.id}`}
       className={cn(
-        'group animate-rise-in relative flex flex-col rounded-2xl border border-ink-200 bg-white p-6',
+        'group animate-rise-in relative flex flex-col rounded-2xl border border-ink-200 bg-white p-5 sm:p-6',
         'shadow-e1 transition-[transform,box-shadow,border-color] duration-200 ease-out',
         'hover:-translate-y-1 hover:border-blue-300 hover:shadow-e3',
       )}
@@ -125,10 +125,10 @@ export default function StudentDashboard() {
     <div>
       {/* Cabecera: estado global de estudio sobre una superficie tranquila */}
       <header className="relative overflow-hidden border-b border-ink-200 bg-gradient-to-br from-soft-sky via-ink-50 to-soft-lavender">
-        <div className="relative mx-auto flex max-w-[78rem] items-center gap-12 px-6 py-12 lg:px-10 lg:py-16">
+        <div className="relative mx-auto flex max-w-[78rem] items-center gap-12 px-5 py-10 sm:px-6 lg:px-10 lg:py-16">
           <div className="min-w-0 flex-1">
             <p className="eyebrow text-deep-sky">Panel del estudiante</p>
-            <h1 className="mt-3.5 text-[2rem] font-semibold leading-[1.12] tracking-[-0.02em] text-ink-900 lg:text-[2.75rem]">
+            <h1 className="mt-3.5 text-[1.625rem] font-semibold leading-[1.12] tracking-[-0.02em] text-ink-900 sm:text-[2rem] lg:text-[2.75rem]">
               {greeting()}, {user?.name?.split(' ')[0]}
             </h1>
 
@@ -140,36 +140,40 @@ export default function StudentDashboard() {
                     : `Te quedan ${remaining} ${remaining === 1 ? 'subtema' : 'subtemas'} por estudiar.`}
                 </p>
 
-                <div className="mt-9 flex flex-wrap items-end gap-x-12 gap-y-6">
-                  <div>
-                    <p className="font-display text-[2.75rem] font-semibold leading-none text-blue-900">
-                      <Counter to={overall} suffix="%" />
-                    </p>
-                    <p className="eyebrow mt-2 text-ink-500">Del temario</p>
-                  </div>
-                  <div>
-                    <p className="font-display text-[2.75rem] font-semibold leading-none text-deep-mint">
-                      <Counter to={totals.completed} />
-                    </p>
-                    <p className="eyebrow mt-2 text-ink-500">Subtemas hechos</p>
-                  </div>
-                  <div>
-                    <p className="font-display text-[2.75rem] font-semibold leading-none text-deep-lavender">
-                      <Counter to={courses.length} />
-                    </p>
-                    <p className="eyebrow mt-2 text-ink-500">
-                      {courses.length === 1 ? 'Curso' : 'Cursos'}
-                    </p>
-                  </div>
-                </div>
+                {/* Rejilla de tres, no fila flexible: en móvil las tres cifras
+                    caben en una línea y no dejan una huérfana debajo. */}
+                <dl className="mt-7 grid max-w-md grid-cols-3 gap-x-4 lg:mt-9 lg:max-w-2xl lg:gap-x-12">
+                  {[
+                    { value: overall, suffix: '%', label: 'Del temario', tone: 'text-blue-900' },
+                    { value: totals.completed, label: 'Subtemas hechos', tone: 'text-deep-mint' },
+                    {
+                      value: courses.length,
+                      label: courses.length === 1 ? 'Curso' : 'Cursos',
+                      tone: 'text-deep-lavender',
+                    },
+                  ].map((stat) => (
+                    <div key={stat.label} className="min-w-0">
+                      <dd
+                        className={cn(
+                          'tabular text-[1.75rem] font-semibold leading-none sm:text-[2.25rem] lg:text-[2.75rem]',
+                          stat.tone,
+                        )}
+                      >
+                        <Counter to={stat.value} suffix={stat.suffix} />
+                      </dd>
+                      <dt className="eyebrow mt-2 text-ink-500">{stat.label}</dt>
+                    </div>
+                  ))}
+                </dl>
 
-                <ProgressBar value={overall} className="mt-9 max-w-md" />
+                <ProgressBar value={overall} className="mt-7 max-w-md lg:mt-9" />
               </>
             )}
           </div>
 
-          {/* Halo pastel: el ojo es casi blanco y necesita separarse del fondo. */}
-          <div className="relative hidden h-64 w-64 shrink-0 lg:block xl:h-72 xl:w-72">
+          {/* Halo pastel: el ojo es casi blanco y necesita separarse del fondo.
+              Solo aparece cuando sobra ancho de verdad; por debajo estorba. */}
+          <div className="relative hidden h-64 w-64 shrink-0 xl:block xl:h-72 xl:w-72">
             <span
               aria-hidden="true"
               className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgb(255_255_255_/_0.9)_38%,transparent_70%)]"
@@ -179,8 +183,9 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[78rem] px-6 py-12 lg:px-10 lg:py-16">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {/* pb generoso: el botón flotante del asistente no debe tapar la última fila. */}
+      <main className="mx-auto max-w-[78rem] px-5 py-10 pb-28 sm:px-6 lg:px-10 lg:py-16 lg:pb-20">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
           <section>
             <div className="flex items-baseline justify-between gap-4">
               <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">Mis cursos</h2>

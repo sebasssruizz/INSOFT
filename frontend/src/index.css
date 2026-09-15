@@ -1,6 +1,4 @@
-@import "@fontsource-variable/manrope";
-@import "@fontsource-variable/newsreader";
-@import "@fontsource-variable/newsreader/wght-italic.css";
+@import "@fontsource-variable/roboto";
 
 @tailwind base;
 @tailwind components;
@@ -10,14 +8,19 @@
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
+    /* Red de seguridad: ninguna pantalla debe desbordar a lo ancho. Los
+       bloques que sí necesitan desplazamiento lateral (tablas, código) lo
+       hacen dentro de su propio contenedor con `overflow-x-auto`. */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-ink-50 text-ink-700 antialiased;
-    font-feature-settings: "cv11", "ss01";
+    overflow-x: hidden;
+    overflow-wrap: break-word;
   }
 
-  /* Titulares con la serif: escala fija, contraste por peso y tamaño.
+  /* Titulares en Roboto: el contraste lo dan peso y tamaño, no la familia.
      El color es fijo, no heredado: todo titular sobre fondo oscuro
      (bg-blue-950 y similares) debe declarar `text-white` explícitamente. */
   h1,
@@ -25,7 +28,14 @@
   h3,
   h4 {
     @apply font-display text-ink-900;
-    font-optical-sizing: auto;
+  }
+
+  /* Ni una imagen ni un vídeo pueden empujar el ancho de su contenedor. */
+  img,
+  video,
+  svg,
+  canvas {
+    max-width: 100%;
   }
 
   ::selection {
@@ -39,11 +49,12 @@
 }
 
 @layer components {
-  /* Superficie de lectura del contenido académico. */
+  /* Superficie de lectura del contenido académico. Roboto pide un cuerpo algo
+     menor y más interlineado que una serif para leerse igual de cómoda. */
   .prose-lesson {
-    @apply font-display text-[1.1875rem] leading-[1.72] text-ink-800;
+    @apply font-display text-[1.0625rem] leading-[1.75] text-ink-800;
     max-width: 68ch;
-    font-optical-sizing: auto;
+    overflow-wrap: break-word;
   }
 
   .prose-lesson p {

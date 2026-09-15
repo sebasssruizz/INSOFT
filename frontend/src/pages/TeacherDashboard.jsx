@@ -192,9 +192,9 @@ export default function TeacherDashboard() {
   return (
     <div>
       <header className="relative overflow-hidden border-b border-ink-200 bg-gradient-to-br from-soft-mint via-ink-50 to-soft-butter">
-        <div className="relative mx-auto max-w-[78rem] px-6 py-12 lg:px-10 lg:py-16">
+        <div className="relative mx-auto max-w-[78rem] px-5 py-10 sm:px-6 lg:px-10 lg:py-16">
           <p className="eyebrow text-deep-mint">Panel del profesor</p>
-          <h1 className="mt-3.5 text-[2rem] font-semibold leading-[1.12] tracking-[-0.02em] text-ink-900 lg:text-[2.75rem]">
+          <h1 className="mt-3.5 text-[1.625rem] font-semibold leading-[1.12] tracking-[-0.02em] text-ink-900 sm:text-[2rem] lg:text-[2.75rem]">
             Hola, {user?.name?.split(' ').slice(0, 2).join(' ')}
           </h1>
           <p className="mt-4 max-w-[52ch] text-[0.9375rem] leading-relaxed text-ink-600">
@@ -202,33 +202,35 @@ export default function TeacherDashboard() {
             oficial en todos los cursos, así que no tienes que mantenerlo.
           </p>
 
-          <div className="mt-9 flex flex-wrap items-end gap-x-12 gap-y-6">
-            <div>
-              <p className="tabular font-display text-[2.75rem] font-semibold leading-none text-blue-900">
-                {courses.length}
-              </p>
-              <p className="eyebrow mt-2 text-ink-500">
-                {courses.length === 1 ? 'Curso' : 'Cursos'}
-              </p>
-            </div>
-            <div>
-              <p className="tabular font-display text-[2.75rem] font-semibold leading-none text-deep-mint">
-                {totalStudents}
-              </p>
-              <p className="eyebrow mt-2 text-ink-500">Estudiantes</p>
-            </div>
-            <div>
-              <p className="tabular font-display text-[2.75rem] font-semibold leading-none text-deep-lavender">
-                {CURRICULUM_FACTS.subtopics}
-              </p>
-              <p className="eyebrow mt-2 text-ink-500">Subtemas oficiales</p>
-            </div>
-          </div>
+          <dl className="mt-7 grid max-w-md grid-cols-3 gap-x-4 lg:mt-9 lg:max-w-2xl lg:gap-x-12">
+            {[
+              {
+                value: courses.length,
+                label: courses.length === 1 ? 'Curso' : 'Cursos',
+                tone: 'text-blue-900',
+              },
+              { value: totalStudents, label: 'Estudiantes', tone: 'text-deep-mint' },
+              {
+                value: CURRICULUM_FACTS.subtopics,
+                label: 'Subtemas oficiales',
+                tone: 'text-deep-lavender',
+              },
+            ].map((stat) => (
+              <div key={stat.label} className="min-w-0">
+                <dd
+                  className={`tabular text-[1.75rem] font-semibold leading-none sm:text-[2.25rem] lg:text-[2.75rem] ${stat.tone}`}
+                >
+                  {stat.value}
+                </dd>
+                <dt className="eyebrow mt-2 text-ink-500">{stat.label}</dt>
+              </div>
+            ))}
+          </dl>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[78rem] px-6 py-12 lg:px-10 lg:py-16">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <main className="mx-auto max-w-[78rem] px-5 py-10 pb-28 sm:px-6 lg:px-10 lg:py-16 lg:pb-20">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
           <section>
             <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">Mis cursos</h2>
 

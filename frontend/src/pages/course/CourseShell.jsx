@@ -27,7 +27,7 @@ function CourseHeader() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-ink-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto max-w-[82rem] px-6 pb-5 pt-5 lg:px-10">
+      <div className="mx-auto max-w-[82rem] px-5 pb-4 pt-4 sm:px-6 lg:px-10 lg:pb-5 lg:pt-5">
         <Link
           to="/dashboard"
           className="inline-flex items-center gap-2 text-[0.8125rem] font-medium text-ink-500 transition-colors duration-150 hover:text-blue-800"
@@ -45,10 +45,10 @@ function CourseHeader() {
                 course?.code && <Badge tone="quiet">{course.code}</Badge>
               )}
             </div>
-            <h1 className="mt-2.5 text-[1.75rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900 lg:text-[2rem]">
+            <h1 className="mt-2.5 text-[1.375rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900 sm:text-[1.75rem] lg:text-[2rem]">
               {course?.name}
             </h1>
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5">
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 sm:gap-x-5">
               <Meta icon={faLayerGroup}>{topics.length} unidades</Meta>
               <Meta icon={faListCheck}>{totalSubtopics} subtemas</Meta>
               <Meta icon={faClock}>{formatDuration(totalMinutes)}</Meta>
@@ -56,7 +56,7 @@ function CourseHeader() {
             </div>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex w-full items-center justify-between gap-5 sm:w-auto sm:justify-start">
             {isStudent && (
               <div className="text-right">
                 <p className="tabular font-display text-[2rem] font-semibold leading-none text-blue-800">
@@ -112,8 +112,8 @@ function CourseBody() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-[82rem] px-6 py-16 lg:px-10">
-        <div className="mx-auto max-w-md rounded-2xl border border-wrong-200 bg-wrong-50 px-6 py-8 text-center">
+      <div className="mx-auto max-w-[82rem] px-5 py-16 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-md rounded-2xl border border-wrong-200 bg-wrong-50 px-5 py-8 text-center sm:px-6">
           <h2 className="text-lg font-semibold text-wrong-700">No se pudo abrir el curso</h2>
           <p className="mt-2 text-sm text-wrong-700/80">{error}</p>
           <Button onClick={refresh} variant="secondary" size="sm" className="mt-5">
@@ -126,7 +126,7 @@ function CourseBody() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[82rem] px-6 py-10 lg:px-10">
+      <div className="mx-auto max-w-[82rem] px-5 py-10 sm:px-6 lg:px-10">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_21rem]">
           <div className="space-y-4">
             <div className="skeleton h-8 w-1/2 rounded" />
@@ -141,7 +141,7 @@ function CourseBody() {
   return (
     <>
       <CourseHeader />
-      <div className="mx-auto max-w-[82rem] px-6 py-8 lg:px-10">
+      <div className="mx-auto max-w-[82rem] px-5 py-7 pb-28 sm:px-6 lg:px-10 lg:py-8 lg:pb-12">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
           <main className="min-w-0">
             <Outlet />

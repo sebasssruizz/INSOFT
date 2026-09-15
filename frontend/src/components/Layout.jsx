@@ -199,7 +199,7 @@ function Shell() {
       </header>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-50 overflow-hidden lg:hidden">
           <button
             aria-label="Cerrar el menú"
             onClick={() => setMobileOpen(false)}

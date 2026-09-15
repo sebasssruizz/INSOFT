@@ -62,8 +62,13 @@ export default function ProfileDrawer({ open, onClose }) {
     navigate('/')
   }
 
+  // El contenedor recorta: cerrado, el panel vive fuera de pantalla a la
+  // derecha y sin `overflow-hidden` empujaría el ancho del documento.
   return (
-    <div className={`fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
+    <div
+      className={`fixed inset-0 z-50 overflow-hidden ${open ? '' : 'pointer-events-none'}`}
+      aria-hidden={!open}
+    >
       <div
         onClick={onClose}
         className={`absolute inset-0 bg-ink-950/50 backdrop-blur-sm transition-opacity duration-300 ease-out ${

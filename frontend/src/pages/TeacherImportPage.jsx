@@ -64,7 +64,7 @@ export default function TeacherImportPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[72rem] px-6 py-10 lg:px-10">
+    <div className="mx-auto max-w-[72rem] px-5 py-10 pb-28 sm:px-6 lg:px-10 lg:pb-16">
       <Link
         to="/dashboard"
         className="inline-flex items-center gap-2 text-[0.8125rem] font-medium text-ink-500 transition-colors duration-150 hover:text-blue-800"
@@ -75,7 +75,7 @@ export default function TeacherImportPage() {
 
       <header className="mt-4">
         <p className="eyebrow text-blue-800">Panel del profesor</p>
-        <h1 className="mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900">
+        <h1 className="mt-2 text-[1.5rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900 sm:text-[2rem]">
           Importar contenido
         </h1>
         <p className="mt-2.5 max-w-[62ch] text-[0.9375rem] leading-relaxed text-ink-500">
@@ -87,7 +87,12 @@ export default function TeacherImportPage() {
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_26rem]">
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-ink-200 bg-white p-6 shadow-e1 lg:p-8">
+        {/* min-w-0: sin esto la celda de la rejilla se dimensiona al contenido
+            y el selector de archivo nativo, que no se encoge, la desborda. */}
+        <form
+          onSubmit={handleSubmit}
+          className="min-w-0 rounded-2xl border border-ink-200 bg-white p-5 shadow-e1 sm:p-6 lg:p-8"
+        >
           <div className="flex flex-wrap items-center gap-3">
             <span
               className="flex h-11 w-11 items-center justify-center rounded-2xl bg-soft-lavender text-deep-lavender"
@@ -108,7 +113,7 @@ export default function TeacherImportPage() {
             type="file"
             accept=".md,.txt,text/markdown,text/plain"
             onChange={(event) => loadFile(event.target.files?.[0])}
-            className="mt-5 block w-full cursor-pointer text-sm text-ink-500 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-soft-sky file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-800 hover:file:bg-blue-100"
+            className="mt-5 block w-full max-w-full cursor-pointer text-sm text-ink-500 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-soft-sky file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-800 hover:file:bg-blue-100"
           />
 
           <textarea
@@ -149,8 +154,8 @@ export default function TeacherImportPage() {
         </form>
 
         {/* Ayuda + resultado */}
-        <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
-          <div className="rounded-2xl border border-ink-200 bg-white p-6 shadow-e1">
+        <aside className="min-w-0 space-y-6 lg:sticky lg:top-8 lg:self-start">
+          <div className="rounded-2xl border border-ink-200 bg-white p-5 shadow-e1 sm:p-6">
             <p className="eyebrow text-ink-400">Formato</p>
             <pre className="mt-3 overflow-x-auto rounded-xl bg-ink-950 p-4 font-mono text-[0.6875rem] leading-relaxed text-blue-100">
               {SAMPLE}

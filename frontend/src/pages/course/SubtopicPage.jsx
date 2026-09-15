@@ -158,10 +158,10 @@ export default function SubtopicPage() {
         <p className="eyebrow text-blue-800">
           Unidad {unitNumber ?? ''} · Subtema {position + 1} de {flatSubtopics.length}
         </p>
-        <h1 className="mt-2 max-w-[22ch] text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em] text-ink-900 lg:text-[2.375rem]">
+        <h1 className="mt-2 max-w-[22ch] text-[1.5rem] font-semibold leading-[1.18] tracking-[-0.02em] text-ink-900 sm:text-[2rem] lg:text-[2.375rem]">
           {subtopic?.name}
         </h1>
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5">
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 sm:gap-x-5">
           <Meta icon={faClock}>{formatDuration(subtopic?.estimated_minutes)} de estudio</Meta>
           {questions.length > 0 && (
             <Meta icon={faListCheck}>{questions.length} preguntas de repaso</Meta>
@@ -175,18 +175,18 @@ export default function SubtopicPage() {
         </div>
       </header>
 
-      <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-7 shadow-e1 lg:p-10">
+      <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-5 shadow-e1 sm:p-7 lg:p-10">
         <LessonContent content={subtopic?.content || ''} />
 
         {hasInteractiveView && (
-          <div className="mt-8 flex flex-wrap items-center gap-4 rounded-2xl bg-blue-950 p-6">
+          <div className="mt-8 rounded-2xl bg-blue-950 p-5 sm:flex sm:flex-wrap sm:items-center sm:gap-4 sm:p-6">
             <span
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white"
               aria-hidden="true"
             >
               <FontAwesomeIcon icon={faCube} />
             </span>
-            <span className="min-w-0 flex-1">
+            <span className="mt-3 block min-w-0 sm:mt-0 sm:flex-1">
               <span className="block font-display text-base font-semibold text-white">
                 Mesa quirúrgica en 3D
               </span>
@@ -199,6 +199,7 @@ export default function SubtopicPage() {
               to={`/courses/${courseId}/subtopics/${subtopicId}/interactive`}
               variant="inverse"
               size="sm"
+              className="mt-4 w-full sm:mt-0 sm:w-auto"
             >
               Abrir vista interactiva
             </Button>
@@ -210,14 +211,14 @@ export default function SubtopicPage() {
       {questions.length > 0 && (
         <section className="mt-8">
           {!quizOpen ? (
-            <div className="flex flex-wrap items-center gap-5 rounded-2xl border border-soft-sky bg-soft-sky p-7">
+            <div className="rounded-2xl border border-soft-sky bg-soft-sky p-5 sm:flex sm:flex-wrap sm:items-center sm:gap-5 sm:p-7">
               <span
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-blue-900 shadow-e1"
                 aria-hidden="true"
               >
                 <FontAwesomeIcon icon={faListCheck} />
               </span>
-              <div className="min-w-0 flex-1">
+              <div className="mt-3 min-w-0 sm:mt-0 sm:flex-1">
                 <h2 className="text-lg font-semibold tracking-[-0.01em] text-ink-900">
                   Comprueba lo que acabas de leer
                 </h2>
@@ -225,10 +226,12 @@ export default function SubtopicPage() {
                   {questions.length} preguntas sobre este subtema, con explicación en cada una.
                 </p>
               </div>
-              <Button onClick={() => setQuizOpen(true)}>Empezar el repaso</Button>
+              <Button onClick={() => setQuizOpen(true)} className="mt-4 w-full sm:mt-0 sm:w-auto">
+                Empezar el repaso
+              </Button>
             </div>
           ) : (
-            <div className="rounded-2xl border border-ink-200 bg-white p-6 lg:p-8">
+            <div className="rounded-2xl border border-ink-200 bg-white p-4 sm:p-6 lg:p-8">
               <h2 className="mb-6 text-lg font-semibold tracking-[-0.01em] text-ink-900">
                 Repaso de {subtopic?.name}
               </h2>
@@ -278,6 +281,7 @@ export default function SubtopicPage() {
             loading={saving}
             variant={completed ? 'secondary' : 'primary'}
             icon={completed ? faCheck : undefined}
+            className="w-full sm:w-auto"
           >
             {completed ? 'Completado · pulsa para desmarcar' : 'Marcar como completado'}
           </Button>

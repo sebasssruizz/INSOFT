@@ -45,11 +45,19 @@ Reglas duras del par pastel:
 
 ## Tipografía
 
-Dos familias auto-alojadas (`@fontsource-variable`), ninguna petición externa.
+Una sola familia auto-alojada (`@fontsource-variable/roboto`), ninguna petición
+externa. **Roboto** responde a los dos tokens, `font-display` y `font-sans`: se
+conservan porque los usa toda la aplicación, pero hoy apuntan a lo mismo.
 
-- **Newsreader** (`font-display`) — titulares y prosa académica. Aplicada por
-  defecto a `h1`–`h4` y a `.prose-lesson` (19px/1.72, máx. 68ch).
-- **Manrope** (`font-sans`) — interfaz: etiquetas, botones, datos, metadatos.
+La jerarquía no la da el contraste entre dos tipografías, sino el peso, el
+tamaño y el interletrado:
+
+- Titulares: 600 dentro de la aplicación, 700 en la portada, con `tracking`
+  negativo (−0.02 a −0.025em) según crece el cuerpo.
+- Texto corrido: 400.
+- `.prose-lesson` es la superficie de lectura académica: 17px/1.75, máx. 68ch.
+  Una sans pide un cuerpo algo menor y más interlineado que una serif para
+  leerse igual de cómoda.
 
 Dos convenciones:
 
@@ -74,7 +82,6 @@ Vocabulario único; no crees variantes nuevas sin quitar la vieja.
 - `course/Quiz` — repaso con retroalimentación inmediata. Acepta `exit`: una
   salida visible durante todo el repaso, para que nadie quede atrapado dentro
   de las preguntas sin poder volver al temario.
-- `ui/Doodles` — `Doodle` y `DoodleField`, los trazos decorativos.
 - `.skeleton` para cargas; nunca un spinner en medio del contenido.
 
 ## Movimiento
@@ -113,25 +120,27 @@ Comillas simples, sin punto y coma, ancho 100. Si formateas, usa:
 npx prettier --write --single-quote --no-semi --print-width 100 "src/**/*.{js,jsx}"
 ```
 
-## Trazos decorativos
+## Adaptación a móvil
 
-`components/ui/Doodles.jsx` dibuja a mano ojos, iris, fondos de ojo, pestañas,
-gafas, optotipos de Snellen, carteles de agudeza visual, gotas de colirio,
-lentes con sus rayos, bisturís y pinzas, más el subrayado de los titulares. El
-adorno habla de oftalmología: nada de estrellas, nubes ni aviones, que valdrían
-para cualquier página. `DoodleField` los reparte por el fondo de una sección con
-posiciones escritas a mano: **la asimetría es el punto**, una rejilla regular
-los convierte en patrón y pierden la gracia.
+**Ninguna pantalla puede desplazarse en horizontal.** `index.css` fija
+`overflow-x: hidden` en `html` y `body` y limita `img`, `video`, `svg` y
+`canvas` a `max-width: 100%`, pero eso es la red de seguridad, no la solución:
+cada pantalla debe caber por sí misma. Lo que sí puede desplazarse a lo ancho
+es un bloque concreto dentro de su propio contenedor con `overflow-x-auto`
+—la tabla de estudiantes, el ejemplo de Markdown—, nunca la página.
 
-Tres reglas al colocarlos:
+Cuatro reglas aprendidas:
 
-- **Solo en la portada.** Dentro de la aplicación —paneles, curso, 404— las
-  pantallas van limpias: ahí el contenido es trabajo, no escaparate.
-- Nunca deben cruzarse con texto ni con imágenes. En la práctica eso los deja
-  en las franjas de `padding` de arriba y abajo de cada sección y en los
-  márgenes que quedan a los lados del bloque de título. Por debajo de `lg` no
-  queda margen libre, así que `DoodleField` se oculta solo.
-- Opacidad entre 35 % y 60 %. Si se leen antes que el contenido, sobran.
+- **`min-w-0` en toda celda de rejilla** que contenga algo que no se encoge
+  (un `input[type=file]`, una tabla, código). Por omisión una celda se
+  dimensiona al contenido y lo desborda todo.
+- **Los paneles `fixed` que viven fuera de pantalla** (cajón de navegación,
+  panel de perfil) van dentro de un contenedor con `overflow-hidden`: si no,
+  empujan el ancho del documento aunque no se vean.
+- **Los adornos que no caben, no se ponen.** El ojo 3D del panel del estudiante
+  solo aparece a partir de `xl`; por debajo estorba en vez de decorar.
+- **Botones de rótulo largo a ancho completo en móvil** (`w-full sm:w-auto`):
+  dentro de un botón de altura fija, el texto plegado se corta.
 
 ## Portada
 
@@ -139,3 +148,14 @@ El vídeo del quirófano es el protagonista: se ve a plena opacidad, con un velo
 lineal suave más un degradado radial concentrado detrás del texto. Así los
 bordes del vídeo quedan limpios y el titular mantiene contraste. No lleva
 elementos 3D: compiten con el vídeo.
+
+El registro es **serio, no ilustrado**: sin trazos dibujados a mano, sin
+tarjetas de tinte pastel y sin desplazamientos caprichosos de la rejilla. El
+temario se presenta como un plan de estudios —celdas separadas por línea fina,
+numeradas—, las imágenes van en una rejilla pareja y las secciones se anuncian
+con una regla superior más su versalita. Radios contenidos (`rounded-lg`,
+`rounded-xl`), nunca `rounded-3xl`.
+
+Bajo el titular van tres cifras del temario que se pueden contar (unidades,
+subtemas, preguntas) en una línea reglada. **Nada de porcentajes inventados**
+tipo «98 % verificado»: si no sale de `seed_content.py`, no se enseña.

@@ -4,17 +4,15 @@ import { faArrowRight, faCheck } from '@fortawesome/free-solid-svg-icons'
 
 import Logo from '../components/Logo'
 import { Button } from '../components/ui/Button'
-import { Counter } from '../components/ui/Counter'
-import { Doodle, DoodleField } from '../components/ui/Doodles'
-import { CURRICULUM_FACTS, splitUnitName, unitIdentity } from '../lib/curriculum'
+import { CURRICULUM_FACTS, splitUnitName } from '../lib/curriculum'
 import { useReveal } from '../hooks/useReveal'
 import { cn } from '../lib/utils'
 
+// Cifras del temario, sin porcentajes inventados: solo lo que se puede contar.
 const FACTS = [
-  { value: CURRICULUM_FACTS.units, label: 'Unidades' },
-  { value: CURRICULUM_FACTS.subtopics, label: 'Subtemas' },
-  { value: CURRICULUM_FACTS.questions, label: 'Preguntas' },
-  { value: CURRICULUM_FACTS.verified, label: 'Verificado', suffix: '%' },
+  { value: CURRICULUM_FACTS.units, label: 'unidades' },
+  { value: CURRICULUM_FACTS.subtopics, label: 'subtemas' },
+  { value: CURRICULUM_FACTS.questions, label: 'preguntas' },
 ]
 
 const UNITS = [
@@ -35,36 +33,16 @@ const STEPS = [
   {
     title: 'Entra con tu cuenta',
     body: 'Accedes con Google y el Curso General de Oftalmología aparece listo, sin configurar nada.',
-    tint: 'sky',
   },
   {
     title: 'Estudia por unidades',
     body: 'Cada subtema trae su contenido, su tiempo estimado y un repaso al terminar.',
-    tint: 'peach',
   },
   {
-    title: 'Sigue tu avance',
-    body: 'La barra del curso se llena según completas subtemas, dentro y fuera de la lección.',
-    tint: 'rose',
+    title: 'Pregunta y avanza',
+    body: 'El asistente responde sobre el temario y tu progreso se guarda subtema a subtema.',
   },
 ]
-
-const TINT_SURFACE = {
-  lavender: 'bg-soft-lavender',
-  sky: 'bg-soft-sky',
-  mint: 'bg-soft-mint',
-  butter: 'bg-soft-butter',
-  peach: 'bg-soft-peach',
-  rose: 'bg-soft-rose',
-}
-const TINT_INK = {
-  lavender: 'text-deep-lavender',
-  sky: 'text-deep-sky',
-  mint: 'text-deep-mint',
-  butter: 'text-deep-butter',
-  peach: 'text-deep-peach',
-  rose: 'text-deep-rose',
-}
 
 function Reveal({ children, delay = 0, className, as: Component = 'div' }) {
   const [ref, revealed] = useReveal({ amount: 0.25 })
@@ -83,27 +61,15 @@ function Reveal({ children, delay = 0, className, as: Component = 'div' }) {
   )
 }
 
-/**
- * Título de sección con su trazo dibujado debajo. `align` decide de qué lado
- * arranca el trazo, para que acompañe al texto en vez de flotar suelto.
- */
-function SectionTitle({ eyebrow, children, underlineClass = 'text-blue-300', align = 'center' }) {
+/** Cabecera de sección: versalita, titular y una regla fina. Sin adornos. */
+function SectionTitle({ eyebrow, children, className }) {
   return (
-    <>
-      <p className="eyebrow text-blue-800">{eyebrow}</p>
-      <h2 className="relative mt-4 inline-block text-[2rem] font-semibold leading-[1.14] tracking-[-0.02em] text-ink-900 lg:text-[2.75rem]">
+    <div className={cn('border-t border-ink-300 pt-6', className)}>
+      <p className="eyebrow text-blue-900">{eyebrow}</p>
+      <h2 className="mt-3 max-w-[22ch] text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] text-ink-900 sm:text-[2.125rem] lg:text-[2.5rem]">
         {children}
-        <Doodle
-          name="underline"
-          size={132}
-          className={cn(
-            'absolute -bottom-3 h-4 w-[52%]',
-            align === 'center' ? 'left-1/2 -translate-x-1/2' : 'left-0',
-            underlineClass,
-          )}
-        />
       </h2>
-    </>
+    </div>
   )
 }
 
@@ -111,7 +77,7 @@ export default function LandingPage() {
   return (
     <div className="bg-ink-50">
       {/* ── Portada: el vídeo es el protagonista ─────────────────────── */}
-      <section className="relative flex min-h-[44rem] flex-col overflow-hidden lg:min-h-screen">
+      <section className="relative flex min-h-[34rem] flex-col overflow-hidden sm:min-h-[40rem] lg:min-h-screen">
         <video
           autoPlay
           muted
@@ -128,42 +94,42 @@ export default function LandingPage() {
             vídeo casi limpios. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-ink-950/40 via-ink-950/15 to-ink-950/65"
+          className="absolute inset-0 bg-gradient-to-b from-ink-950/45 via-ink-950/20 to-ink-950/70"
         />
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-[radial-gradient(60%_55%_at_50%_52%,rgb(14_14_13_/_0.62)_0%,rgb(14_14_13_/_0.34)_55%,transparent_100%)]"
         />
 
-        <header className="relative z-10 mx-auto flex h-24 w-full max-w-[78rem] items-center justify-between px-6 lg:px-10">
-          <Logo light size="lg" />
+        <header className="relative z-10 mx-auto flex h-20 w-full max-w-[78rem] items-center justify-between px-5 sm:px-6 lg:h-24 lg:px-10">
+          <Logo light size="md" className="lg:hidden" />
+          <Logo light size="lg" className="hidden lg:inline-flex" />
           <Button as={Link} to="/login" variant="outline" size="sm">
             Acceder
           </Button>
         </header>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-[54rem] flex-1 flex-col items-center justify-center px-6 pb-20 text-center">
-          <p className="eyebrow animate-rise-in text-white/80">
-            Plataforma de aprendizaje de Oftalmología
+        <div className="relative z-10 mx-auto flex w-full max-w-[52rem] flex-1 flex-col items-center justify-center px-5 pb-14 text-center sm:px-6 lg:pb-20">
+          <p className="eyebrow animate-rise-in text-white/75">
+            Plataforma académica de oftalmología
           </p>
 
           <h1
-            className="animate-rise-in mt-6 text-[2.75rem] font-semibold leading-[1.06] tracking-[-0.03em] text-white sm:text-[3.5rem] lg:text-[4.25rem]"
+            className="animate-rise-in mt-5 text-[2rem] font-bold leading-[1.1] tracking-[-0.025em] text-white sm:text-[2.75rem] lg:text-[3.75rem] lg:leading-[1.05]"
             style={{ animationDelay: '80ms' }}
           >
-            Aprende <span className="italic text-blue-200">Oftalmología</span> con el contenido
-            oficial
+            Estudia oftalmología e instrumentación quirúrgica con IA
           </h1>
 
           <p
-            className="animate-rise-in mt-7 max-w-[52ch] text-[1.0625rem] leading-relaxed text-white/85"
+            className="animate-rise-in mt-6 max-w-[50ch] text-[0.9375rem] leading-relaxed text-white/85 sm:text-[1.0625rem]"
             style={{ animationDelay: '160ms' }}
           >
-            Estudia temas verificados, únete a los cursos de tu facultad con un código y sigue tu
-            progreso en cada subtema.
+            Contenido oficial en ocho unidades, repasos con explicación en cada pregunta y un
+            asistente que responde sobre el temario de tu curso.
           </p>
 
-          <div className="animate-rise-in mt-10" style={{ animationDelay: '240ms' }}>
+          <div className="animate-rise-in mt-8 lg:mt-10" style={{ animationDelay: '240ms' }}>
             <Button
               as={Link}
               to="/login"
@@ -176,21 +142,25 @@ export default function LandingPage() {
             </Button>
           </div>
 
+          {/* Ficha del temario: tres datos que se pueden contar, en una línea. */}
           <dl
-            className="animate-rise-in mt-16 grid w-full max-w-2xl grid-cols-2 gap-x-8 gap-y-8 border-t border-white/25 pt-9 sm:grid-cols-4"
+            className="animate-rise-in mt-12 grid w-full max-w-md grid-cols-3 border-t border-white/25 pt-6 lg:mt-14"
             style={{ animationDelay: '320ms' }}
           >
-            {FACTS.map((fact) => (
-              <div key={fact.label}>
-                <dt className="sr-only">{fact.label}</dt>
-                <dd>
-                  <span className="font-display text-[2.25rem] font-semibold leading-none tracking-[-0.02em] text-white lg:text-[2.75rem]">
-                    <Counter to={fact.value} suffix={fact.suffix} />
-                  </span>
-                  <span className="mt-2.5 block text-[0.8125rem] font-medium text-white/70">
-                    {fact.label}
-                  </span>
+            {FACTS.map((fact, index) => (
+              <div
+                key={fact.label}
+                className={cn(
+                  'px-2 text-center',
+                  index > 0 && 'border-l border-white/20',
+                )}
+              >
+                <dd className="tabular text-[1.5rem] font-bold leading-none text-white">
+                  {fact.value}
                 </dd>
+                <dt className="mt-1.5 text-[0.75rem] font-medium text-white/70 sm:text-[0.8125rem]">
+                  {fact.label}
+                </dt>
               </div>
             ))}
           </dl>
@@ -198,214 +168,93 @@ export default function LandingPage() {
       </section>
 
       {/* ── El temario ───────────────────────────────────────────────── */}
-      <section id="temario" className="relative overflow-hidden py-14 lg:py-20">
-        <DoodleField
-          items={[
-            {
-              name: 'eye',
-              size: 74,
-              rotate: -8,
-              className: 'left-[3%] top-[9%] text-deep-lavender/40',
-            },
-            { name: 'snellen', size: 30, className: 'right-[7%] top-[7%] text-deep-butter/55' },
-            {
-              name: 'drop',
-              size: 30,
-              rotate: 12,
-              className: 'left-[33%] top-[2%] text-deep-rose/40',
-            },
-            { name: 'iris', size: 52, className: 'right-[4%] top-[40%] text-deep-sky/35' },
-            { name: 'lens', size: 46, className: 'left-[7%] bottom-[2%] text-deep-mint/40' },
-            {
-              name: 'scalpel',
-              size: 40,
-              rotate: -10,
-              className: 'right-[9%] bottom-[2%] text-deep-peach/45',
-            },
-          ]}
-        />
-
-        <div className="relative mx-auto max-w-[78rem] px-6 lg:px-10">
-          <Reveal className="mx-auto max-w-[46ch] text-center">
-            <SectionTitle eyebrow="El temario" underlineClass="text-deep-lavender/50">
+      <section id="temario" className="py-14 lg:py-24">
+        <div className="mx-auto max-w-[78rem] px-5 sm:px-6 lg:px-10">
+          <Reveal className="lg:flex lg:items-end lg:justify-between lg:gap-16">
+            <SectionTitle eyebrow="El temario">
               Ocho unidades, de la anatomía a la oculoplastia
             </SectionTitle>
-            <p className="mt-8 text-[1.0625rem] leading-relaxed text-ink-600">
-              El mismo contenido para todos los cursos: una sola fuente académica que tu facultad no
-              tiene que mantener por duplicado.
+            <p className="mt-5 max-w-[46ch] text-[0.9375rem] leading-relaxed text-ink-600 lg:mt-0 lg:shrink-0 lg:pb-1">
+              El mismo contenido para todos los cursos: una sola fuente académica que tu facultad
+              no tiene que mantener por duplicado.
             </p>
           </Reveal>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Rejilla reglada: las celdas se separan por línea fina, no por
+              tarjetas sueltas. Es un plan de estudios, no un escaparate. */}
+          <Reveal className="mt-10 grid gap-px overflow-hidden rounded-lg border border-ink-200 bg-ink-200 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4">
             {UNITS.map(([name, blurb], index) => {
               const { number, title } = splitUnitName(name)
-              const identity = unitIdentity(index)
               return (
-                <Reveal
-                  key={name}
-                  delay={index * 60}
-                  className={cn(
-                    'rounded-3xl p-7 transition-transform duration-300 ease-out hover:-translate-y-1.5',
-                    identity.classes.soft,
-                    // Alterna la altura para romper la rejilla perfecta.
-                    index % 2 === 1 && 'lg:mt-12',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex h-14 w-14 items-center justify-center rounded-2xl bg-white/70 text-xl',
-                      identity.classes.text,
-                    )}
-                    aria-hidden="true"
-                  >
-                    <FontAwesomeIcon icon={identity.icon} />
-                  </span>
-
-                  <p
-                    className={cn(
-                      'tabular mt-6 text-xs font-bold uppercase tracking-[0.12em]',
-                      identity.classes.text,
-                    )}
-                  >
-                    Unidad {number}
+                <div key={name} className="bg-white p-5 sm:p-6">
+                  <p className="tabular text-xs font-bold tracking-[0.1em] text-ink-400">
+                    {String(number ?? index + 1).padStart(2, '0')}
                   </p>
-                  <h3 className="mt-2 font-display text-[1.1875rem] font-semibold leading-snug text-ink-900">
+                  <h3 className="mt-3 text-base font-bold leading-snug tracking-[-0.01em] text-ink-900">
                     {title}
                   </h3>
-                  <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink-600">{blurb}</p>
-                </Reveal>
+                  <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-600">{blurb}</p>
+                </div>
               )
             })}
-          </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ── Sobre la plataforma: collage asimétrico ──────────────────── */}
-      <section className="relative overflow-hidden bg-white py-14 lg:py-20">
-        <DoodleField
-          items={[
-            {
-              name: 'fundus',
-              size: 66,
-              rotate: -8,
-              className: 'left-[5%] top-[14%] text-deep-mint/32',
-            },
-            { name: 'drop', size: 30, className: 'right-[8%] top-[12%] text-deep-rose/40' },
-            { name: 'snellen', size: 26, className: 'left-[46%] top-[5%] text-deep-butter/45' },
-            {
-              name: 'forceps',
-              size: 44,
-              rotate: 14,
-              className: 'right-[41%] bottom-[2%] text-deep-sky/38',
-            },
-            {
-              name: 'glasses',
-              size: 52,
-              rotate: -8,
-              className: 'left-[11%] bottom-[3%] text-deep-lavender/40',
-            },
-          ]}
-        />
-
-        <div className="relative mx-auto max-w-[78rem] px-6 lg:px-10">
-          <Reveal className="mx-auto max-w-[46ch] text-center">
-            <SectionTitle eyebrow="Sobre INSOFT" underlineClass="text-deep-mint/50">
+      {/* ── Sobre la plataforma ──────────────────────────────────────── */}
+      <section className="bg-white py-14 lg:py-24">
+        <div className="mx-auto max-w-[78rem] px-5 sm:px-6 lg:px-10">
+          <Reveal className="lg:flex lg:items-end lg:justify-between lg:gap-16">
+            <SectionTitle eyebrow="Sobre INSOFT">
               Estudiar cirugía ocular sin perderse en el camino
             </SectionTitle>
-            <p className="mt-8 text-[1.0625rem] leading-relaxed text-ink-600">
+            <p className="mt-5 max-w-[46ch] text-[0.9375rem] leading-relaxed text-ink-600 lg:mt-0 lg:shrink-0 lg:pb-1">
               Pensado para instrumentación quirúrgica: el orden del temario, el tiempo que lleva
               cada parte y la comprobación de que de verdad se ha entendido.
             </p>
           </Reveal>
 
-          {/* Collage: alturas y desplazamientos distintos a propósito. */}
-          <div className="mt-12 grid grid-cols-2 items-end gap-4 sm:gap-6 lg:grid-cols-4">
-            <Reveal className="lg:mb-14">
-              <img
-                src="/images/slideshow/slide-1.jpg"
-                alt="Estudiantes de instrumentación quirúrgica en prácticas"
-                loading="lazy"
-                className="h-52 w-full rounded-3xl object-cover shadow-e2 sm:h-64"
-              />
-            </Reveal>
-            <Reveal delay={90} className="lg:mt-10">
-              <img
-                src="/images/slideshow/slide-2.jpg"
-                alt="Material e instrumental de quirófano"
-                loading="lazy"
-                className="h-64 w-full rounded-3xl object-cover shadow-e2 sm:h-80"
-              />
-            </Reveal>
-            <Reveal delay={180} className="lg:mb-20">
-              <img
-                src="/images/slideshow/slide-3.jpg"
-                alt="Microscopio quirúrgico oftalmológico"
-                loading="lazy"
-                className="h-56 w-full rounded-3xl object-cover shadow-e2 sm:h-72"
-              />
-            </Reveal>
-            <Reveal delay={270} className="relative lg:mt-4">
-              <img
-                src="/images/slideshow/slide-4.jpg"
-                alt="Equipo quirúrgico durante una intervención"
-                loading="lazy"
-                className="h-52 w-full rounded-3xl object-cover shadow-e2 sm:h-64"
-              />
-              <span className="absolute -left-5 -top-9 hidden rotate-[-6deg] rounded-full bg-blue-900 px-5 py-3.5 text-center font-display text-[0.9375rem] font-semibold leading-tight text-white shadow-e3 lg:block">
-                Del temario
-                <br />
-                al quirófano
-              </span>
-            </Reveal>
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:mt-12 lg:grid-cols-4">
+            {[
+              ['slide-1.jpg', 'Manos enguantadas aplicando instrumental sobre el globo ocular'],
+              ['slide-2.jpg', 'Exploración de una paciente en la lámpara de hendidura'],
+              ['slide-3.jpg', 'Equipo quirúrgico en torno al microscopio durante una intervención'],
+              ['slide-4.jpg', 'Hojas de bisturí oftálmico alineadas sobre el paño estéril'],
+            ].map(([file, alt], index) => (
+              <Reveal key={file} delay={index * 80}>
+                <img
+                  src={`/images/slideshow/${file}`}
+                  alt={alt}
+                  loading="lazy"
+                  className="aspect-[4/5] w-full rounded-lg object-cover"
+                />
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ── Cómo funciona ────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden py-14 lg:py-20">
-        <DoodleField
-          items={[
-            { name: 'chart', size: 42, className: 'right-[6%] top-[16%] text-deep-peach/40' },
-            {
-              name: 'eye',
-              size: 56,
-              rotate: 6,
-              className: 'left-[3%] bottom-[3%] text-deep-sky/35',
-            },
-            { name: 'lashes', size: 42, className: 'right-[30%] bottom-[3%] text-deep-rose/38' },
-          ]}
-        />
-
-        <div className="relative mx-auto max-w-[78rem] px-6 lg:px-10">
+      <section className="py-14 lg:py-24">
+        <div className="mx-auto max-w-[78rem] px-5 sm:px-6 lg:px-10">
           <Reveal>
-            <SectionTitle eyebrow="Cómo funciona" underlineClass="text-deep-sky/50" align="left">
-              Tres pasos y ya estás estudiando
-            </SectionTitle>
+            <SectionTitle eyebrow="Cómo funciona">Tres pasos y ya estás estudiando</SectionTitle>
           </Reveal>
 
-          <div className="mt-12 grid gap-12 sm:grid-cols-3 lg:gap-16">
+          <div className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-8 lg:mt-14 lg:gap-12">
             {STEPS.map((step, index) => (
               <Reveal
                 key={step.title}
                 delay={index * 110}
-                className={cn(index === 1 && 'sm:mt-16')}
+                className="border-t border-ink-200 pt-5"
               >
-                <span
-                  className={cn(
-                    'tabular flex h-16 w-16 items-center justify-center rounded-2xl font-display text-2xl font-semibold',
-                    TINT_SURFACE[step.tint],
-                    TINT_INK[step.tint],
-                  )}
-                  aria-hidden="true"
-                >
-                  {index + 1}
+                <span className="tabular text-[0.8125rem] font-bold tracking-[0.1em] text-blue-900">
+                  {String(index + 1).padStart(2, '0')}
                 </span>
-                <h3 className="mt-6 text-xl font-semibold tracking-[-0.01em] text-ink-900">
+                <h3 className="mt-3 text-lg font-bold tracking-[-0.01em] text-ink-900">
                   {step.title}
                 </h3>
-                <p className="mt-3 max-w-[34ch] text-[0.9375rem] leading-relaxed text-ink-600">
-                  {step.body}
-                </p>
+                <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-600">{step.body}</p>
               </Reveal>
             ))}
           </div>
@@ -413,28 +262,15 @@ export default function LandingPage() {
       </section>
 
       {/* ── Cierre ───────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden py-12 lg:py-16">
-        <div className="relative mx-auto max-w-[78rem] px-6 lg:px-10">
-          <Reveal className="relative overflow-hidden rounded-[2rem] bg-blue-900 px-8 py-14 lg:px-16 lg:py-20">
-            <DoodleField
-              items={[
-                { name: 'iris', size: 54, className: 'right-[7%] top-[14%] text-white/20' },
-                {
-                  name: 'eye',
-                  size: 60,
-                  rotate: -6,
-                  className: 'left-[2%] bottom-[3%] text-white/18',
-                },
-                { name: 'snellen', size: 26, className: 'right-[24%] bottom-[18%] text-white/22' },
-              ]}
-            />
-
-            <div className="relative flex flex-wrap items-end justify-between gap-x-12 gap-y-10">
-              <div>
-                <h2 className="max-w-[18ch] text-[2rem] font-semibold leading-[1.14] tracking-[-0.02em] text-white lg:text-[2.75rem]">
+      <section className="pb-14 lg:pb-24">
+        <div className="mx-auto max-w-[78rem] px-5 sm:px-6 lg:px-10">
+          <Reveal className="rounded-xl bg-blue-900 px-6 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-16">
+            <div className="flex flex-col gap-y-9 lg:flex-row lg:items-end lg:justify-between lg:gap-x-12">
+              <div className="min-w-0">
+                <h2 className="max-w-[18ch] text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] text-white sm:text-[2.125rem] lg:text-[2.5rem]">
                   Empieza por la unidad 1 hoy mismo
                 </h2>
-                <ul className="mt-9 space-y-3.5">
+                <ul className="mt-7 space-y-3">
                   {[
                     'Acceso inmediato al Curso General',
                     'Repasos con explicación en cada pregunta',
@@ -442,10 +278,10 @@ export default function LandingPage() {
                   ].map((line) => (
                     <li
                       key={line}
-                      className="flex items-center gap-3 text-[0.9375rem] text-blue-100"
+                      className="flex items-start gap-3 text-[0.9375rem] leading-snug text-blue-100"
                     >
                       <span
-                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-[0.5rem] text-white"
+                        className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/20 text-[0.45rem] text-white"
                         aria-hidden="true"
                       >
                         <FontAwesomeIcon icon={faCheck} />
@@ -461,7 +297,7 @@ export default function LandingPage() {
                 to="/login"
                 variant="inverse"
                 size="lg"
-                className="group/btn"
+                className="group/btn w-full shrink-0 sm:w-auto"
                 iconRight={faArrowRight}
               >
                 Acceder
@@ -473,7 +309,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-ink-200 py-10 text-center">
         <Logo size="sm" className="justify-center" />
-        <p className="mt-3.5 text-xs text-ink-500">
+        <p className="mt-3.5 px-5 text-xs text-ink-500">
           Sistema web de apoyo al aprendizaje de Oftalmología
         </p>
       </footer>

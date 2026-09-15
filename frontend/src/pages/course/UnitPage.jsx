@@ -52,10 +52,10 @@ export default function UnitPage() {
         Todas las unidades
       </Link>
 
-      <header className="mt-4 flex items-start gap-5">
+      <header className="mt-4 flex items-start gap-4 sm:gap-5">
         <span
           className={cn(
-            'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl text-white',
+            'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white sm:h-14 sm:w-14 sm:text-xl',
             identity.classes.bg,
           )}
           aria-hidden="true"
@@ -65,7 +65,7 @@ export default function UnitPage() {
 
         <div className="min-w-0 flex-1">
           <p className="eyebrow text-blue-800">Unidad {number ?? topic.order + 1}</p>
-          <h1 className="mt-1.5 text-[1.75rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900">
+          <h1 className="mt-1.5 text-[1.375rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900 sm:text-[1.75rem]">
             {title}
           </h1>
           <p className="tabular mt-2 text-xs text-ink-500">
@@ -90,7 +90,7 @@ export default function UnitPage() {
           <li key={subtopic.id} className="border-b border-ink-200 last:border-b-0">
             <Link
               to={`/courses/${courseId}/subtopics/${subtopic.id}`}
-              className="group flex items-center gap-4 px-5 py-4 transition-colors duration-150 hover:bg-blue-50"
+              className="group flex items-center gap-3 px-4 py-3.5 transition-colors duration-150 hover:bg-blue-50 sm:gap-4 sm:px-5 sm:py-4"
             >
               <span
                 className={cn(
@@ -118,9 +118,11 @@ export default function UnitPage() {
                 </span>
               </span>
 
+              {/* El estado ya lo dice el círculo de la izquierda: en móvil la
+                  etiqueta solo roba ancho al nombre del subtema. */}
               <span
                 className={cn(
-                  'shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]',
+                  'hidden shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] sm:inline',
                   subtopic.completed ? 'text-blue-800' : 'text-ink-400',
                 )}
               >
@@ -137,12 +139,14 @@ export default function UnitPage() {
         ))}
       </ol>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      {/* En móvil los botones ocupan el ancho completo: el rótulo del repaso es
+          largo y dentro de un botón de altura fija se cortaría al plegarse. */}
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         {nextSubtopic && (
           <Button
             as={Link}
             to={`/courses/${courseId}/subtopics/${nextSubtopic.id}`}
-            className="group/btn"
+            className="group/btn w-full sm:w-auto"
             iconRight={faArrowRight}
           >
             {done > 0 ? 'Continuar la unidad' : 'Empezar la unidad'}
@@ -154,6 +158,7 @@ export default function UnitPage() {
             to={`/courses/${courseId}/units/${topic.id}/quiz`}
             variant={nextSubtopic ? 'secondary' : 'primary'}
             icon={faListCheck}
+            className="w-full sm:w-auto"
           >
             Repasar la unidad · {topic.question_count} preguntas
           </Button>
