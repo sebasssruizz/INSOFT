@@ -856,13 +856,21 @@ export default function InteractiveViewPage() {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => startGameRef.current()}
-              className="mt-6 w-full rounded-lg bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-950"
-            >
-              {hasStarted ? 'Continuar' : 'Iniciar experiencia'}
-            </button>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => startGameRef.current()}
+                className="w-full rounded-lg bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-950 sm:flex-1"
+              >
+                {hasStarted ? 'Continuar' : 'Iniciar experiencia'}
+              </button>
+              <Link
+                to={`/courses/${courseId}/subtopics/${subtopicId}`}
+                className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 sm:w-auto"
+              >
+                Salir de la vista
+              </Link>
+            </div>
           </section>
         </div>
       )}
