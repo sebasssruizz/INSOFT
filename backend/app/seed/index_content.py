@@ -27,7 +27,7 @@ from app.models.content import Subtopic
 from app.repositories import subtopic_chunk_repository as chunk_repo
 from app.services.embeddings_service import embed_batch
 
-DEFAULT_MAX_CHUNK_WORDS = 300
+DEFAULT_MAX_CHUNK_WORDS = 250
 
 
 def _split_long_paragraph(paragraph: str, max_words: int) -> list[str]:

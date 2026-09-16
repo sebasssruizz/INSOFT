@@ -37,7 +37,7 @@ ANSWER_SYSTEM = (
     "la pregunta usando exclusivamente la información del contexto."
 )
 
-TOP_K = 1
+TOP_K = 2
 
 
 def _courses_with_access(db: Session, user: User) -> list[int]:
