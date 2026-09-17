@@ -1,9 +1,12 @@
+"""Servicio de IA con soporte para OpenRouter y Google Gemini.
 
 Orquesta: normalización de pregunta → búsqueda de chunks por similitud →
 respuesta final con contexto → guardado en historial (ai_queries).
+Soporte alternable por variable de entorno AI_PROVIDER=openrouter|gemini.
 """
 from __future__ import annotations
 
+import google.generativeai as genai
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -38,6 +41,13 @@ ANSWER_SYSTEM = (
 )
 
 TOP_K = 2
+
+GEMINI_TIMEOUT_SECONDS = 60
+
+
+class GeminiCallError(Exception):
+    """Error en la llamada a Gemini (API key ausente/inválida, timeout, red, 4xx/5xx)."""
+    pass
 
 
 def _courses_with_access(db: Session, user: User) -> list[int]:
@@ -129,6 +139,46 @@ async def _retrieve_chunks(
     return [chunk for _, chunk in scored]
 
 
+async def call_gemini(
+    model: str,
+    system_prompt: str,
+    user_content: str,
+) -> str:
+    """Llama a Google Gemini API para generar texto.
+
+    Args:
+        model: Nombre del modelo de Gemini (ej. "gemini-1.5-flash").
+        system_prompt: Prompt de sistema (rol "system").
+        user_content: Contenido del usuario (rol "user").
+
+    Returns:
+        Contenido de la respuesta (string).
+
+    Raises:
+        GeminiCallError: Si falta GEMINI_API_KEY o la llamada a Gemini falla.
+
+    La API key nunca se incluye en los mensajes de error.
+    """
+    if not settings.GEMINI_API_KEY:
+        raise GeminiCallError(
+            "El proveedor Gemini no está configurado (falta GEMINI_API_KEY)."
+        )
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+    gemini_model = genai.GenerativeModel(model)
+    try:
+        response = gemini_model.generate_content(
+            [system_prompt, user_content],
+            generation_config=genai.GenerationConfig(
+                max_output_tokens=1200,
+                temperature=0.7,
+            ),
+            request_options={"timeout": GEMINI_TIMEOUT_SECONDS},
+        )
+    except Exception as exc:
+        raise GeminiCallError(f"Error al generar respuesta con Gemini: {exc}") from exc
+    return response.text
+
+
 async def ask_ai(
     question: str,
     user_id: int,
@@ -156,6 +206,7 @@ async def ask_ai(
         ForbiddenError: Si el usuario no tiene acceso al subtopic_id o al curso.
         OpenRouterSaturatedError: Si se alcanza el límite global de OpenRouter.
         OpenRouterCallError: Si la llamada a OpenRouter falla.
+        GeminiCallError: Si la llamada a Gemini falla.
     """
     # 1. Autorización: curso (si se pasa) y subtopic (si se pasa).
     if course_id is not None:
@@ -163,6 +214,7 @@ async def ask_ai(
     if subtopic_id is not None:
         _ensure_subtopic_access(db, current_user, subtopic_id, course_id)
 
+    # 2. Normalizar la pregunta (siempre usa OpenRouter por consistencia)
     normalized = await call_openrouter(
         model=settings.OPENROUTER_NORMALIZE_MODEL,
         system_prompt=NORMALIZE_SYSTEM,
@@ -172,8 +224,21 @@ async def ask_ai(
     # 3. Buscar chunks similares (contextuales al curso/subtema si se pasan)
     chunks = await _retrieve_chunks(db, normalized, subtopic_id, course_id)
 
+    # 4. Respuesta final con contexto (usar el proveedor configurado)
     context = "\n\n".join(chunk.content for chunk in chunks) if chunks else "(sin contexto disponible)"
 
+    if settings.AI_PROVIDER == "gemini":
+        answer = await call_gemini(
+            model=settings.GEMINI_MODEL,
+            system_prompt=ANSWER_SYSTEM,
+            user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
+        )
+    else:
+        answer = await call_openrouter(
+            model=settings.OPENROUTER_ANSWER_MODEL,
+            system_prompt=ANSWER_SYSTEM,
+            user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
+        )
 
     # 5. Guardar en historial (ai_queries)
     ai_query_repo.create(

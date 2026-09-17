@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     AI_ASK_RATE_LIMIT: str = "10/hour"
     OPENROUTER_GLOBAL_LIMIT_PER_MIN: int = 18
 
+    # Google Gemini (IA) - proveedor alternativo gratuito
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-1.5-flash"
+    AI_PROVIDER: str = "openrouter"  # "openrouter" o "gemini"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:

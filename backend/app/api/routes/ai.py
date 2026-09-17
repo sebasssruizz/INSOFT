@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.ai import AskRequest, AskResponse
-from app.services.ai_service import ask_ai
+from app.services.ai_service import GeminiCallError, ask_ai
 from app.services.exceptions import ForbiddenError, NotFoundError
 from app.core.openrouter_client import OpenRouterCallError, OpenRouterSaturatedError
 
@@ -80,4 +80,6 @@ async def ask_ai_endpoint(
     except OpenRouterSaturatedError as exc:
         raise HTTPException(status_code=429, detail=str(exc))
     except OpenRouterCallError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except GeminiCallError as exc:
         raise HTTPException(status_code=503, detail=str(exc))

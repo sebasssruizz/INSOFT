@@ -35,6 +35,9 @@ services:
       OPENROUTER_ANSWER_MODEL: ${OPENROUTER_ANSWER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}
       AI_ASK_RATE_LIMIT: ${AI_ASK_RATE_LIMIT:-10/hour}
       OPENROUTER_GLOBAL_LIMIT_PER_MIN: ${OPENROUTER_GLOBAL_LIMIT_PER_MIN:-18}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      AI_PROVIDER: ${AI_PROVIDER:-openrouter}
     ports:
       - "8000:8000"
     depends_on:
