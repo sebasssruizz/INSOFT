@@ -23,9 +23,35 @@ from sqlalchemy import select
 
 from app.database.session import SessionLocal
 from app.main import app
-from app.models.content import Subtopic
+from app.models.content import CourseTopic, Subtopic
+from app.models.course import Course, CourseType
 from app.repositories import subtopic_chunk_repository as chunk_repo
 from app.services.embeddings_service import embed_text
+
+
+def create_teacher_course(client: TestClient, email: str, name: str) -> dict:
+    """Crea un curso vía API (rol profesor) y devuelve su JSON."""
+    teacher = auth_headers(client, email, "Profesor IA", "TEACHER")
+    resp = client.post(
+        "/api/courses",
+        json={"name": name, "description": "Curso de prueba RAG contextual"},
+        headers=teacher,
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()
+
+
+def disable_topic_in_course(course_id: int, topic_id: int) -> None:
+    """Deshabilita un CourseTopic directamente en la BD (solo para pruebas)."""
+    with SessionLocal() as s:
+        ct = s.scalar(
+            select(CourseTopic).where(
+                CourseTopic.course_id == course_id, CourseTopic.topic_id == topic_id
+            )
+        )
+        assert ct is not None, "El course_topic debería existir tras crear el curso."
+        ct.enabled = False
+        s.commit()
 
 
 @pytest.fixture(scope="module")
@@ -192,3 +218,107 @@ def test_ask_ai_rate_limit_user_429(mock_call, client: TestClient, indexed_subto
             assert resp.status_code == 200, f"fallo en petición {i}: {resp.text}"
         else:
             assert resp.status_code == 429, f"petición {i} debería ser 429: {resp.text}"
+
+
+@patch("app.services.ai_service.call_openrouter", new_callable=AsyncMock)
+def test_ask_ai_course_id_scope_curso_estudiante(mock_call, client: TestClient, indexed_subtopic_id):
+    """course_id del curso propio: RAG contextual, chunks >= 1."""
+    mock_call.side_effect = ["¿Qué es el glaucoma agudo?", "Es una urgencia oftalmológica..."]
+
+    student = auth_headers(client, "ai-ctx-est@example.com", "AI Ctx Est", "STUDENT")
+    general = client.get("/api/courses", headers=student).json()[0]
+    assert general["type"] == "GENERAL"
+
+    resp = client.post(
+        "/api/ai/ask",
+        json={"question": "glaucoma agudo?", "course_id": general["id"]},
+        headers=student,
+    )
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["subtopic_id"] is None
+    assert data["chunks_usados"] >= 1
+
+
+@patch("app.services.ai_service.call_openrouter", new_callable=AsyncMock)
+def test_ask_ai_course_id_sin_acceso_403(mock_call, client: TestClient, indexed_subtopic_id):
+    """Estudiante que NO pertenece a un curso -> 403 al pedir ese course_id."""
+    mock_call.side_effect = ["normalizada", "respuesta"]
+
+    course = create_teacher_course(client, "ai-ctx-profe@example.com", "Curso privado AI")
+    other = auth_headers(client, "ai-ctx-otro@example.com", "AI Ctx Otro", "STUDENT")
+
+    resp = client.post(
+        "/api/ai/ask",
+        json={"question": "glaucoma", "course_id": course["id"]},
+        headers=other,
+    )
+    assert resp.status_code == 403, resp.text
+
+
+@patch("app.services.ai_service.call_openrouter", new_callable=AsyncMock)
+def test_ask_ai_course_id_mas_subtopic_valido(mock_call, client: TestClient, indexed_subtopic_id):
+    """course_id + subtopic_id del curso: recupera solo ese subtema (más restrictivo)."""
+    mock_call.side_effect = ["¿Qué es la presión intraocular?", "El glaucoma sube la presión..."]
+
+    student = auth_headers(client, "ai-ctx-est2@example.com", "AI Ctx Est 2", "STUDENT")
+    general = client.get("/api/courses", headers=student).json()[0]
+
+    resp = client.post(
+        "/api/ai/ask",
+        json={
+            "question": "presión intraocular",
+            "course_id": general["id"],
+            "subtopic_id": indexed_subtopic_id,
+        },
+        headers=student,
+    )
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["subtopic_id"] == indexed_subtopic_id
+    assert data["chunks_usados"] >= 1
+
+
+@patch("app.services.ai_service.call_openrouter", new_callable=AsyncMock)
+def test_ask_ai_course_id_subtopic_topic_deshabilitado_403(
+    mock_call, client: TestClient, indexed_subtopic_id
+):
+    """course_id + subtopic de un topic deshabilitado en ESE curso -> 403."""
+    mock_call.side_effect = ["normalizada", "respuesta"]
+
+    course = create_teacher_course(client, "ai-ctx-profe2@example.com", "Curso con tema cerrado")
+    teacher = auth_headers(client, "ai-ctx-profe2@example.com", "Profesor IA", "TEACHER")
+
+    with SessionLocal() as s:
+        topic_id = s.get(Subtopic, indexed_subtopic_id).topic_id
+    disable_topic_in_course(course["id"], topic_id)
+
+    resp = client.post(
+        "/api/ai/ask",
+        json={
+            "question": "glaucoma",
+            "course_id": course["id"],
+            "subtopic_id": indexed_subtopic_id,
+        },
+        headers=teacher,
+    )
+    assert resp.status_code == 403, resp.text
+
+
+def test_list_chunks_for_course_ignora_topic_deshabilitado(
+    client: TestClient, indexed_subtopic_id
+):
+    """list_chunks_for_course() excluye chunks de topics deshabilitados."""
+    course = create_teacher_course(client, "ai-ctx-profe3@example.com", "Curso filtrado RAG")
+
+    with SessionLocal() as s:
+        topic_id = s.get(Subtopic, indexed_subtopic_id).topic_id
+        # Con el topic habilitado, el chunk del subtema indexado SÍ está en el curso.
+        chunks = chunk_repo.list_chunks_for_course(s, course["id"])
+        assert any(chunk.subtopic_id == indexed_subtopic_id for chunk in chunks)
+
+    disable_topic_in_course(course["id"], topic_id)
+
+    with SessionLocal() as s:
+        chunks = chunk_repo.list_chunks_for_course(s, course["id"])
+    assert all(chunk.subtopic_id != indexed_subtopic_id for chunk in chunks)

@@ -2,6 +2,7 @@
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.models.content import CourseTopic, Subtopic
 from app.models.subtopic_chunk import SubtopicChunk
 
 
@@ -25,6 +26,22 @@ def list_chunks_for_subtopic(db: Session, subtopic_id: int) -> list[SubtopicChun
     stmt = (
         select(SubtopicChunk)
         .where(SubtopicChunk.subtopic_id == subtopic_id)
+        .order_by(SubtopicChunk.id)
+    )
+    return list(db.scalars(stmt).all())
+
+
+def list_chunks_for_course(db: Session, course_id: int) -> list[SubtopicChunk]:
+    """Chunks de los topics habilitados en un curso (via course_topics).
+
+    Recorre la relación course_topics -> topics -> subtopics -> subtopic_chunks
+    y solo devuelve chunks de topics con `enabled=True` en ese curso.
+    """
+    stmt = (
+        select(SubtopicChunk)
+        .join(Subtopic, Subtopic.id == SubtopicChunk.subtopic_id)
+        .join(CourseTopic, CourseTopic.topic_id == Subtopic.topic_id)
+        .where(CourseTopic.course_id == course_id, CourseTopic.enabled.is_(True))
         .order_by(SubtopicChunk.id)
     )
     return list(db.scalars(stmt).all())

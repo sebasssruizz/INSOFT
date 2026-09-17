@@ -1,7 +1,11 @@
 import { apiFetch } from './api'
 
-export const askAi = (question, subtopicId) =>
+export const askAi = (question, courseId, subtopicId) =>
   apiFetch('/ai/ask', {
     method: 'POST',
-    body: { question, subtopic_id: subtopicId ?? null },
+    body: {
+      question,
+      course_id: courseId ?? null,
+      subtopic_id: subtopicId ?? null,
+    },
   })

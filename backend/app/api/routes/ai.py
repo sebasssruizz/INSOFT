@@ -59,6 +59,9 @@ async def ask_ai_endpoint(
     - `subtopic_id`: opcional. Si se pasa, valida que el usuario tenga acceso
       a ese subtema (inscripción o profesor dueño del curso); si no tiene acceso
       → 403; si no existe → 404. Si no se pasa, busca en todo el contenido.
+    - `course_id`: opcional. Acota la búsqueda RAG a los topics habilitados en
+      ese curso y valida la membresía del usuario; si el usuario no pertenece
+      al curso → 403. Sin `course_id` se conserva la búsqueda global (fallback).
     """
     try:
         result = await ask_ai(
@@ -67,6 +70,7 @@ async def ask_ai_endpoint(
             subtopic_id=payload.subtopic_id,
             db=db,
             current_user=current_user,
+            course_id=payload.course_id,
         )
         return AskResponse(**result)
     except NotFoundError as exc:

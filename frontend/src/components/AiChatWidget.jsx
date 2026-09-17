@@ -56,8 +56,12 @@ function Message({ message }) {
         {message.chunks > 0 && !message.error && (
           <span className="mt-1.5 block text-[0.6875rem] font-medium text-ink-400">
             {message.scope
-              ? `Según este subtema · ${message.chunks} ${message.chunks === 1 ? 'fragmento' : 'fragmentos'}`
-              : `Según el contenido del curso · ${message.chunks} ${message.chunks === 1 ? 'fragmento' : 'fragmentos'}`}
+              ? 'Según este subtema'
+              : message.course
+                ? 'Según el contenido del curso'
+                : 'Según el contenido general'}
+            {' · '}
+            {message.chunks} {message.chunks === 1 ? 'fragmento' : 'fragmentos'}
           </span>
         )}
       </div>
@@ -89,7 +93,11 @@ function TypingBubble() {
 
 export default function AiChatWidget() {
   const [open, setOpen] = useState(false)
+  // Contiene el curso/carpeta actual (cualquier página dentro de /courses/:courseId/...)
+  // y, si es el caso, el subtema concreto para acotar todavía más el RAG.
+  const courseMatch = useMatch('/courses/:courseId/*')
   const subtopicMatch = useMatch('/courses/:courseId/subtopics/:subtopicId')
+  const courseId = courseMatch ? Number(courseMatch.params.courseId) : null
   const subtopicId = subtopicMatch ? Number(subtopicMatch.params.subtopicId) : null
   const [messages, setMessages] = useState([
     {
@@ -111,13 +119,14 @@ export default function AiChatWidget() {
     setSending(true)
 
     try {
-      const data = await askAi(text, subtopicId)
+      const data = await askAi(text, courseId, subtopicId)
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
           content: data.respuesta,
           scope: Boolean(data.subtopic_id),
+          course: courseId != null,
           chunks: data.chunks_usados,
         },
       ])

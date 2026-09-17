@@ -9,6 +9,11 @@ class AskRequest(BaseModel):
     subtopic_id: int | None = Field(
         default=None, description="Subtema opcional para limitar la búsqueda"
     )
+    course_id: int | None = Field(
+        default=None,
+        description="Curso/carpeta actual para acotar el RAG al contenido habilitado"
+        " en ese curso. Si se omite, se conserva la búsqueda global.",
+    )
 
 
 class AskResponse(BaseModel):

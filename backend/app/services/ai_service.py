@@ -1,4 +1,3 @@
-"""Servicio de IA para el endpoint /api/ai/ask (RAG con OpenRouter).
 
 Orquesta: normalización de pregunta → búsqueda de chunks por similitud →
 respuesta final con contexto → guardado en historial (ai_queries).
@@ -16,6 +15,7 @@ from app.models.user import User, UserRole
 from app.repositories import ai_query_repository as ai_query_repo
 from app.repositories import course_repository as course_repo
 from app.repositories import subtopic_chunk_repository as chunk_repo
+from app.services import course_service
 from app.services.embeddings_service import cosine_similarity, embed_text
 from app.services.exceptions import ForbiddenError, NotFoundError
 
@@ -47,11 +47,38 @@ def _courses_with_access(db: Session, user: User) -> list[int]:
     return [c.id for c in course_repo.get_courses_for_student(db, user.id)]
 
 
-def _ensure_subtopic_access(db: Session, user: User, subtopic_id: int) -> Subtopic:
-    """Valida que el subtema exista y que `user` tenga acceso a él; si no, 403."""
+def _ensure_course_access(db: Session, user: User, course_id: int) -> None:
+    """Valida que `user` pertenezca a `course_id` (o lo posea); si no, 403/404."""
+    course_service.get_course_with_access_check(db, user, course_id)
+
+
+def _ensure_subtopic_access(
+    db: Session, user: User, subtopic_id: int, course_id: int | None = None
+) -> Subtopic:
+    """Valida que el subtema exista y que `user` tenga acceso a él; si no, 403.
+
+    Con `course_id`: el acceso se restringe a ese curso (debe estar habilitado
+    el topic del subtema en `course_topics`). Sin `course_id` se conserva el
+    comportamiento histórico de autorizar contra cualquiera de los cursos con
+    acceso del usuario.
+    """
     subtopic = db.get(Subtopic, subtopic_id)
     if subtopic is None:
         raise NotFoundError("Subtema no encontrado.")
+
+    if course_id is not None:
+        has_topic = db.scalar(
+            select(CourseTopic.id)
+            .where(
+                CourseTopic.course_id == course_id,
+                CourseTopic.topic_id == subtopic.topic_id,
+                CourseTopic.enabled.is_(True),
+            )
+            .limit(1)
+        )
+        if has_topic is None:
+            raise ForbiddenError("No tienes acceso a este subtema en este curso.")
+        return subtopic
 
     course_ids = _courses_with_access(db, user)
     if not course_ids:
@@ -72,13 +99,21 @@ def _ensure_subtopic_access(db: Session, user: User, subtopic_id: int) -> Subtop
 
 
 async def _retrieve_chunks(
-    db: Session, query_text: str, subtopic_id: int | None
+    db: Session, query_text: str, subtopic_id: int | None, course_id: int | None = None
 ) -> list:
-    """Recupera top-K chunks por similitud coseno, filtrando por subtopic si se pasa."""
+    """Recupera top-K chunks por similitud coseno, acotado al contexto dado.
+
+    - `subtopic_id` → solo los chunks de ese subtema.
+    - `course_id` (sin subtopic) → chunks de los topics habilitados del curso.
+    - ninguno → todos los chunks (fallback global, compatible con pantallas que
+      aún no tienen contexto de curso).
+    """
     query_vec = embed_text(query_text)
 
     if subtopic_id is not None:
         chunks = chunk_repo.list_chunks_for_subtopic(db, subtopic_id)
+    elif course_id is not None:
+        chunks = chunk_repo.list_chunks_for_course(db, course_id)
     else:
         chunks = chunk_repo.list_all_chunks(db)
 
@@ -100,6 +135,7 @@ async def ask_ai(
     subtopic_id: int | None,
     db: Session,
     current_user: User,
+    course_id: int | None = None,
 ) -> dict:
     """Ejecuta el flujo completo: normalizar → buscar chunks → responder → guardar.
 
@@ -109,38 +145,35 @@ async def ask_ai(
         subtopic_id: Subtema opcional para filtrar la búsqueda.
         db: Sesión de base de datos.
         current_user: Usuario autenticado (para autorización).
+        course_id: Curso/carpeta actual opcional. Acota el RAG al contenido
+            habilitado en ese curso y valida que el usuario pertenezca a él.
 
     Returns:
         Dict con: respuesta, subtopic_id, chunks_usados.
 
     Raises:
-        NotFoundError: Si subtopic_id no existe.
-        ForbiddenError: Si el usuario no tiene acceso al subtopic_id.
+        NotFoundError: Si subtopic_id no existe o el curso no existe.
+        ForbiddenError: Si el usuario no tiene acceso al subtopic_id o al curso.
         OpenRouterSaturatedError: Si se alcanza el límite global de OpenRouter.
         OpenRouterCallError: Si la llamada a OpenRouter falla.
     """
-    # 1. Autorización por subtopic (reutiliza la misma lógica que /rag/search)
+    # 1. Autorización: curso (si se pasa) y subtopic (si se pasa).
+    if course_id is not None:
+        _ensure_course_access(db, current_user, course_id)
     if subtopic_id is not None:
-        _ensure_subtopic_access(db, current_user, subtopic_id)
+        _ensure_subtopic_access(db, current_user, subtopic_id, course_id)
 
-    # 2. Normalizar la pregunta
     normalized = await call_openrouter(
         model=settings.OPENROUTER_NORMALIZE_MODEL,
         system_prompt=NORMALIZE_SYSTEM,
         user_content=question,
     )
 
-    # 3. Buscar chunks similares
-    chunks = await _retrieve_chunks(db, normalized, subtopic_id)
+    # 3. Buscar chunks similares (contextuales al curso/subtema si se pasan)
+    chunks = await _retrieve_chunks(db, normalized, subtopic_id, course_id)
 
-    # 4. Respuesta final con contexto
     context = "\n\n".join(chunk.content for chunk in chunks) if chunks else "(sin contexto disponible)"
 
-    answer = await call_openrouter(
-        model=settings.OPENROUTER_ANSWER_MODEL,
-        system_prompt=ANSWER_SYSTEM,
-        user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
-    )
 
     # 5. Guardar en historial (ai_queries)
     ai_query_repo.create(

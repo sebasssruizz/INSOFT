@@ -17,6 +17,7 @@ from app.models.user import User, UserRole
 from app.repositories import course_repository as course_repo
 from app.repositories import subtopic_chunk_repository as chunk_repo
 from app.schemas.rag import ChunkResult, SearchRequest, SearchResponse
+from app.services import course_service
 from app.services.embeddings_service import cosine_similarity, embed_text
 from app.services.exceptions import ForbiddenError, NotFoundError
 
@@ -30,11 +31,36 @@ def _courses_with_access(db: Session, user: User) -> list[int]:
     return [c.id for c in course_repo.get_courses_for_student(db, user.id)]
 
 
-def _ensure_subtopic_access(db: Session, user: User, subtopic_id: int) -> Subtopic:
-    """Valida que el subtema exista y que `user` tenga acceso a él; si no, 403."""
+def _ensure_course_access(db: Session, user: User, course_id: int) -> None:
+    """Valida que `user` pertenezca a `course_id` (o lo posea); si no, 403/404."""
+    course_service.get_course_with_access_check(db, user, course_id)
+
+
+def _ensure_subtopic_access(
+    db: Session, user: User, subtopic_id: int, course_id: int | None = None
+) -> Subtopic:
+    """Valida que el subtema exista y que `user` tenga acceso a él; si no, 403.
+
+    Con `course_id` el acceso se restringe a ese curso; sin él, a cualquiera
+    de los cursos con acceso del usuario (compatibilidad).
+    """
     subtopic = db.get(Subtopic, subtopic_id)
     if subtopic is None:
         raise NotFoundError("Subtema no encontrado.")
+
+    if course_id is not None:
+        has_topic = db.scalar(
+            select(CourseTopic.id)
+            .where(
+                CourseTopic.course_id == course_id,
+                CourseTopic.topic_id == subtopic.topic_id,
+                CourseTopic.enabled.is_(True),
+            )
+            .limit(1)
+        )
+        if has_topic is None:
+            raise ForbiddenError("No tienes acceso a este subtema en este curso.")
+        return subtopic
 
     course_ids = _courses_with_access(db, user)
     if not course_ids:
@@ -60,10 +86,18 @@ def rag_search(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Búsqueda semántica sobre el contenido oficial indexado en `subtopic_chunks`."""
+    """Búsqueda semántica sobre el contenido oficial indexado en `subtopic_chunks`.
+
+    Contextual al curso (si `course_id` viene): solo chunks de topics habilitados.
+    Sin `course_id` conserva la búsqueda global (compatibilidad/herramientas).
+    """
+    if payload.course_id is not None:
+        _ensure_course_access(db, current_user, payload.course_id)
     if payload.subtopic_id is not None:
-        _ensure_subtopic_access(db, current_user, payload.subtopic_id)
+        _ensure_subtopic_access(db, current_user, payload.subtopic_id, payload.course_id)
         chunks = chunk_repo.list_chunks_for_subtopic(db, payload.subtopic_id)
+    elif payload.course_id is not None:
+        chunks = chunk_repo.list_chunks_for_course(db, payload.course_id)
     else:
         chunks = chunk_repo.list_all_chunks(db)
 
