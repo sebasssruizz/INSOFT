@@ -20,7 +20,7 @@ import { getSubtopic } from '../../services/contentService'
 import { useAuth } from '../../hooks/useAuth'
 import { useCourse } from '../../hooks/useCourse'
 
-/** Contenido oficial: párrafos, listas con "- " o "1." y **negritas**. */
+/** Contenido oficial: encabezados ###, párrafos, listas con "- " o "1." y **negritas**. */
 function LessonContent({ content }) {
   const blocks = useMemo(() => {
     const renderInline = (text, key) =>
@@ -39,6 +39,16 @@ function LessonContent({ content }) {
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line, index) => {
+        if (/^###\s+/.test(line)) {
+          return (
+            <h3
+              key={index}
+              className="mb-3 mt-8 text-[1.0625rem] font-semibold tracking-[-0.01em] text-ink-900 first:mt-0"
+            >
+              {renderInline(line.replace(/^###\s+/, ''), index)}
+            </h3>
+          )
+        }
         if (/^[-•]\s+/.test(line)) {
           return (
             <li key={index} className="mb-2.5 ml-1 list-none pl-6 -indent-6">
