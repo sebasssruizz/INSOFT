@@ -38,6 +38,9 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
       AI_PROVIDER: ${AI_PROVIDER:-openrouter}
+      AI_QUESTION_RATE_LIMIT: ${AI_QUESTION_RATE_LIMIT:-5/hour}
+      AI_QUESTION_MAX_ATTEMPTS: ${AI_QUESTION_MAX_ATTEMPTS:-2}
+      QUIZ_MAX_QUESTIONS: ${QUIZ_MAX_QUESTIONS:-10}
     ports:
       - "8000:8000"
     depends_on:

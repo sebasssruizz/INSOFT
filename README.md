@@ -151,6 +151,14 @@ python -m pytest tests/ -v
 | POST | `/api/progress` | Marcar subtema completado | estudiante |
 | GET | `/api/progress` | Progreso en todos mis cursos | estudiante |
 | GET | `/api/progress/course?course_id=` | Progreso en un curso | estudiante |
+| POST | `/api/ai/ask` | Pregunta al asistente IA (RAG) | miembro/profesor |
+| POST | `/api/ai/questions/generate` | Generar preguntas IA (nacen pendientes) | profesor |
+| POST | `/api/content/subtopics/{id}/questions` | Crear pregunta manual | profesor |
+| GET | `/api/content/subtopics/{id}/questions/bank` | Banco de preguntas del subtema | profesor |
+| GET | `/api/content/topics/{id}/questions/summary` | Conteos por subtema | profesor |
+| PATCH | `/api/content/questions/{id}` | Editar pregunta propia | profesor autor |
+| DELETE | `/api/content/questions/{id}` | Borrar pregunta propia | profesor autor |
+| POST | `/api/content/questions/{id}/review` | Aprobar/rechazar pregunta IA | profesor autor |
 
 \* solo si `DEV_AUTH_ENABLED=true`.
 
@@ -169,15 +177,42 @@ users ──< progress (user_id, course_id, subtopic_id, completed)
   todo estudiante nuevo se inscribe automáticamente.
 - Los cursos de profesor tienen `type=TEACHER` y un código único `OFT-XXXX`.
 
+## Banco de preguntas y preguntas con IA
+
+Los profesores gestionan las preguntas de evaluación desde el panel de su curso
+(sección "Banco de preguntas"), con tres orígenes:
+
+- **Oficial**: importada del compendio vía `POST /api/content/import`. Es de solo
+  lectura para todos; solo el importador la actualiza.
+- **Docente**: creada a mano por el profesor (enunciado + 4 opciones A-D + correcta +
+  explicación opcional). Es `approved` y los estudiantes la ven de inmediato.
+- **IA**: generada con `POST /api/ai/questions/generate` a partir del contenido oficial
+  indexado (RAG). Nace `pending` y **no se muestra a estudiantes** hasta que el profesor
+  la aprueba o la descarta desde la cola de revisión.
+
+Cada pregunta tiene `source` (official/ai/teacher) y `status` (approved/pending/rejected);
+los quizzes de estudiantes solo incluyen `approved`, con un tope de
+`QUIZ_MAX_QUESTIONS` (muestreo aleatorio si hay más).
+
+Variables de entorno nuevas:
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `AI_QUESTION_RATE_LIMIT` | `5/hour` | Límite de generaciones IA por profesor y hora |
+| `AI_QUESTION_MAX_ATTEMPTS` | `2` | Intentos del LLM por solicitud |
+| `QUIZ_MAX_QUESTIONS` | `10` | Tope de preguntas por quiz |
+
 ## Seguridad
 
 - El ID token de Google se verifica criptográficamente en el backend.
 - Las sesiones usan JWT firmados con `SECRET_KEY`.
 - Toda la autorización (roles, membresías, propiedad de cursos) se valida en el backend.
-- Los profesores no pueden crear ni modificar contenido académico: no existen endpoints para ello.
+- El contenido oficial es de solo lectura para los profesores; las preguntas propias del
+  banco docente sí pueden crearse, editarse y borrarse por su autor.
 
 ## Alcance de esta versión
 
-Esta primera versión no incluye funcionalidades de IA (chatbot, RAG, embeddings,
-generación de preguntas, etc.). La arquitectura está preparada para incorporarlas en
-el futuro sobre la base de contenido única y centralizada.
+Incluye el asistente conversacional basado en RAG (`/api/ai/ask`, con OpenRouter o
+Gemini como proveedor, embeddings locales multilingües e indexación por chunks), el
+banco de preguntas del profesor y la generación de preguntas IA con revisión. La
+vista 3D y el contenido multimedia se encuentran en desarrollo.
