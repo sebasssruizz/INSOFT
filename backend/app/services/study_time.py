@@ -13,8 +13,14 @@ MIN_SUBTOPIC_MINUTES = 4
 
 
 def estimate_minutes(subtopic) -> int:
-    """Minutos estimados para leer un subtema y resolver sus preguntas."""
+    """Minutos estimados para leer un subtema y resolver sus preguntas.
+
+    Solo cuentan las preguntas aprobadas: las pendientes de revisión no son
+    parte del trabajo real del estudiante.
+    """
     words = len(subtopic.content.split())
     reading = words / STUDY_WORDS_PER_MINUTE
-    quiz = len(subtopic.questions) * MINUTES_PER_QUESTION
+    quiz = (
+        len([q for q in subtopic.questions if q.status == "approved"]) * MINUTES_PER_QUESTION
+    )
     return max(MIN_SUBTOPIC_MINUTES, math.ceil(reading + quiz))

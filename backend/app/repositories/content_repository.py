@@ -139,6 +139,21 @@ def find_duplicate_prompt(
     return None
 
 
+def count_approved_questions_by_subtopics(db: Session, subtopic_ids: list[int]) -> dict[int, int]:
+    """Conteo de preguntas aprobadas por subtema (una sola query agregada)."""
+    if not subtopic_ids:
+        return {}
+    rows = db.execute(
+        select(Question.subtopic_id, func.count(Question.id))
+        .where(
+            Question.subtopic_id.in_(subtopic_ids),
+            Question.status == QuestionStatus.APPROVED,
+        )
+        .group_by(Question.subtopic_id)
+    ).all()
+    return dict(rows)
+
+
 def count_questions_by_status_and_source(db: Session, topic_id: int) -> dict[int, dict[str, int]]:
     """Conteos por subtema de una unidad: {subtopic_id: {status/source: n}}.
 

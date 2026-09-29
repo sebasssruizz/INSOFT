@@ -98,7 +98,12 @@ def _student_course_summary(db: Session, student: User, course: Course) -> dict:
         "total_subtopics": total,
         "total_units": content_repo.count_course_topics(db, course.id),
         "estimated_minutes": sum(estimate_minutes(subtopic) for subtopic in subtopics),
-        "question_count": sum(len(subtopic.questions) for subtopic in subtopics),
+        "question_count": sum(
+            count
+            for count in content_repo.count_approved_questions_by_subtopics(
+                db, subtopic_ids
+            ).values()
+        ),
     }
 
 

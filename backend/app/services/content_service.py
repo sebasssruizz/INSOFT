@@ -78,6 +78,11 @@ def get_course_content(db: Session, user: User, course_id: int) -> list[dict]:
     result = []
     for course_topic in content_repo.get_course_topics(db, course_id):
         topic = course_topic.topic
+        topic_subtopics = sorted(topic.subtopics, key=lambda s: s.order)
+        # Una sola query agregada para los conteos del curso (evita N+1).
+        approved_counts = content_repo.count_approved_questions_by_subtopics(
+            db, [sub.id for sub in topic_subtopics]
+        )
         subtopics = [
             {
                 "id": sub.id,
@@ -86,9 +91,9 @@ def get_course_content(db: Session, user: User, course_id: int) -> list[dict]:
                 "order": sub.order,
                 "completed": sub.id in completed_ids,
                 "estimated_minutes": estimate_minutes(sub),
-                "question_count": len(content_repo.get_approved_questions_by_subtopic(db, sub.id)),
+                "question_count": approved_counts.get(sub.id, 0),
             }
-            for sub in sorted(topic.subtopics, key=lambda s: s.order)
+            for sub in topic_subtopics
         ]
         completed_count = sum(1 for s in subtopics if s["completed"])
         result.append(
