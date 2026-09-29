@@ -67,6 +67,24 @@ def assert_teacher_can_manage_subtopic(db: Session, teacher: User, subtopic_id: 
     return subtopic
 
 
+def assert_teacher_can_manage_topic(db: Session, teacher: User, topic_id: int) -> None:
+    """Autorización de gestión sobre una unidad completa (para generación IA)."""
+    if teacher.role != UserRole.TEACHER:
+        raise HTTPException(status_code=403, detail="Solo los profesores pueden gestionar preguntas.")
+    course_ids = [c.id for c in course_repo.get_courses_for_teacher(db, teacher.id)]
+    if not course_ids:
+        raise HTTPException(status_code=403, detail="No tienes cursos con esta unidad habilitada.")
+    has_access = db.scalar(
+        select(CourseTopic.id).where(
+            CourseTopic.course_id.in_(course_ids),
+            CourseTopic.topic_id == topic_id,
+            CourseTopic.enabled.is_(True),
+        )
+    )
+    if has_access is None:
+        raise HTTPException(status_code=403, detail="No tienes cursos con esta unidad habilitada.")
+
+
 def assert_teacher_can_manage_question(db: Session, teacher: User, question: Question) -> None:
     """Autorización de edición/borrado/revisión de UNA pregunta.
 
@@ -191,16 +209,7 @@ def get_topic_bank_summary(db: Session, teacher: User, topic_id: int) -> list[di
     if topic is None:
         raise HTTPException(status_code=404, detail="Unidad no encontrada.")
 
-    course_ids = [c.id for c in course_repo.get_courses_for_teacher(db, teacher.id)]
-    has_access = db.scalar(
-        select(CourseTopic.id).where(
-            CourseTopic.course_id.in_(course_ids),
-            CourseTopic.topic_id == topic_id,
-            CourseTopic.enabled.is_(True),
-        )
-    ) if course_ids else None
-    if has_access is None:
-        raise HTTPException(status_code=403, detail="No tienes cursos con esta unidad habilitada.")
+    assert_teacher_can_manage_topic(db, teacher, topic_id)
 
     counts = content_repo.count_questions_by_status_and_source(db, topic_id)
     summary = []
