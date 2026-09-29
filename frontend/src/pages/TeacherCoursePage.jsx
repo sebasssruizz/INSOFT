@@ -4,13 +4,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faArrowRight, faCheck, faCopy } from '@fortawesome/free-solid-svg-icons'
 
 import { Button } from '../components/ui/Button'
+import QuestionBank from '../components/teacher/QuestionBank'
 
 import { getCourse, getCourseStudents } from '../services/courseService'
+import { getCourseTopics } from '../services/contentService'
 
 export default function TeacherCoursePage() {
   const { courseId } = useParams()
   const [course, setCourse] = useState(null)
   const [students, setStudents] = useState([])
+  const [topics, setTopics] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -19,12 +22,14 @@ export default function TeacherCoursePage() {
     setLoading(true)
     setError(null)
     try {
-      const [courseData, studentsData] = await Promise.all([
+      const [courseData, studentsData, topicsData] = await Promise.all([
         getCourse(courseId),
         getCourseStudents(courseId),
+        getCourseTopics(courseId),
       ])
       setCourse(courseData)
       setStudents(studentsData)
+      setTopics(topicsData)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -186,6 +191,8 @@ export default function TeacherCoursePage() {
               </div>
             </div>
           )}
+
+          <QuestionBank courseId={courseId} topics={topics} />
         </>
       )}
     </div>
