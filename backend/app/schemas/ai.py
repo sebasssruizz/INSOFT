@@ -26,3 +26,22 @@ class AskResponse(BaseModel):
     chunks_usados: int = Field(
         ..., description="Número de chunks recuperados y usados como contexto"
     )
+
+class GenerateQuestionsRequest(BaseModel):
+    """Petición de generación de preguntas con IA (solo profesores).
+
+    Debe venir exactamente uno de `subtopic_id` o `topic_id`.
+    """
+
+    subtopic_id: int | None = None
+    topic_id: int | None = None
+    count: int = Field(default=3, ge=1, le=5, description="Cantidad a generar (1-5)")
+
+
+class GenerateQuestionsResponse(BaseModel):
+    """Resultado de la generación: preguntas IA creadas (pending)."""
+
+    generated: list
+    requested: int
+    created: int
+    warning: str | None = None

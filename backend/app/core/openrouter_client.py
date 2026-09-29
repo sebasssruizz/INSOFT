@@ -67,6 +67,7 @@ async def call_openrouter(
     system_prompt: str,
     user_content: str,
     max_tokens: int = 1200,
+    temperature: float | None = None,
 ) -> str:
     """Llama a OpenRouter Chat Completions con rate limiting y reintento.
 
@@ -75,6 +76,8 @@ async def call_openrouter(
         system_prompt: Prompt de sistema (rol "system").
         user_content: Contenido del usuario (rol "user").
         max_tokens: Tokens máximos de respuesta.
+        temperature: Opcional. Si no se pasa, no se envía (comportamiento
+            por defecto del proveedor). Retrocompatible con usos existentes.
 
     Returns:
         Contenido de la respuesta (string).
@@ -105,6 +108,8 @@ async def call_openrouter(
         ],
         "max_tokens": max_tokens,
     }
+    if temperature is not None:
+        payload["temperature"] = temperature
 
     timeout = httpx.Timeout(20.0, connect=5.0)
 
