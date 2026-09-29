@@ -121,25 +121,22 @@ def find_duplicate_prompt(
 ) -> Question | None:
     """Pregunta existente en el subtema con el mismo enunciado normalizado.
 
-    Ignora las rechazadas (se pueden re-crear versiones nuevas). Normalización
-    compartida: minúsculas + espacios colapsados + sin puntuación final (la
-    hace `normalize_prompt` en services/question_service.py).
+    Ignora las rechazadas (se pueden re-crear versiones nuevas). A escala de
+    subtema (pocas preguntas) la comparación normalizada se hace en Python
+    con la misma función que normaliza el nuevo enunciado.
     """
+    from app.services.question_service import normalize_prompt
+
     stmt = select(Question).where(
         Question.subtopic_id == subtopic_id,
         Question.status != QuestionStatus.REJECTED,
-        func.lower(
-            func.trim(
-                func.replace(
-                    func.replace(func.replace(func.trim(Question.prompt), "  ", " "), "  ", " "), "  ", " "
-                )
-            )
-        )
-        == normalized_prompt.lower(),
     )
     if exclude_question_id is not None:
         stmt = stmt.where(Question.id != exclude_question_id)
-    return db.scalar(stmt)
+    for question in db.scalars(stmt).all():
+        if normalize_prompt(question.prompt) == normalized_prompt:
+            return question
+    return None
 
 
 def count_questions_by_status_and_source(db: Session, topic_id: int) -> dict[int, dict[str, int]]:

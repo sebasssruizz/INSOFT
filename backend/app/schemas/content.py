@@ -42,6 +42,38 @@ class QuestionTeacherRead(BaseModel):
     is_owner: bool = False
 
 
+class TeacherQuestionCreate(BaseModel):
+    """Creación manual de una pregunta por el profesor."""
+
+    prompt: str
+    options: list[str]
+    correct_index: int
+    explanation: str | None = None
+
+
+class TeacherQuestionUpdate(BaseModel):
+    """Edición parcial de una pregunta propia."""
+
+    prompt: str | None = None
+    options: list[str] | None = None
+    correct_index: int | None = None
+    explanation: str | None = None
+
+
+class QuestionReviewAction(BaseModel):
+    """Aprobar o rechazar una pregunta IA pendiente."""
+
+    action: str  # "approve" | "reject" (validado en el servicio)
+
+
+class DeleteQuestionResponse(BaseModel):
+    """Resultado del borrado (puede archivarse si tiene respuestas)."""
+
+    deleted: bool
+    archived: bool
+    detail: str | None = None
+
+
 class SubtopicListItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
