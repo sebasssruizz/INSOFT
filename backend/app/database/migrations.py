@@ -15,7 +15,7 @@ NEW_COLUMNS = {
 
 
 def ensure_schema_compatibility() -> None:
-    inspector = inspect(engine)
+    inspector = inspect(engine)  # sin caché de reflexión: ve el estado actual del esquema
     existing_tables = set(inspector.get_table_names())
     with engine.begin() as conn:
         # Habilita la extensión pgvector en PostgreSQL (requerida por las
