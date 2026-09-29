@@ -1,7 +1,8 @@
-from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
+from app.models.question_meta import QuestionSource, QuestionStatus
 
 
 class Topic(Base):
@@ -42,9 +43,14 @@ class Question(Base):
 
     Igual que el resto del contenido académico, es única y centralizada: la
     comparten todos los cursos que habilitan el subtema.
+
+    Procedencia (`source`): oficial (importador), docente (creada a mano) o
+    IA (generada; siempre nace `pending` hasta que un profesor la apruebe).
+    Solo las preguntas `approved` llegan a los estudiantes.
     """
 
     __tablename__ = "questions"
+    __table_args__ = (Index("ix_questions_subtopic_status", "subtopic_id", "status"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     subtopic_id: Mapped[int] = mapped_column(ForeignKey("subtopics.id"), nullable=False)
@@ -53,6 +59,15 @@ class Question(Base):
     correct_index: Mapped[int] = mapped_column(Integer, nullable=False)
     explanation: Mapped[str] = mapped_column(Text, nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    source: Mapped[str] = mapped_column(
+        String(20), default=QuestionSource.OFFICIAL, server_default=QuestionSource.OFFICIAL, nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), default=QuestionStatus.APPROVED, server_default=QuestionStatus.APPROVED, nullable=False
+    )
+    created_by: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     subtopic = relationship("Subtopic", back_populates="questions")
 

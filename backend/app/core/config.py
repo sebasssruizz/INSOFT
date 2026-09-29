@@ -62,6 +62,13 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-1.5-flash"
     AI_PROVIDER: str = "openrouter"  # "openrouter" o "gemini"
 
+    # Generación de preguntas con IA (solo profesores)
+    AI_QUESTION_RATE_LIMIT: str = "5/hour"
+    AI_QUESTION_MAX_ATTEMPTS: int = 2
+
+    # Tope de preguntas por quiz del estudiante (muestreo aleatorio si hay más)
+    QUIZ_MAX_QUESTIONS: int = 10
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:

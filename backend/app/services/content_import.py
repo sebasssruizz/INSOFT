@@ -200,28 +200,53 @@ def sync_questions(
     *,
     prune: bool = True,
 ) -> tuple[int, int]:
-    """Alinea las preguntas del subtema con `desired`, creando/actualizando por orden."""
+    """Alinea las preguntas OFICIALES del subtema con `desired`.
+
+    Solo compara/actualiza/borra preguntas con `source='official'`: las
+    preguntas de profesores (`teacher`) y de IA (`ai`) del mismo subtema son
+    intocables para el importador, aunque el documento no las mencione.
+    Las nuevas se crean con `order` continuando después de la máxima existente
+    (evita chocar con las preguntas teacher/ai ya presentes).
+    """
+    from app.models.question_meta import QuestionSource, QuestionStatus
+
     created = 0
     updated = 0
-    current = sorted(subtopic.questions, key=lambda question: question.order)
+    official = sorted(
+        (q for q in subtopic.questions if q.source == QuestionSource.OFFICIAL),
+        key=lambda question: question.order,
+    )
 
-    for order, question_data in enumerate(desired):
-        if order < len(current):
-            question = current[order]
+    for offset, question_data in enumerate(desired):
+        if offset < len(official):
+            question = official[offset]
             updated += 1
         else:
-            question = Question(subtopic=subtopic)
+            question = Question(
+                subtopic=subtopic,
+                source=QuestionSource.OFFICIAL,
+                status=QuestionStatus.APPROVED,
+                created_by=None,
+            )
             db.add(question)
             created += 1
         question.prompt = question_data["prompt"]
         question.options = question_data["options"]
         question.correct_index = question_data["correct_index"]
         question.explanation = question_data["explanation"]
-        question.order = order
+        question.order = offset
 
     if prune:
-        for stale in current[len(desired) :]:
+        for stale in official[len(desired) :]:
             db.delete(stale)
+    # Reordena las no oficiales (teacher/ai) para que queden después de las
+    # oficiales: los `order` de las oficiales son 0..len(desired)-1.
+    extras = sorted(
+        (q for q in subtopic.questions if q.source != QuestionSource.OFFICIAL),
+        key=lambda question: question.order,
+    )
+    for shift, extra in enumerate(extras):
+        extra.order = len(desired) + shift
     return created, updated
 
 

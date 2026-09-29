@@ -6,7 +6,8 @@ class QuestionRead(BaseModel):
 
     La corrección se resuelve en el cliente para dar retroalimentación
     inmediata: son preguntas formativas de autoevaluación, no un examen
-    calificado.
+    calificado. NO expone source/status/created_by: los estudiantes solo
+    reciben preguntas aprobadas.
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -18,6 +19,27 @@ class QuestionRead(BaseModel):
     correct_index: int
     explanation: str
     order: int
+
+
+class QuestionTeacherRead(BaseModel):
+    """Pregunta vista desde el panel del profesor (banco de preguntas).
+
+    Incluye procedencia, estado y autoría para los flujos de revisión.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    subtopic_id: int
+    prompt: str
+    options: list[str]
+    correct_index: int
+    explanation: str
+    order: int
+    source: str
+    status: str
+    created_by: int | None
+    is_owner: bool = False
 
 
 class SubtopicListItem(BaseModel):

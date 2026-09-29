@@ -1,7 +1,8 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.content import CourseTopic, Subtopic, Topic
+from app.models.content import CourseTopic, Question, Subtopic, Topic
+from app.models.question_meta import QuestionSource, QuestionStatus
 
 
 def get_all_topics(db: Session) -> list[Topic]:
@@ -75,3 +76,97 @@ def get_subtopic_ids_for_course(db: Session, course_id: int) -> list[int]:
         .where(CourseTopic.course_id == course_id, CourseTopic.enabled.is_(True))
     )
     return list(db.scalars(stmt).all())
+
+
+def get_approved_questions_by_subtopic(db: Session, subtopic_id: int) -> list[Question]:
+    """Preguntas visibles para estudiantes de un subtema (solo approved).
+
+    Filtro centralizado: TODO listado para estudiantes debe pasar por aquí
+    (oficiales + docentes + IA aprobadas). Orden por `order` del subtema.
+    """
+    return list(
+        db.scalars(
+            select(Question)
+            .where(Question.subtopic_id == subtopic_id, Question.status == QuestionStatus.APPROVED)
+            .order_by(Question.order)
+        ).all()
+    )
+
+
+def get_approved_questions_by_topic(db: Session, topic_id: int) -> list[Question]:
+    """Preguntas aprobadas de todos los subtemas de una unidad, ordenadas."""
+    return list(
+        db.scalars(
+            select(Question)
+            .join(Subtopic, Subtopic.id == Question.subtopic_id)
+            .where(Subtopic.topic_id == topic_id, Question.status == QuestionStatus.APPROVED)
+            .order_by(Subtopic.order, Question.order)
+        ).all()
+    )
+
+
+def next_question_order(db: Session, subtopic_id: int) -> int:
+    """Siguiente valor de `order` para una pregunta nueva del subtema.
+
+    Único punto de cálculo (creación manual, generación IA e importador).
+    """
+    current_max = db.scalar(
+        select(func.max(Question.order)).where(Question.subtopic_id == subtopic_id)
+    )
+    return (current_max + 1) if current_max is not None else 0
+
+
+def find_duplicate_prompt(
+    db: Session, subtopic_id: int, normalized_prompt: str, exclude_question_id: int | None = None
+) -> Question | None:
+    """Pregunta existente en el subtema con el mismo enunciado normalizado.
+
+    Ignora las rechazadas (se pueden re-crear versiones nuevas). Normalización
+    compartida: minúsculas + espacios colapsados + sin puntuación final (la
+    hace `normalize_prompt` en services/question_service.py).
+    """
+    stmt = select(Question).where(
+        Question.subtopic_id == subtopic_id,
+        Question.status != QuestionStatus.REJECTED,
+        func.lower(
+            func.trim(
+                func.replace(
+                    func.replace(func.replace(func.trim(Question.prompt), "  ", " "), "  ", " "), "  ", " "
+                )
+            )
+        )
+        == normalized_prompt.lower(),
+    )
+    if exclude_question_id is not None:
+        stmt = stmt.where(Question.id != exclude_question_id)
+    return db.scalar(stmt)
+
+
+def count_questions_by_status_and_source(db: Session, topic_id: int) -> dict[int, dict[str, int]]:
+    """Conteos por subtema de una unidad: {subtopic_id: {status/source: n}}.
+
+    Una sola query agregada (GROUP BY) para alimentar el resumen del panel
+    del profesor sin N+1.
+    """
+    rows = db.execute(
+        select(
+            Question.subtopic_id,
+            Question.status,
+            Question.source,
+            func.count(Question.id),
+        )
+        .join(Subtopic, Subtopic.id == Question.subtopic_id)
+        .where(Subtopic.topic_id == topic_id)
+        .group_by(Question.subtopic_id, Question.status, Question.source)
+    ).all()
+
+    counts: dict[int, dict[str, int]] = {}
+    for subtopic_id, status, source, total in rows:
+        bucket = counts.setdefault(subtopic_id, {})
+        bucket[status] = bucket.get(status, 0) + total
+        bucket[source] = bucket.get(source, 0) + total
+    return counts
+
+
+def get_question(db: Session, question_id: int) -> Question | None:
+    return db.get(Question, question_id)

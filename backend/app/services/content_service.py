@@ -3,8 +3,11 @@
 El contenido es ÚNICO y centralizado: los cursos referencian los mismos temas
 mediante CourseTopic, sin duplicar información médica.
 """
+import random
+
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.user import User, UserRole
 from app.repositories import content_repository as content_repo
 from app.repositories import progress_repository as progress_repo
@@ -14,6 +17,11 @@ from app.services.study_time import estimate_minutes
 
 
 def _serialize_question(question) -> dict:
+    """Serializa una pregunta para ESTUDIANTES: solo campos del quiz.
+
+    No expone source/status/created_by: los estudiantes solo ven preguntas
+    aprobadas (el filtro vive en content_repository).
+    """
     return {
         "id": question.id,
         "subtopic_id": question.subtopic_id,
@@ -23,6 +31,36 @@ def _serialize_question(question) -> dict:
         "explanation": question.explanation,
         "order": question.order,
     }
+
+
+def serialize_question_for_teacher(question, teacher_id: int) -> dict:
+    """Serializa una pregunta para el panel del profesor (banco de preguntas)."""
+    return {
+        "id": question.id,
+        "subtopic_id": question.subtopic_id,
+        "prompt": question.prompt,
+        "options": question.options,
+        "correct_index": question.correct_index,
+        "explanation": question.explanation,
+        "order": question.order,
+        "source": question.source,
+        "status": question.status,
+        "created_by": question.created_by,
+        "is_owner": question.created_by == teacher_id,
+    }
+
+
+def _sample_questions(questions: list) -> list:
+    """Aplica el tope del quiz (QUIZ_MAX_QUESTIONS).
+
+    Si hay más preguntas aprobadas que el tope, toma una muestra aleatoria y
+    la devuelve ordenada por `order` para mantener el recorrido estable.
+    """
+    max_questions = settings.QUIZ_MAX_QUESTIONS
+    if max_questions <= 0 or len(questions) <= max_questions:
+        return list(questions)
+    sample = random.sample(questions, max_questions)
+    return sorted(sample, key=lambda q: q.order)
 
 
 def get_course_content(db: Session, user: User, course_id: int) -> list[dict]:
@@ -48,7 +86,7 @@ def get_course_content(db: Session, user: User, course_id: int) -> list[dict]:
                 "order": sub.order,
                 "completed": sub.id in completed_ids,
                 "estimated_minutes": estimate_minutes(sub),
-                "question_count": len(sub.questions),
+                "question_count": len(content_repo.get_approved_questions_by_subtopic(db, sub.id)),
             }
             for sub in sorted(topic.subtopics, key=lambda s: s.order)
         ]
@@ -83,7 +121,9 @@ def get_subtopic_detail(db: Session, user: User, course_id: int, subtopic_id: in
         record = progress_repo.get_record(db, user.id, course_id, subtopic.id)
         completed = bool(record and record.completed)
 
-    questions = sorted(subtopic.questions, key=lambda q: q.order)
+    # Solo preguntas aprobadas (oficiales + docentes + IA aprobadas), con tope.
+    questions = content_repo.get_approved_questions_by_subtopic(db, subtopic.id)
+    questions = _sample_questions(questions)
     return {
         "id": subtopic.id,
         "topic_id": subtopic.topic_id,
@@ -107,7 +147,7 @@ def get_topic_questions(db: Session, user: User, course_id: int, topic_id: int) 
     if course_topic is None:
         raise NotFoundError("Unidad no encontrada en este curso.")
 
-    questions = []
-    for subtopic in sorted(course_topic.topic.subtopics, key=lambda s: s.order):
-        questions.extend(sorted(subtopic.questions, key=lambda q: q.order))
+    # Solo preguntas aprobadas (oficiales + docentes + IA aprobadas), con tope.
+    questions = content_repo.get_approved_questions_by_topic(db, topic_id)
+    questions = _sample_questions(questions)
     return [_serialize_question(question) for question in questions]
