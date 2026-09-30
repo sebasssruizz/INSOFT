@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     # Tope de preguntas por quiz del estudiante (muestreo aleatorio si hay más)
     QUIZ_MAX_QUESTIONS: int = 10
 
+    # Respuestas de quiz calificadas en servidor (por usuario; default alto)
+    QUIZ_ANSWER_RATE_LIMIT: str = "120/hour"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:

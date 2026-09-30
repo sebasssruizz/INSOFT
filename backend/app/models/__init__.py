@@ -4,6 +4,7 @@ from app.models.content import Topic, Subtopic, CourseTopic, Question
 from app.models.progress import Progress
 from app.models.subtopic_chunk import SubtopicChunk
 from app.models.ai_query import AiQuery
+from app.models.question_answer import QuestionAnswer
 
 __all__ = [
     "User",
@@ -18,4 +19,5 @@ __all__ = [
     "Progress",
     "SubtopicChunk",
     "AiQuery",
+    "QuestionAnswer",
 ]

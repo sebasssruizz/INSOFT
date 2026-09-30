@@ -363,7 +363,12 @@ def _create_ai_pending(client, teacher, subtopic_id, prompt):
     return qid
 
 
-def test_review_aprobar_hace_visible(client, teacher, student, subtopic_id):
+def test_review_aprobar_hace_visible(client, teacher, student, subtopic_id, monkeypatch):
+    # Sin tope: el muestreo aleatorio (QUIZ_MAX_QUESTIONS) podía excluir la
+    # pregunta recién aprobada de la respuesta y hacer el test intermitente.
+    from app.core.config import settings as _settings
+
+    monkeypatch.setattr(_settings, "QUIZ_MAX_QUESTIONS", 0)
     prompt = "¿Pregunta IA por aprobar?"
     qid = _create_ai_pending(client, teacher, subtopic_id, prompt)
 

@@ -7,12 +7,14 @@ import Quiz from '../../components/course/Quiz'
 import { Button } from '../../components/ui/Button'
 import { splitUnitName } from '../../lib/curriculum'
 import { getTopicQuestions } from '../../services/contentService'
+import { newQuizAttemptId, submitQuizAnswer } from '../../services/quizService'
 import { useCourse } from '../../hooks/useCourse'
 
 export default function UnitQuizPage() {
   const { courseId, topicId } = useParams()
   const { topics } = useCourse()
   const [questions, setQuestions] = useState([])
+  const [attemptId, setAttemptId] = useState(() => newQuizAttemptId())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -92,6 +94,10 @@ export default function UnitQuizPage() {
         {!loading && !error && (
           <Quiz
             questions={questions}
+            onAnswer={(questionId, selectedIndex) =>
+              submitQuizAnswer({ questionId, selectedIndex, attemptId })
+            }
+            onRestartAttempt={() => setAttemptId(newQuizAttemptId())}
             exit={
               <Link
                 to={`/courses/${courseId}`}

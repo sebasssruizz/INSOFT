@@ -17,6 +17,7 @@ import { Meta } from '../../components/ui/Meta'
 import { cn } from '../../lib/utils'
 import { formatDuration, splitUnitName } from '../../lib/curriculum'
 import { getSubtopic } from '../../services/contentService'
+import { newQuizAttemptId, submitQuizAnswer } from '../../services/quizService'
 import { useAuth } from '../../hooks/useAuth'
 import { useCourse } from '../../hooks/useCourse'
 
@@ -87,6 +88,20 @@ export default function SubtopicPage() {
   const [error, setError] = useState(null)
   const [quizOpen, setQuizOpen] = useState(false)
   const [quizScore, setQuizScore] = useState(null)
+  // Un intento = un quiz: todas las respuestas comparten attempt_id.
+  const [quizAttemptId, setQuizAttemptId] = useState(null)
+
+  const startQuiz = () => {
+    setQuizAttemptId(newQuizAttemptId())
+    setQuizOpen(true)
+  }
+
+  const answerQuestion = (questionId, selectedIndex) =>
+    submitQuizAnswer({
+      questionId,
+      selectedIndex,
+      attemptId: quizAttemptId ?? newQuizAttemptId(),
+    })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -236,7 +251,7 @@ export default function SubtopicPage() {
                   {questions.length} preguntas sobre este subtema, con explicación en cada una.
                 </p>
               </div>
-              <Button onClick={() => setQuizOpen(true)} className="mt-4 w-full sm:mt-0 sm:w-auto">
+              <Button onClick={startQuiz} className="mt-4 w-full sm:mt-0 sm:w-auto">
                 Empezar el repaso
               </Button>
             </div>
@@ -247,6 +262,8 @@ export default function SubtopicPage() {
               </h2>
               <Quiz
                 questions={questions}
+                onAnswer={answerQuestion}
+                onRestartAttempt={() => setQuizAttemptId(newQuizAttemptId())}
                 onFinish={(result) => setQuizScore(result.score)}
                 exit={
                   <span className="flex shrink-0 items-center gap-4">

@@ -130,10 +130,10 @@ function Results({ answers, questions, onRestart, footer, exit }) {
                   </p>
                   <p className="mt-3 flex items-start gap-2 text-sm text-correct-700">
                     <FontAwesomeIcon icon={faCheck} className="mt-1 shrink-0" aria-hidden="true" />
-                    {answer.question.options[answer.question.correct_index]}
+                    {answer.question.options[answer.correct_index]}
                   </p>
                   <p className="mt-2.5 text-sm leading-relaxed text-ink-600">
-                    {answer.question.explanation}
+                    {answer.explanation}
                   </p>
                 </div>
               ))}
@@ -147,15 +147,18 @@ function Results({ answers, questions, onRestart, footer, exit }) {
 /**
  * Repaso de opción múltiple con retroalimentación inmediata.
  *
- * El valor formativo está en la explicación que aparece tras responder, no en
- * la nota: por eso se muestra siempre, se acierte o no, y no se puede cambiar
+ * La calificación ocurre en el servidor: al elegir una opción se envía
+ * `onAnswer(questionId, optionIndex)` (que registra la respuesta en el
+ * intento actual) y el feedback llega en su respuesta. No se puede cambiar
  * la respuesta una vez enviada.
  */
-export default function Quiz({ questions, onFinish, footer, exit }) {
+export default function Quiz({ questions, onAnswer, onFinish, onRestartAttempt, footer, exit }) {
   const [index, setIndex] = useState(0)
   const [chosen, setChosen] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const [answers, setAnswers] = useState([])
   const [finished, setFinished] = useState(false)
+  const [sendError, setSendError] = useState(false)
 
   const question = questions[index]
   const isLast = index === questions.length - 1
@@ -169,15 +172,34 @@ export default function Quiz({ questions, onFinish, footer, exit }) {
     setChosen(null)
     setAnswers([])
     setFinished(false)
+    setSendError(false)
+    // Nuevo intento: el attempt_id cambia para no chocar con la idempotencia.
+    onRestartAttempt?.()
   }
 
-  const choose = (optionIndex) => {
-    if (chosen !== null) return
+  const choose = async (optionIndex) => {
+    if (chosen !== null || submitting) return
     setChosen(optionIndex)
-    setAnswers((previous) => [
-      ...previous,
-      { chosen: optionIndex, correct: optionIndex === question.correct_index },
-    ])
+    setSubmitting(true)
+    setSendError(false)
+    try {
+      const result = await onAnswer(question.id, optionIndex)
+      setAnswers((previous) => [
+        ...previous,
+        {
+          chosen: optionIndex,
+          correct: result.is_correct,
+          correct_index: result.correct_index,
+          explanation: result.explanation,
+        },
+      ])
+    } catch (err) {
+      // Error de red/servidor: permite reintentar (la respuesta no quedó guardada).
+      setChosen(null)
+      setSendError(true)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const advance = () => {
@@ -215,8 +237,9 @@ export default function Quiz({ questions, onFinish, footer, exit }) {
     )
   }
 
-  const answered = chosen !== null
-  const wasRight = answered && chosen === question.correct_index
+  const answered = chosen !== null && answers.length > index
+  const current = answers[index] || null
+  const wasRight = answered && current.correct
 
   return (
     <div>
@@ -244,7 +267,7 @@ export default function Quiz({ questions, onFinish, footer, exit }) {
             let state = 'idle'
             if (answered) {
               if (optionIndex === chosen) state = wasRight ? 'chosen-right' : 'chosen-wrong'
-              else if (optionIndex === question.correct_index) state = 'revealed'
+              else if (optionIndex === current.correct_index) state = 'revealed'
               else state = 'muted'
             }
             return (
@@ -253,12 +276,20 @@ export default function Quiz({ questions, onFinish, footer, exit }) {
                 label={LETTERS[optionIndex]}
                 text={option}
                 state={state}
-                disabled={answered}
+                disabled={answered || submitting}
                 onSelect={() => choose(optionIndex)}
               />
             )
           })}
         </div>
+
+        {sendError && !answered && (
+          <div className="animate-rise-in mt-5 rounded-xl border border-wrong-200 bg-wrong-50 p-5">
+            <p className="text-sm font-medium text-wrong-700">
+              No se pudo registrar tu respuesta. Revisa tu conexión y elige una opción de nuevo.
+            </p>
+          </div>
+        )}
 
         {answered && (
           <div className="animate-rise-in mt-5 rounded-xl border border-blue-200 bg-blue-50 p-5">
@@ -267,7 +298,7 @@ export default function Quiz({ questions, onFinish, footer, exit }) {
               {wasRight ? 'Correcto' : 'Por qué la respuesta es otra'}
             </p>
             <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-700">
-              {question.explanation}
+              {current.explanation}
             </p>
             <Button onClick={advance} className="group/btn mt-5" iconRight={faArrowRight}>
               {isLast ? 'Ver resultado' : 'Siguiente pregunta'}

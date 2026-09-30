@@ -29,6 +29,8 @@ NEW_COLUMNS = {
 NEW_INDEXES = {
     "ix_questions_subtopic_status": ("questions", "CREATE INDEX ix_questions_subtopic_status ON questions (subtopic_id, status)"),
     "ix_ai_queries_session_id": ("ai_queries", "CREATE INDEX ix_ai_queries_session_id ON ai_queries (session_id)"),
+    "ix_question_answers_user_subtopic": ("question_answers", "CREATE INDEX ix_question_answers_user_subtopic ON question_answers (user_id, subtopic_id)"),
+    "ix_question_answers_question": ("question_answers", "CREATE INDEX ix_question_answers_question ON question_answers (question_id)"),
 }
 
 
@@ -40,6 +42,32 @@ def ensure_schema_compatibility() -> None:
         # columnas `vector` de subtopic_chunks). No-op en SQLite/tests.
         if engine.dialect.name == "postgresql":
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+
+        # Tabla nueva de respuestas de quiz (aditiva; nunca borra datos).
+        # create_all ya cubre arranques limpios; este CREATE cubre bases de
+        # datos preexistentes con datos (idempotente via chequeo previo).
+        if "question_answers" not in existing_tables and "users" in existing_tables and "questions" in existing_tables:
+            if engine.dialect.name == "postgresql":
+                pk = "SERIAL PRIMARY KEY"
+                answered_at = "TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()"
+            else:
+                pk = "INTEGER PRIMARY KEY AUTOINCREMENT"
+                answered_at = "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"
+            conn.execute(text(f"""
+                CREATE TABLE question_answers (
+                    id {pk},
+                    user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                    question_id INTEGER NOT NULL REFERENCES questions (id) ON DELETE CASCADE,
+                    subtopic_id INTEGER NOT NULL,
+                    attempt_id VARCHAR(36) NOT NULL,
+                    selected_index INTEGER NOT NULL,
+                    is_correct BOOLEAN NOT NULL,
+                    answered_at {answered_at},
+                    CONSTRAINT uq_attempt_question UNIQUE (attempt_id, question_id)
+                )
+            """))
+            inspector = inspect(engine)
+            existing_tables = set(inspector.get_table_names())
         for (table, column), ddl in NEW_COLUMNS.items():
             if table not in existing_tables:
                 continue

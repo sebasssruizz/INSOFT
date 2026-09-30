@@ -348,3 +348,75 @@ def stats_subtopics_endpoint(
         to_date=_parse_date(to_date, "to_date"),
     )
     return {"subtopics": subtopics, "total": total}
+
+
+# ── Exportación CSV de estadísticas de IA ──────────────────────────────────
+
+
+def _escape_csv_cell(value) -> str:
+    """Evita inyección de fórmulas en Excel: prefija ' a = + - @ iniciales."""
+    text = "" if value is None else str(value)
+    if text.startswith(("=", "+", "-", "@")):
+        return "'" + text
+    return text
+
+
+def _csv_response(rows, headers: list[str]):
+    import csv
+    import io
+
+    from fastapi.responses import StreamingResponse
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(headers)
+    for row in rows:
+        writer.writerow([_escape_csv_cell(cell) for cell in row])
+    buffer.seek(0)
+    return StreamingResponse(
+        iter([buffer.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="estadisticas_ia.csv"'},
+    )
+
+
+@router.get("/stats/export.csv", tags=["ai"])
+def ai_stats_export_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    subtopic_id: int | None = None,
+    from_date: str | None = None,
+    to_date: str | None = None,
+):
+    """CSV descargable con las consultas de IA de estudiantes de sus cursos."""
+    _require_teacher_role(current_user)
+    queries, _ = ai_query_repo.get_all_filtered(
+        db,
+        teacher_id=current_user.id,
+        subtopic_id=subtopic_id,
+        from_date=_parse_date(from_date, "from_date"),
+        to_date=_parse_date(to_date, "to_date"),
+        limit=10000,
+    )
+    headers = [
+        "fecha",
+        "pregunta",
+        "respuesta",
+        "subtopic_id",
+        "session_id",
+        "modelo",
+        "tiempo_respuesta_ms",
+    ]
+    rows = (
+        [
+            q.created_at.isoformat(),
+            q.question_original,
+            q.respuesta,
+            q.subtopic_id,
+            str(q.session_id) if q.session_id else None,
+            q.model_used,
+            q.response_time_ms,
+        ]
+        for q in queries
+    )
+    return _csv_response(rows, headers)

@@ -301,8 +301,10 @@ def delete_question(db: Session, teacher: User, question_id: int) -> dict:
 
 
 def _question_has_student_answers(db: Session, question_id: int) -> bool:
-    """Chequea dependencias futuras (hoy ninguna tabla referencia questions)."""
-    return False
+    """True si hay respuestas de estudiantes (FK question_answers → questions)."""
+    from app.repositories import quiz_answer_repository as quiz_answer_repo
+
+    return quiz_answer_repo.question_has_answers(db, question_id)
 
 
 def review_ai_question(

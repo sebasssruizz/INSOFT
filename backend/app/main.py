@@ -9,7 +9,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy.exc import OperationalError
 
 from app.api.router import api_router
-from app.api.routes.ai import limiter
+from app.api.routes.ai import limiter as ai_limiter
 from app.core.config import settings
 from app.database.base import Base
 from app.database.migrations import ensure_schema_compatibility
@@ -54,7 +54,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    app.state.limiter = limiter
+    # slowapi: el estado del app referencia el limiter principal; cada router
+    # (ai, quiz) usa su propio limiter en sus decoradores y así se mantiene el
+    # registro de límites separado por endpoint.
+    app.state.limiter = ai_limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     app.add_middleware(

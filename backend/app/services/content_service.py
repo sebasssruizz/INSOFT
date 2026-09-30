@@ -19,16 +19,15 @@ from app.services.study_time import estimate_minutes
 def _serialize_question(question) -> dict:
     """Serializa una pregunta para ESTUDIANTES: solo campos del quiz.
 
-    No expone source/status/created_by: los estudiantes solo ven preguntas
-    aprobadas (el filtro vive en content_repository).
+    No expone source/status/created_by ni la respuesta correcta
+    (correct_index/explanation): el envío se califica en el servidor vía
+    POST /api/quiz/answers y solo ahí se revelan.
     """
     return {
         "id": question.id,
         "subtopic_id": question.subtopic_id,
         "prompt": question.prompt,
         "options": question.options,
-        "correct_index": question.correct_index,
-        "explanation": question.explanation,
         "order": question.order,
     }
 

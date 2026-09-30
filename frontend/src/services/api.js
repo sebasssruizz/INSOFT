@@ -40,6 +40,27 @@ export class ApiError extends Error {
   }
 }
 
+/** Descarga un CSV del backend con el token de sesión. */
+export async function downloadCsv(path, filename) {
+  const headers = {}
+  const token = session.getToken()
+  if (token) headers.Authorization = `Bearer ${token}`
+  const response = await fetch(`${API_URL}/api${path}`, { headers })
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new ApiError(response.status, data.detail || 'No se pudo descargar el CSV')
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export async function apiFetch(path, { method = 'GET', body } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   const token = session.getToken()

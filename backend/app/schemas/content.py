@@ -2,12 +2,12 @@ from pydantic import BaseModel, ConfigDict
 
 
 class QuestionRead(BaseModel):
-    """Pregunta de repaso de un subtema, con su respuesta y explicación.
+    """Pregunta de repaso para el estudiante (sin la respuesta correcta).
 
-    La corrección se resuelve en el cliente para dar retroalimentación
-    inmediata: son preguntas formativas de autoevaluación, no un examen
-    calificado. NO expone source/status/created_by: los estudiantes solo
-    reciben preguntas aprobadas.
+    El enunciado y las opciones viajan al cliente; la calificación ocurre en
+    el servidor (POST /api/quiz/answers), que devuelve is_correct, la correcta
+    y la explicación tras responder. NO expone source/status/created_by:
+    los estudiantes solo reciben preguntas aprobadas.
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -16,8 +16,6 @@ class QuestionRead(BaseModel):
     subtopic_id: int
     prompt: str
     options: list[str]
-    correct_index: int
-    explanation: str
     order: int
 
 
