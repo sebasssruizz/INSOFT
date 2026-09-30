@@ -4,6 +4,7 @@ import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 
 import { Button } from '../ui/Button'
 import { cn } from '../../lib/utils'
+import { optionDraftError, validateQuestionDraft } from '../../lib/questionValidation'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 const EMPTY_OPTIONS = ['', '', '', '']
@@ -25,21 +26,10 @@ export default function QuestionForm({ initial, onSubmit, onCancel, submitting, 
   const [explanation, setExplanation] = useState(initial?.explanation ?? '')
   const [showPreview, setShowPreview] = useState(false)
 
-  const validation = useMemo(() => {
-    const trimmed = prompt.trim()
-    const cleaned = options.map((option) => option.trim())
-    const filled = cleaned.every((option) => option.length > 0)
-    const unique = new Set(cleaned.map((option) => option.toLowerCase())).size === 4
-    const hasCorrect = correctIndex !== null
-    return {
-      trimmed,
-      cleaned,
-      promptOk: trimmed.length >= 5 && trimmed.length <= 500,
-      optionsOk: filled && unique,
-      hasCorrect,
-      valid: trimmed.length >= 5 && trimmed.length <= 500 && filled && unique && hasCorrect,
-    }
-  }, [prompt, options, correctIndex])
+  const validation = useMemo(
+    () => validateQuestionDraft({ prompt, options, correctIndex }),
+    [prompt, options, correctIndex],
+  )
 
   const setOption = (index, value) => {
     setOptions((current) => current.map((option, i) => (i === index ? value : option)))
@@ -56,15 +46,7 @@ export default function QuestionForm({ initial, onSubmit, onCancel, submitting, 
     })
   }
 
-  const optionError = (index) => {
-    const value = options[index]?.trim() ?? ''
-    if (!value) return 'Esta opción es obligatoria.'
-    const duplicate = options.some(
-      (option, i) => i !== index && option.trim().toLowerCase() === value.toLowerCase(),
-    )
-    if (duplicate) return 'Esta opción está repetida.'
-    return null
-  }
+  const optionError = (index) => optionDraftError(options, index)
 
   return (
     <form

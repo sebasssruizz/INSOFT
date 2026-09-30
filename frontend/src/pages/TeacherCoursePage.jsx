@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faArrowRight, faCheck, faCopy } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowLeft,
+  faArrowRight,
+  faCheck,
+  faCopy,
+  faPlus,
+} from '@fortawesome/free-solid-svg-icons'
 
 import { Button } from '../components/ui/Button'
+import AddQuestionWizard from '../components/teacher/AddQuestionWizard'
 import QuestionBank from '../components/teacher/QuestionBank'
 
 import { getCourse, getCourseStudents } from '../services/courseService'
@@ -17,6 +24,10 @@ export default function TeacherCoursePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
+  // Asistente "Agregar pregunta" a nivel de curso (independiente del banco).
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [wizardInitialSubtopic, setWizardInitialSubtopic] = useState(null)
+  const [wizardRefreshSignal, setWizardRefreshSignal] = useState(0)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -111,20 +122,30 @@ export default function TeacherCoursePage() {
             </p>
           </div>
 
-          <div className="mt-10 flex flex-wrap items-baseline justify-between gap-4">
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">
               Estudiantes inscritos
               <span className="tabular ml-2 font-sans text-base font-medium text-ink-400">
                 {students.length}
               </span>
             </h2>
-            <Link
-              to={`/courses/${courseId}`}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-800 transition-colors duration-150 hover:text-blue-800"
-            >
-              Ver el contenido del curso
-              <FontAwesomeIcon icon={faArrowRight} className="text-[0.7rem]" aria-hidden="true" />
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="primary"
+                icon={faPlus}
+                onClick={() => setWizardOpen(true)}
+                className="order-first w-full sm:order-none sm:w-auto"
+              >
+                Agregar pregunta
+              </Button>
+              <Link
+                to={`/courses/${courseId}`}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-blue-800 transition-colors duration-150 hover:text-blue-800"
+              >
+                Ver el contenido del curso
+                <FontAwesomeIcon icon={faArrowRight} className="text-[0.7rem]" aria-hidden="true" />
+              </Link>
+            </div>
           </div>
 
           {students.length === 0 ? (
@@ -192,7 +213,21 @@ export default function TeacherCoursePage() {
             </div>
           )}
 
-          <QuestionBank courseId={courseId} topics={topics} />
+          <QuestionBank
+            courseId={courseId}
+            topics={topics}
+            refreshSignal={wizardRefreshSignal}
+            onSelectedSubtopicChange={setWizardInitialSubtopic}
+          />
+
+          {wizardOpen && (
+            <AddQuestionWizard
+              topics={topics}
+              initialSubtopicId={wizardInitialSubtopic}
+              onClose={() => setWizardOpen(false)}
+              onSaved={() => setWizardRefreshSignal((signal) => signal + 1)}
+            />
+          )}
         </>
       )}
     </div>

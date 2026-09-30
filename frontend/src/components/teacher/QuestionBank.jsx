@@ -38,7 +38,12 @@ const SOURCE_LABELS = { official: 'Oficial', teacher: 'Docente', ai: 'IA' }
  * Las preguntas IA nacen pendientes: no llegan a los estudiantes hasta que
  * el profesor las aprueba aquí.
  */
-export default function QuestionBank({ courseId, topics }) {
+export default function QuestionBank({
+  courseId,
+  topics,
+  refreshSignal = 0,
+  onSelectedSubtopicChange,
+}) {
   const [expandedTopicId, setExpandedTopicId] = useState(null)
   const [summaries, setSummaries] = useState({})
   const [selectedSubtopic, setSelectedSubtopic] = useState(null)
@@ -60,24 +65,37 @@ export default function QuestionBank({ courseId, topics }) {
   const [reviewLoading, setReviewLoading] = useState(false)
 
   // Resumen de conteos por unidad (para badges de pendientes en la navegación)
-  useEffect(() => {
-    let cancelled = false
-    async function loadSummaries() {
+  const loadSummaries = useCallback(
+    async (cancelledRef) => {
+      if (!topics?.length) return
       const results = {}
-      for (const topic of topics ?? []) {
+      for (const topic of topics) {
         try {
           results[topic.id] = await getTopicQuestionSummary(topic.id)
         } catch {
           results[topic.id] = []
         }
       }
-      if (!cancelled) setSummaries(results)
-    }
-    if (topics?.length) loadSummaries()
+      if (!cancelledRef?.cancelled) setSummaries(results)
+    },
+    [topics],
+  )
+
+  useEffect(() => {
+    let cancelled = { cancelled: false }
+    loadSummaries(cancelled)
     return () => {
-      cancelled = true
+      cancelled.cancelled = true
     }
-  }, [topics])
+  }, [loadSummaries])
+
+  // El asistente "Agregar pregunta" guarda: refresca lista y conteos si hay subtema abierto.
+  useEffect(() => {
+    if (!refreshSignal) return
+    if (selectedSubtopic) loadBank(selectedSubtopic)
+    loadSummaries()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshSignal])
 
   const loadBank = useCallback(
     async (subtopicId) => {
@@ -119,6 +137,7 @@ export default function QuestionBank({ courseId, topics }) {
 
   const selectSubtopic = (subtopicId) => {
     setSelectedSubtopic(subtopicId)
+    onSelectedSubtopicChange?.(subtopicId)
     setEditing(null)
     setFormError(null)
     setActionMessage(null)
