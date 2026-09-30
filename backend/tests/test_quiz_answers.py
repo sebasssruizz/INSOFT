@@ -157,12 +157,12 @@ def test_answer_idempotent(client, scenario):
 
     with SessionLocal() as s:
         from app.models.question_answer import QuestionAnswer
-        from uuid import UUID
+        from uuid import UUID  # noqa: F401
 
         count = len(
             s.scalars(
                 select(QuestionAnswer).where(
-                    QuestionAnswer.attempt_id == UUID(attempt),
+                    QuestionAnswer.attempt_id == attempt,
                     QuestionAnswer.question_id == qid,
                 )
             ).all()

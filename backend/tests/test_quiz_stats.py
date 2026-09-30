@@ -87,13 +87,13 @@ def data(client):
         e2 = s.scalar(select(User).where(User.email == "stats-e2@example.com"))
         answers = [
             QuestionAnswer(user_id=e1.id, question_id=q1["id"], subtopic_id=subtopic_id,
-                           attempt_id=uuid.uuid4(), selected_index=0, is_correct=True),
+                           attempt_id=str(uuid.uuid4()), selected_index=0, is_correct=True),
             QuestionAnswer(user_id=e1.id, question_id=q2["id"], subtopic_id=subtopic_id,
-                           attempt_id=uuid.uuid4(), selected_index=0, is_correct=False),
+                           attempt_id=str(uuid.uuid4()), selected_index=0, is_correct=False),
             QuestionAnswer(user_id=e2.id, question_id=q1["id"], subtopic_id=subtopic_id,
-                           attempt_id=uuid.uuid4(), selected_index=0, is_correct=True),
+                           attempt_id=str(uuid.uuid4()), selected_index=0, is_correct=True),
             QuestionAnswer(user_id=e2.id, question_id=q2["id"], subtopic_id=subtopic_id,
-                           attempt_id=uuid.uuid4(), selected_index=2, is_correct=True),
+                           attempt_id=str(uuid.uuid4()), selected_index=2, is_correct=True),
         ]
         s.add_all(answers)
         s.commit()
@@ -200,7 +200,7 @@ def test_export_csv_escapes_formulas(client, data):
                 user_id=tricky.id,
                 question_id=data["q1"]["id"],
                 subtopic_id=data["subtopic_id"],
-                attempt_id=uuid.uuid4(),
+                attempt_id=str(uuid.uuid4()),
                 selected_index=0,
                 is_correct=True,
             )

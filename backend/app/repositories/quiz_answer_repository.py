@@ -25,7 +25,7 @@ def create(
         user_id=user_id,
         question_id=question_id,
         subtopic_id=subtopic_id,
-        attempt_id=attempt_id,
+        attempt_id=str(attempt_id),
         selected_index=selected_index,
         is_correct=is_correct,
     )
@@ -40,7 +40,7 @@ def get_for_attempt(
 ) -> QuestionAnswer | None:
     """Busca la respuesta ya guardada para (attempt_id, question_id)."""
     stmt = select(QuestionAnswer).where(
-        QuestionAnswer.attempt_id == attempt_id,
+        QuestionAnswer.attempt_id == str(attempt_id),
         QuestionAnswer.question_id == question_id,
     )
     return db.scalar(stmt)

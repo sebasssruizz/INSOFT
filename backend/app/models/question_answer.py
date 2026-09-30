@@ -7,7 +7,7 @@ estadísticas por quiz y hace el endpoint idempotente ante reintentos.
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -32,7 +32,8 @@ class QuestionAnswer(Base):
     )
     # Desnormalizado para consultas rápidas de estadísticas por subtema.
     subtopic_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    attempt_id: Mapped[UUID] = mapped_column(nullable=False)
+    # Se guarda como string normalizado (UUID) para portabilidad SQLite/PG.
+    attempt_id: Mapped[str] = mapped_column(String(36), nullable=False)
     selected_index: Mapped[int] = mapped_column(Integer, nullable=False)
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
     answered_at: Mapped[datetime] = mapped_column(
