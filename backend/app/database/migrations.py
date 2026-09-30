@@ -23,6 +23,8 @@ NEW_COLUMNS = {
     ("ai_queries", "session_id"): "VARCHAR(36)",
     ("ai_queries", "model_used"): "VARCHAR",
     ("ai_queries", "response_time_ms"): "INTEGER",
+    # Fecha de creación de preguntas (tope diario de práctica por subtema).
+    ("questions", "created_at"): "TIMESTAMPTZ_NOT_NULL_NOW",
 }
 
 # Índices nuevos: (nombre, SQL). Idempotente via chequeo previo.
@@ -73,7 +75,20 @@ def ensure_schema_compatibility() -> None:
                 continue
             existing_columns = {c["name"] for c in inspector.get_columns(table)}
             if column not in existing_columns:
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
+                if ddl == "TIMESTAMPTZ_NOT_NULL_NOW":
+                    # DDL específico por dialecto (misma semántica: ahora, no nulo).
+                    if engine.dialect.name == "postgresql":
+                        conn.execute(text(
+                            f"ALTER TABLE {table} ADD COLUMN {column} "
+                            "TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()"
+                        ))
+                    else:
+                        conn.execute(text(
+                            f"ALTER TABLE {table} ADD COLUMN {column} "
+                            "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"
+                        ))
+                else:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
 
         # Respaldo: ninguna fila de preguntas sin clasificar. Idempotente y
         # acotado (con WHERE); en la práctica no actualiza nada tras el primer

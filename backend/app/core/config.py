@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_NORMALIZE_MODEL: str = "liquid/lfm-2.5-2.6b:free"
     OPENROUTER_ANSWER_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
-    AI_ASK_RATE_LIMIT: str = "10/hour"
+    AI_ASK_RATE_LIMIT: str = "60/hour"
     OPENROUTER_GLOBAL_LIMIT_PER_MIN: int = 18
 
     # Google Gemini (IA) - proveedor alternativo gratuito
@@ -71,6 +71,13 @@ class Settings(BaseSettings):
 
     # Respuestas de quiz calificadas en servidor (por usuario; default alto)
     QUIZ_ANSWER_RATE_LIMIT: str = "120/hour"
+
+    # Modo práctica (banco + IA reutilizable)
+    PRACTICE_RATE_LIMIT: str = "30/hour"
+    PRACTICE_DEFAULT_COUNT: int = 5
+    PRACTICE_MAX_COUNT: int = 10
+    PRACTICE_AI_RATIO: float = 0.4
+    PRACTICE_MAX_GENERATIONS_PER_SUBTOPIC_PER_DAY: int = 4
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.content import Question
 from app.models.question_answer import QuestionAnswer
+from app.models.question_meta import QuestionStatus
 from app.models.course import CourseMembership
 from app.models.user import User, UserRole
 
@@ -144,11 +145,19 @@ def get_stats_overview(
     ).one()
     total_respuestas, correctas, total_intentos, estudiantes_activos = totals
 
+    # Origen: respuestas a preguntas de práctica vs banco (retrocompatible).
+    practica = db.scalar(
+        select(func.count(QuestionAnswer.id))
+        .join(Question, Question.id == QuestionAnswer.question_id)
+        .where(*conditions, Question.status == QuestionStatus.PRACTICE)
+    ) or 0
+
     return {
         "total_intentos": int(total_intentos or 0),
         "total_respuestas": int(total_respuestas or 0),
         "porcentaje_acierto": _percent(int(correctas or 0), int(total_respuestas or 0)),
         "estudiantes_activos": int(estudiantes_activos or 0),
+        "respuestas_practica": int(practica),
     }
 
 
@@ -211,6 +220,7 @@ def get_stats_questions(
                 "respuestas": int(totals[qid]),
                 "porcentaje_acierto": _percent(int(correct.get(qid, 0)), int(totals[qid])),
                 "opcion_incorrecta_mas_elegida": most_wrong,
+                "origen": "practica" if question.status == QuestionStatus.PRACTICE else "banco",
             }
         )
     return rows, total
@@ -346,6 +356,10 @@ def iter_answers_for_export(
             QuestionAnswer.selected_index,
             QuestionAnswer.is_correct,
             QuestionAnswer.attempt_id,
+            case(
+                (Question.status == QuestionStatus.PRACTICE, "practica"),
+                else_="banco",
+            ).label("origen"),
         )
         .join(User, User.id == QuestionAnswer.user_id)
         .join(Question, Question.id == QuestionAnswer.question_id)

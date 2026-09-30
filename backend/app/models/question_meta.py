@@ -22,5 +22,6 @@ class QuestionStatus:
     APPROVED = "approved"  # Visible en quizzes
     PENDING = "pending"  # Esperando revisión del profesor (preguntas IA)
     REJECTED = "rejected"  # Descartada; se conserva para historial/auditoría
+    PRACTICE = "practice"  # Generada por IA para sesiones de práctica (no quiz normal)
 
-    ALL = (APPROVED, PENDING, REJECTED)
+    ALL = (APPROVED, PENDING, REJECTED, PRACTICE)

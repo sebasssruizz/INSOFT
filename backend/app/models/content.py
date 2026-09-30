@@ -1,4 +1,6 @@
-from sqlalchemy import JSON, Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from datetime import datetime, timezone
+
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -67,6 +69,11 @@ class Question(Base):
     )
     created_by: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    # Fecha de creación (usada por el modo práctica para el tope diario de
+    # generaciones IA por subtema). Aditiva e idempotente en migrations.py.
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=True
     )
 
     subtopic = relationship("Subtopic", back_populates="questions")

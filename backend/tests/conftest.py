@@ -61,13 +61,16 @@ def _fresh_db_module():
     # Resetea contadores de rate limit: la DB nueva re-numera usuarios desde 1
     # y el limiter (en memoria) persistiría counts de módulos anteriores.
     from app.api.routes.ai import limiter
+    from app.api.routes.practice import limiter as practice_limiter
+    from app.api.routes.quiz import limiter as quiz_limiter
 
-    try:
-        limiter.reset()
-    except Exception:
-        storage = getattr(getattr(limiter, "_limiter", limiter), "_storage", None)
-        if storage is not None:
-            storage.reset()
+    for _limiter in (limiter, practice_limiter, quiz_limiter):
+        try:
+            _limiter.reset()
+        except Exception:
+            storage = getattr(getattr(_limiter, "_limiter", _limiter), "_storage", None)
+            if storage is not None:
+                storage.reset()
 
     _engine.dispose()
     Base.metadata.drop_all(bind=_engine)

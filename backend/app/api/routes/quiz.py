@@ -76,7 +76,7 @@ def _require_teacher(current_user: User) -> None:
         429: {"description": "Límite de respuestas alcanzado"},
     },
 )
-@limiter.limit(settings.QUIZ_ANSWER_RATE_LIMIT)
+@limiter.limit(lambda: settings.QUIZ_ANSWER_RATE_LIMIT)
 def submit_answer_endpoint(
     request: Request,
     payload: QuizAnswerRequest,
@@ -273,5 +273,6 @@ def quiz_stats_export_endpoint(
         "opcion_elegida",
         "correcta",
         "intento",
+        "origen",
     ]
     return _csv_response(rows, headers)

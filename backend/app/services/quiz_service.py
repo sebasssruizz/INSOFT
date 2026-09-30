@@ -48,7 +48,10 @@ def submit_answer(
         )
 
     question = db.get(Question, question_id)
-    if question is None or question.status != QuestionStatus.APPROVED:
+    if question is None or question.status not in (
+        QuestionStatus.APPROVED,
+        QuestionStatus.PRACTICE,
+    ):
         raise HTTPException(status_code=404, detail="Pregunta no encontrada.")
 
     try:

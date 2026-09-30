@@ -332,11 +332,17 @@ def _call_llm_for_questions(system_prompt: str, user_content: str, attempt: int)
     )
 
 
+_GENERATED_BY_UNSET = object()
+
+
 async def generate_questions_for_subtopic(
     db: Session,
     teacher: User,
     subtopic_id: int,
     count: int,
+    *,
+    status: str | None = None,
+    created_by: int | None | object = _GENERATED_BY_UNSET,
 ) -> dict:
     """Genera `count` preguntas IA para un subtema y las guarda como pending.
 
@@ -344,6 +350,10 @@ async def generate_questions_for_subtopic(
     AI_QUESTION_MAX_ATTEMPTS intentos por llamada al LLM; solo reintenta si
     no quedó ninguna pregunta válida. Si el proveedor está saturado, propaga
     el error limpio sin reintentos.
+
+    Con `status`/`created_by` explícitos se reutiliza el mismo pipeline para
+    otras variantes (p. ej. preguntas de práctica con status=practice y
+    created_by=NULL); sin ellos se conserva el comportamiento histórico.
     """
     from app.models.content import Question
     from app.models.question_meta import QuestionSource, QuestionStatus
@@ -418,8 +428,8 @@ async def generate_questions_for_subtopic(
                 explanation=q.explanation.strip(),
                 order=base_order + offset,
                 source=QuestionSource.AI,
-                status=QuestionStatus.PENDING,
-                created_by=teacher.id,
+                status=status or QuestionStatus.PENDING,
+                created_by=teacher.id if created_by is _GENERATED_BY_UNSET else created_by,
             )
             db.add(question)
             created.append(question)

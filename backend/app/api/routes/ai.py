@@ -59,7 +59,7 @@ limiter = Limiter(key_func=_get_user_id_from_auth_header, default_limits=[])
 
 
 @router.post("/ask", response_model=AskResponse)
-@limiter.limit(settings.AI_ASK_RATE_LIMIT)
+@limiter.limit(lambda: settings.AI_ASK_RATE_LIMIT)
 async def ask_ai_endpoint(
     request: Request,
     payload: Annotated[AskRequest, Body(...)],
@@ -127,7 +127,7 @@ def _validate_generate_payload(payload) -> None:
         503: {"description": "Proveedor de IA no disponible"},
     },
 )
-@limiter.limit(settings.AI_QUESTION_RATE_LIMIT)
+@limiter.limit(lambda: settings.AI_QUESTION_RATE_LIMIT)
 async def generate_questions_endpoint(
     request: Request,
     payload: GenerateQuestionsRequest,

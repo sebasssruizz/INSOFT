@@ -218,14 +218,16 @@ def get_topic_bank_summary(db: Session, teacher: User, topic_id: int) -> list[di
         approved = bucket.get(QuestionStatus.APPROVED, 0)
         pending = bucket.get(QuestionStatus.PENDING, 0)
         rejected = bucket.get(QuestionStatus.REJECTED, 0)
+        practice = bucket.get(QuestionStatus.PRACTICE, 0)
         summary.append(
             {
                 "subtopic_id": subtopic.id,
                 "title": subtopic.name,
-                "total": approved + pending + rejected,
+                "total": approved + pending + rejected + practice,
                 "approved": approved,
                 "pending": pending,
                 "rejected": rejected,
+                "practice": practice,
                 "official": bucket.get(QuestionSource.OFFICIAL, 0),
                 "teacher": bucket.get(QuestionSource.TEACHER, 0),
                 "ai": bucket.get(QuestionSource.AI, 0),
