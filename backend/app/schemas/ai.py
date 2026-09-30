@@ -1,4 +1,6 @@
 """Esquemas Pydantic para el endpoint de IA (/api/ai/ask)."""
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
@@ -13,6 +15,10 @@ class AskRequest(BaseModel):
         default=None,
         description="Curso/carpeta actual para acotar el RAG al contenido habilitado"
         " en ese curso. Si se omite, se conserva la búsqueda global.",
+    )
+    session_id: UUID | None = Field(
+        default=None,
+        description="Identificador de sesión (UUID) para agrupar consultas del mismo intento",
     )
 
 

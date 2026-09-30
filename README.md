@@ -153,6 +153,11 @@ python -m pytest tests/ -v
 | GET | `/api/progress/course?course_id=` | Progreso en un curso | estudiante |
 | POST | `/api/ai/ask` | Pregunta al asistente IA (RAG) | miembro/profesor |
 | POST | `/api/ai/questions/generate` | Generar preguntas IA (nacen pendientes) | profesor |
+| GET | `/api/ai/history` | Historial de consultas propio | estudiante/profesor |
+| GET | `/api/ai/history/all` | Historial completo (estudiantes de sus cursos) | profesor |
+| GET | `/api/ai/stats/overview` | Estadísticas generales de IA | profesor |
+| GET | `/api/ai/stats/students` | Uso de IA por estudiante | profesor |
+| GET | `/api/ai/stats/subtopics` | Uso de IA por subtema | profesor |
 | POST | `/api/content/subtopics/{id}/questions` | Crear pregunta manual | profesor |
 | GET | `/api/content/subtopics/{id}/questions/bank` | Banco de preguntas del subtema | profesor |
 | GET | `/api/content/topics/{id}/questions/summary` | Conteos por subtema | profesor |
@@ -214,5 +219,7 @@ Variables de entorno nuevas:
 
 Incluye el asistente conversacional basado en RAG (`/api/ai/ask`, con OpenRouter o
 Gemini como proveedor, embeddings locales multilingües e indexación por chunks), el
-banco de preguntas del profesor y la generación de preguntas IA con revisión. La
+banco de preguntas del profesor y la generación de preguntas IA con revisión, y el
+historial/estadísticas de uso del asistente (`/api/ai/history`, `/api/ai/history/all`,
+`/api/ai/stats/*`; los profesores solo ven estudiantes de sus propios cursos). La
 vista 3D y el contenido multimedia se encuentran en desarrollo.

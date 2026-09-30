@@ -1,8 +1,17 @@
 """Endpoint de IA: pregunta al asistente con RAG (OpenRouter).
 
+Orquesta: normalización de pregunta → búsqueda de chunks por similitud →
+respuesta final con contexto → guardado en historial (ai_queries).
+
 POST /api/ai/ask — pregunta del estudiante, opcionalmente filtrada por subtema.
+GET /api/ai/history — historial propio del estudiante autenticado.
+GET /api/ai/history/all — historial completo (solo profesor, sus cursos).
+GET /api/ai/stats/overview|students|subtopics — estadísticas (solo profesor).
 """
-from fastapi import APIRouter, Depends, HTTPException, Request
+from datetime import datetime, timedelta, timezone
+from typing import Annotated
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -11,7 +20,8 @@ from app.auth.dependencies import get_current_user, require_teacher
 from app.auth.jwt import decode_access_token
 from app.core.config import settings
 from app.database.session import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
+from app.repositories import ai_query_repository as ai_query_repo
 from app.repositories import content_repository as content_repo
 from app.schemas.ai import AskRequest, AskResponse, GenerateQuestionsRequest, GenerateQuestionsResponse
 from app.services import ai_service, question_service
@@ -52,7 +62,7 @@ limiter = Limiter(key_func=_get_user_id_from_auth_header, default_limits=[])
 @limiter.limit(settings.AI_ASK_RATE_LIMIT)
 async def ask_ai_endpoint(
     request: Request,
-    payload: AskRequest,
+    payload: Annotated[AskRequest, Body(...)],
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -74,6 +84,7 @@ async def ask_ai_endpoint(
             db=db,
             current_user=current_user,
             course_id=payload.course_id,
+            session_id=payload.session_id,
         )
         return AskResponse(**result)
     except NotFoundError as exc:
@@ -176,3 +187,164 @@ async def generate_questions_endpoint(
         created=result["created"],
         warning=warning,
     )
+
+
+# ── Historial de consultas ─────────────────────────────────────────────────
+
+
+def _parse_date(value: str | None, name: str) -> datetime | None:
+    """Convierte una fecha ISO (YYYY-MM-DD) en datetime; 400 si es inválida."""
+    if value is None:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, detail=f"Formato de fecha inválido para {name}; usa ISO (YYYY-MM-DD)."
+        )
+
+
+def _serialize_ai_query(q) -> dict:
+    return {
+        "id": q.id,
+        "question": q.question_original,
+        "answer": q.respuesta,
+        "subtopic_id": q.subtopic_id,
+        "session_id": str(q.session_id) if q.session_id else None,
+        "model_used": q.model_used,
+        "response_time_ms": q.response_time_ms,
+        "created_at": q.created_at.isoformat(),
+    }
+
+
+@router.get("/history", response_model=list[dict], tags=["ai"])
+def history_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    subtopic_id: int | None = None,
+    session_id: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """Historial de consultas del estudiante autenticado (solo lo suyo)."""
+    queries, _ = ai_query_repo.get_by_user(
+        db,
+        current_user.id,
+        subtopic_id=subtopic_id,
+        session_id=session_id,
+        limit=limit,
+        offset=offset,
+    )
+    return [_serialize_ai_query(q) for q in queries]
+
+
+@router.get("/history/all", response_model=list[dict], tags=["ai"])
+def history_all_endpoint(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    subtopic_id: int | None = None,
+    session_id: str | None = None,
+    user_id: int | None = None,
+    from_date: str | None = None,
+    to_date: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+):
+    """Historial de consultas (solo profesor; estudiantes de sus cursos).
+
+    - `from_date`/`to_date`: rango ISO (YYYY-MM-DD); si no hay `from_date`, se
+      acota a los últimos 30 días.
+    """
+    if current_user.role != UserRole.TEACHER:
+        raise HTTPException(
+            status_code=403, detail="Solo profesores pueden ver el historial completo."
+        )
+    from_date_dt = _parse_date(from_date, "from_date")
+    to_date_dt = _parse_date(to_date, "to_date")
+    if from_date_dt is None:
+        from_date_dt = datetime.now(timezone.utc) - timedelta(days=30)
+
+    queries, _ = ai_query_repo.get_all_filtered(
+        db,
+        teacher_id=current_user.id,
+        subtopic_id=subtopic_id,
+        session_id=session_id,
+        user_id=user_id,
+        from_date=from_date_dt,
+        to_date=to_date_dt,
+        limit=limit,
+        offset=offset,
+    )
+    return [_serialize_ai_query(q) for q in queries]
+
+
+# ── Estadísticas de uso de IA (solo profesores) ────────────────────────────
+
+
+def _require_teacher_role(current_user: User) -> None:
+    if current_user.role != UserRole.TEACHER:
+        raise HTTPException(
+            status_code=403, detail="Solo profesores pueden ver estadísticas."
+        )
+
+
+@router.get("/stats/overview", response_model=dict, tags=["ai"])
+def stats_overview_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    from_date: str | None = None,
+    to_date: str | None = None,
+):
+    """Estadísticas generales de IA: total, tiempo promedio, conteo por subtema."""
+    _require_teacher_role(current_user)
+    return ai_query_repo.get_stats_overview(
+        db,
+        current_user.id,
+        from_date=_parse_date(from_date, "from_date"),
+        to_date=_parse_date(to_date, "to_date"),
+    )
+
+
+@router.get("/stats/students", response_model=dict, tags=["ai"])
+def stats_students_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = 50,
+    offset: int = 0,
+    from_date: str | None = None,
+    to_date: str | None = None,
+):
+    """Preguntas por estudiante y último uso (solo estudiantes de sus cursos)."""
+    _require_teacher_role(current_user)
+    students, total = ai_query_repo.get_stats_students(
+        db,
+        current_user.id,
+        limit=limit,
+        offset=offset,
+        from_date=_parse_date(from_date, "from_date"),
+        to_date=_parse_date(to_date, "to_date"),
+    )
+    return {"students": students, "total": total}
+
+
+@router.get("/stats/subtopics", response_model=dict, tags=["ai"])
+def stats_subtopics_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = 50,
+    offset: int = 0,
+    from_date: str | None = None,
+    to_date: str | None = None,
+):
+    """Conteo por subtema y preguntas más frecuentes (solo estudiantes de sus cursos)."""
+    _require_teacher_role(current_user)
+    subtopics, total = ai_query_repo.get_stats_subtopics(
+        db,
+        current_user.id,
+        limit=limit,
+        offset=offset,
+        from_date=_parse_date(from_date, "from_date"),
+        to_date=_parse_date(to_date, "to_date"),
+    )
+    return {"subtopics": subtopics, "total": total}

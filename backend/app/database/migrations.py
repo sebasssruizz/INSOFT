@@ -19,11 +19,16 @@ NEW_COLUMNS = {
     ("questions", "source"): "VARCHAR(20) NOT NULL DEFAULT 'official'",
     ("questions", "status"): "VARCHAR(20) NOT NULL DEFAULT 'approved'",
     ("questions", "created_by"): "INTEGER",
+    # Sesión/modelo/tiempo de las consultas al asistente (stats de IA).
+    ("ai_queries", "session_id"): "VARCHAR(36)",
+    ("ai_queries", "model_used"): "VARCHAR",
+    ("ai_queries", "response_time_ms"): "INTEGER",
 }
 
 # Índices nuevos: (nombre, SQL). Idempotente via chequeo previo.
 NEW_INDEXES = {
-    "ix_questions_subtopic_status": "CREATE INDEX ix_questions_subtopic_status ON questions (subtopic_id, status)",
+    "ix_questions_subtopic_status": ("questions", "CREATE INDEX ix_questions_subtopic_status ON questions (subtopic_id, status)"),
+    "ix_ai_queries_session_id": ("ai_queries", "CREATE INDEX ix_ai_queries_session_id ON ai_queries (session_id)"),
 }
 
 
@@ -52,9 +57,9 @@ def ensure_schema_compatibility() -> None:
             if "status" in existing_columns:
                 conn.execute(text("UPDATE questions SET status='approved' WHERE status IS NULL"))
 
-        for index_name, ddl in NEW_INDEXES.items():
-            if "questions" not in existing_tables:
+        for index_name, (table, ddl) in NEW_INDEXES.items():
+            if table not in existing_tables:
                 continue
-            existing_indexes = {i["name"] for i in inspector.get_indexes("questions")}
+            existing_indexes = {i["name"] for i in inspector.get_indexes(table)}
             if index_name not in existing_indexes:
                 conn.execute(text(ddl))

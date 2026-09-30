@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowRight,
   faCheck,
+  faChartBar,
   faCopy,
   faFileArrowUp,
   faPlus,
@@ -232,41 +233,46 @@ export default function TeacherDashboard() {
       <main className="mx-auto max-w-[78rem] px-5 py-10 pb-28 sm:px-6 lg:px-10 lg:py-16 lg:pb-20">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
           <section>
-            <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">Mis cursos</h2>
+            <div>
+              <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">Mis cursos</h2>
 
-            {error && (
-              <p className="mt-4 rounded-xl border border-wrong-200 bg-wrong-50 px-4 py-3 text-sm text-wrong-700">
-                {error}
-              </p>
-            )}
-
-            {loading && (
-              <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                {[0, 1].map((i) => (
-                  <div key={i} className="rounded-2xl border border-ink-200 bg-white p-6">
-                    <div className="skeleton h-12 w-12 rounded-xl" />
-                    <div className="skeleton mt-5 h-6 w-3/4 rounded" />
-                    <div className="skeleton mt-4 h-8 w-32 rounded-lg" />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {!loading && courses.length === 0 && !error && (
-              <div className="mt-5 rounded-2xl border border-dashed border-ink-300 bg-white px-6 py-12 text-center">
-                <h3 className="text-lg font-semibold text-ink-900">Todavía no has creado cursos</h3>
-                <p className="mx-auto mt-2 max-w-[44ch] text-sm leading-relaxed text-ink-500">
-                  Crea uno con el formulario de la derecha. Recibirás un código tipo OFT-A72K para
-                  que tus estudiantes se unan.
+              {error && (
+                <p className="mt-4 rounded-xl border border-wrong-200 bg-wrong-50 px-4 py-3 text-sm text-wrong-700">
+                  {error}
                 </p>
-              </div>
-            )}
+              )}
 
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              {!loading &&
-                courses.map((course, index) => (
+              <Link to="/teacher/ai-stats" className="mt-4 block text-[0.9rem] text-ink-500">
+                Ver estadísticas de IA
+              </Link>
+
+              {loading && (
+                <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                  {[0, 1].map((i) => (
+                    <div key={i} className="rounded-2xl border border-ink-200 bg-white p-6">
+                      <div className="skeleton h-12 w-12 rounded-xl" />
+                      <div className="skeleton mt-5 h-6 w-3/4 rounded" />
+                      <div className="skeleton mt-4 h-8 w-32 rounded-lg" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!loading && courses.length === 0 && !error && (
+                <div className="mt-5 rounded-2xl border border-dashed border-ink-300 bg-white px-6 py-12 text-center">
+                  <h3 className="text-lg font-semibold text-ink-900">Todavía no has creado cursos</h3>
+                  <p className="mx-auto mt-2 max-w-[44ch] text-sm leading-relaxed text-ink-500">
+                    Crea uno con el formulario de la derecha. Recibirás un código tipo OFT-A72K para
+                    que tus estudiantes se unan.
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                {!loading && courses.map((course, index) => (
                   <TeacherCourseCard key={course.id} course={course} index={index} />
                 ))}
+              </div>
             </div>
           </section>
 
@@ -287,6 +293,32 @@ export default function TeacherDashboard() {
               <p className="mt-1.5 text-sm leading-relaxed text-ink-500">
                 Subí contenido con preguntas y respuestas: se indexa de inmediato para el
                 asistente de IA.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800">
+                Abrir
+                <FontAwesomeIcon
+                  icon={faArrowRight}
+                  className="transition-transform duration-200 ease-out group-hover:translate-x-1"
+                  aria-hidden="true"
+                />
+              </span>
+            </Link>
+
+            <Link
+              to="/teacher/ai-stats"
+              className="group block rounded-2xl border border-ink-200 bg-white p-6 shadow-e1 transition-[border-color,box-shadow] duration-150 hover:border-blue-300 hover:shadow-e2"
+            >
+              <span
+                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-soft-lavender text-deep-lavender"
+                aria-hidden="true"
+              >
+                <FontAwesomeIcon icon={faChartBar} />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold tracking-[-0.01em] text-ink-900">
+                Estadísticas de IA
+              </h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-500">
+                Revisa el uso del asistente, tiempos de respuesta y preguntas por subtema.
               </p>
               <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800">
                 Abrir

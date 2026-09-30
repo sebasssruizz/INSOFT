@@ -6,6 +6,8 @@ Soporte alternable por variable de entorno AI_PROVIDER=openrouter|gemini.
 """
 from __future__ import annotations
 
+import time
+
 import google.generativeai as genai
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -190,6 +192,7 @@ async def ask_ai(
     db: Session,
     current_user: User,
     course_id: int | None = None,
+    session_id=None,
 ) -> dict:
     """Ejecuta el flujo completo: normalizar → buscar chunks → responder → guardar.
 
@@ -201,6 +204,7 @@ async def ask_ai(
         current_user: Usuario autenticado (para autorización).
         course_id: Curso/carpeta actual opcional. Acota el RAG al contenido
             habilitado en ese curso y valida que el usuario pertenezca a él.
+        session_id: UUID opcional para agrupar consultas en una sesión.
 
     Returns:
         Dict con: respuesta, subtopic_id, chunks_usados.
@@ -228,9 +232,12 @@ async def ask_ai(
     # 3. Buscar chunks similares (contextuales al curso/subtema si se pasan)
     chunks = await _retrieve_chunks(db, normalized, subtopic_id, course_id)
 
-    # 4. Respuesta final con contexto (usar el proveedor configurado)
+    # 4. Respuesta final con contexto (usar el proveedor configurado).
+    # Se mide el tiempo solo de la generación de la respuesta (no de la
+    # normalización ni de la recuperación) para las estadísticas de IA.
     context = "\n\n".join(chunk.content for chunk in chunks) if chunks else "(sin contexto disponible)"
 
+    start_ms = time.perf_counter()
     if settings.AI_PROVIDER == "gemini":
         answer = await call_gemini(
             model=settings.GEMINI_MODEL,
@@ -243,6 +250,7 @@ async def ask_ai(
             system_prompt=ANSWER_SYSTEM,
             user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
         )
+    response_time_ms = int((time.perf_counter() - start_ms) * 1000)
 
     # 5. Guardar en historial (ai_queries)
     ai_query_repo.create(
@@ -250,6 +258,11 @@ async def ask_ai(
         user_id=user_id,
         question_original=question,
         subtopic_id=subtopic_id,
+        session_id=session_id,
+        model_used=settings.OPENROUTER_ANSWER_MODEL
+        if settings.AI_PROVIDER != "gemini"
+        else settings.GEMINI_MODEL,
+        response_time_ms=response_time_ms,
         question_normalizada=normalized,
         respuesta=answer,
     )

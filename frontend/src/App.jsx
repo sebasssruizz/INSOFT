@@ -9,6 +9,7 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 import TeacherCoursePage from './pages/TeacherCoursePage'
+import TeacherAiStats from './pages/TeacherAiStats'
 import TeacherImportPage from './pages/TeacherImportPage'
 import CourseOverview from './pages/course/CourseOverview'
 import CourseShell from './pages/course/CourseShell'
@@ -74,6 +75,15 @@ export default function App() {
             element={
               <ProtectedRoute requiredRole="TEACHER">
                 <TeacherCoursePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/teacher/ai-stats"
+            element={
+              <ProtectedRoute requiredRole="TEACHER">
+                <TeacherAiStats />
               </ProtectedRoute>
             }
           />
