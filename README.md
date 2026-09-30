@@ -158,6 +158,13 @@ python -m pytest tests/ -v
 | GET | `/api/ai/stats/overview` | Estadísticas generales de IA | profesor |
 | GET | `/api/ai/stats/students` | Uso de IA por estudiante | profesor |
 | GET | `/api/ai/stats/subtopics` | Uso de IA por subtema | profesor |
+| GET | `/api/ai/stats/export.csv` | Exportar uso de IA a CSV | profesor |
+| POST | `/api/quiz/answers` | Responder pregunta (califica el servidor) | estudiante |
+| GET | `/api/quiz/stats/overview` | Intentos, respuestas y % acierto | profesor |
+| GET | `/api/quiz/stats/questions` | Resultados por pregunta | profesor |
+| GET | `/api/quiz/stats/students` | Resultados por estudiante | profesor |
+| GET | `/api/quiz/stats/subtopics` | % acierto por subtema | profesor |
+| GET | `/api/quiz/stats/export.csv` | Exportar respuestas a CSV | profesor |
 | POST | `/api/content/subtopics/{id}/questions` | Crear pregunta manual | profesor |
 | GET | `/api/content/subtopics/{id}/questions/bank` | Banco de preguntas del subtema | profesor |
 | GET | `/api/content/topics/{id}/questions/summary` | Conteos por subtema | profesor |
@@ -199,6 +206,14 @@ Cada pregunta tiene `source` (official/ai/teacher) y `status` (approved/pending/
 los quizzes de estudiantes solo incluyen `approved`, con un tope de
 `QUIZ_MAX_QUESTIONS` (muestreo aleatorio si hay más).
 
+El cliente ya no recibe la respuesta correcta: al elegir una opción, el frontend llama
+a `POST /api/quiz/answers` con el `question_id`, la opción elegida y un `attempt_id`
+(UUID por intento). El servidor califica, guarda la respuesta en `question_answers`
+(idempotente por `attempt_id + question_id`) y devuelve `is_correct`, `correct_index`
+y la explicación para la retroalimentación. Las estadísticas de quizzes
+(`/api/quiz/stats/*`) se calculan con esas respuestas y un profesor solo ve
+estudiantes de sus propios cursos.
+
 Variables de entorno nuevas:
 
 | Variable | Default | Descripción |
@@ -206,6 +221,7 @@ Variables de entorno nuevas:
 | `AI_QUESTION_RATE_LIMIT` | `5/hour` | Límite de generaciones IA por profesor y hora |
 | `AI_QUESTION_MAX_ATTEMPTS` | `2` | Intentos del LLM por solicitud |
 | `QUIZ_MAX_QUESTIONS` | `10` | Tope de preguntas por quiz |
+| `QUIZ_ANSWER_RATE_LIMIT` | `120/hour` | Límite de respuestas de quiz por estudiante y hora |
 
 ## Seguridad
 
@@ -219,7 +235,9 @@ Variables de entorno nuevas:
 
 Incluye el asistente conversacional basado en RAG (`/api/ai/ask`, con OpenRouter o
 Gemini como proveedor, embeddings locales multilingües e indexación por chunks), el
-banco de preguntas del profesor y la generación de preguntas IA con revisión, y el
+banco de preguntas del profesor y la generación de preguntas IA con revisión, el
 historial/estadísticas de uso del asistente (`/api/ai/history`, `/api/ai/history/all`,
-`/api/ai/stats/*`; los profesores solo ven estudiantes de sus propios cursos). La
-vista 3D y el contenido multimedia se encuentran en desarrollo.
+`/api/ai/stats/*`) y los intentos de quiz calificados en el servidor con estadísticas
+y exportación CSV (`/api/quiz/answers`, `/api/quiz/stats/*`, `export.csv`). Los
+profesores solo ven datos de estudiantes de sus propios cursos. La vista 3D y el
+contenido multimedia se encuentran en desarrollo.
