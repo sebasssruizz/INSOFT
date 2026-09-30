@@ -160,6 +160,7 @@ python -m pytest tests/ -v
 | GET | `/api/ai/stats/subtopics` | Uso de IA por subtema | profesor |
 | GET | `/api/ai/stats/export.csv` | Exportar uso de IA a CSV | profesor |
 | POST | `/api/quiz/answers` | Responder pregunta (califica el servidor) | estudiante |
+| POST | `/api/practice/sessions` | Sesión de práctica (banco + IA reutilizable) | miembro |
 | GET | `/api/quiz/stats/overview` | Intentos, respuestas y % acierto | profesor |
 | GET | `/api/quiz/stats/questions` | Resultados por pregunta | profesor |
 | GET | `/api/quiz/stats/students` | Resultados por estudiante | profesor |
@@ -222,6 +223,33 @@ Variables de entorno nuevas:
 | `AI_QUESTION_MAX_ATTEMPTS` | `2` | Intentos del LLM por solicitud |
 | `QUIZ_MAX_QUESTIONS` | `10` | Tope de preguntas por quiz |
 | `QUIZ_ANSWER_RATE_LIMIT` | `120/hour` | Límite de respuestas de quiz por estudiante y hora |
+| `PRACTICE_RATE_LIMIT` | `30/hour` | Límite de sesiones de práctica por usuario y hora |
+| `PRACTICE_DEFAULT_COUNT` | `5` | Preguntas por sesión de práctica |
+| `PRACTICE_MAX_COUNT` | `10` | Máximo de preguntas por sesión |
+| `PRACTICE_AI_RATIO` | `0.4` | Proporción máxima de preguntas IA por sesión |
+| `PRACTICE_MAX_GENERATIONS_PER_SUBTOPIC_PER_DAY` | `4` | Tope diario de generaciones IA por subtema |
+
+## Modo práctica
+
+El estudiante pulsa "Modo práctica" (en el subtema, en el repaso de la unidad o
+desde "Ponme a prueba" en el asistente) y recibe un set corto de preguntas que
+mezcla el **banco aprobado** (docente > oficial) con preguntas generadas por IA.
+Prioridad de fuente:
+
+1. Banco `approved`, excluyendo lo que el estudiante respondió bien en los
+   últimos 14 días y priorizando lo que falló.
+2. Preguntas de práctica IA ya existentes (`status=practice`) que el estudiante
+   no haya respondido (reutilización: no gasta LLM).
+3. Solo si el pool no alcanza, genera con el LLM reutilizando el pipeline RAG
+   (máx. 1 llamada por subtema, 2 por sesión y un tope diario de
+   `PRACTICE_MAX_GENERATIONS_PER_SUBTOPIC_PER_DAY` por subtema).
+
+Los fallos del proveedor degradan la sesión a solo-banco (`ai_available: false`).
+Los subtemas se ponderan por consultas al asistente (agregados y anónimos, nunca
+se expone el texto de consultas ajenas), 3× las consultas propias y el % de
+acierto propio. Las preguntas `practice` no salen en el quiz normal, ni en la
+cola de pendientes, ni cuentan como aprobadas; el profesor puede promoverlas
+("Aprobar para el banco") o descartarlas desde el banco (filtro "Práctica IA").
 
 ## Seguridad
 
