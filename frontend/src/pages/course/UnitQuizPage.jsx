@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faArrowRight, faLayerGroup } from '@fortawesome/free-solid-svg-icons'
 
 import Quiz from '../../components/course/Quiz'
+import PracticeQuiz from '../../components/course/PracticeQuiz'
 import { Button } from '../../components/ui/Button'
 import { splitUnitName } from '../../lib/curriculum'
 import { getTopicQuestions } from '../../services/contentService'
@@ -15,6 +16,7 @@ export default function UnitQuizPage() {
   const { topics } = useCourse()
   const [questions, setQuestions] = useState([])
   const [attemptId, setAttemptId] = useState(() => newQuizAttemptId())
+  const [practiceOpen, setPracticeOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -70,6 +72,15 @@ export default function UnitQuizPage() {
           Preguntas de todos los subtemas de la unidad. Tras cada respuesta verás por qué es
           correcta: esa explicación es la parte que se queda.
         </p>
+        <div className="mt-4">
+          <Button
+            variant={practiceOpen ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => setPracticeOpen((open) => !open)}
+          >
+            {practiceOpen ? 'Volver al repaso' : 'Modo práctica de la unidad'}
+          </Button>
+        </div>
       </header>
 
       <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-4 sm:p-6 lg:p-8">
@@ -91,7 +102,11 @@ export default function UnitQuizPage() {
           </div>
         )}
 
-        {!loading && !error && (
+        {!loading && !error && practiceOpen && (
+          <PracticeQuiz topicId={Number(topicId)} />
+        )}
+
+        {!loading && !error && !practiceOpen && (
           <Quiz
             questions={questions}
             onAnswer={(questionId, selectedIndex) =>

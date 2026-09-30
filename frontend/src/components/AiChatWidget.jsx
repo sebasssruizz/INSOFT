@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link, useMatch } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUp,
+  faListCheck,
   faPaperPlane,
   faRobot,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
-import { useMatch } from 'react-router-dom'
 
 import { cn } from '../lib/utils'
 import { askAi } from '../services/aiService'
@@ -193,6 +194,19 @@ export default function AiChatWidget() {
               </p>
             </div>
           </header>
+
+          {/* En un subtema: acceso directo al modo práctica de ese subtema. */}
+          {subtopicId && courseId && (
+            <div className="border-b border-ink-200 px-4 py-2.5">
+              <Link
+                to={`/courses/${courseId}/subtopics/${subtopicId}?practice=1`}
+                className="flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-[0.8125rem] font-semibold text-blue-900 transition-colors duration-150 hover:border-blue-400 hover:bg-soft-sky"
+              >
+                <FontAwesomeIcon icon={faListCheck} className="text-[0.7rem]" aria-hidden="true" />
+                Ponme a prueba
+              </Link>
+            </div>
+          )}
 
           <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
             {messages.map((message, index) => (

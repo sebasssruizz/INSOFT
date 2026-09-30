@@ -152,7 +152,15 @@ function Results({ answers, questions, onRestart, footer, exit }) {
  * intento actual) y el feedback llega en su respuesta. No se puede cambiar
  * la respuesta una vez enviada.
  */
-export default function Quiz({ questions, onAnswer, onFinish, onRestartAttempt, footer, exit }) {
+export default function Quiz({
+  questions,
+  onAnswer,
+  onFinish,
+  onRestartAttempt,
+  badgeFor,
+  footer,
+  exit,
+}) {
   const [index, setIndex] = useState(0)
   const [chosen, setChosen] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -261,6 +269,7 @@ export default function Quiz({ questions, onAnswer, onFinish, onRestartAttempt, 
         <h3 className="font-display text-[1.375rem] font-semibold leading-snug tracking-[-0.01em] text-ink-900">
           {question.prompt}
         </h3>
+        {badgeFor?.(question)}
 
         <div className="mt-5 space-y-2.5">
           {question.options.map((option, optionIndex) => {

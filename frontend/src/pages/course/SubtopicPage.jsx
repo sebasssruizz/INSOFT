@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowLeft,
@@ -12,6 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 import Quiz from '../../components/course/Quiz'
+import PracticeQuiz from '../../components/course/PracticeQuiz'
 import { Button } from '../../components/ui/Button'
 import { Meta } from '../../components/ui/Meta'
 import { cn } from '../../lib/utils'
@@ -77,6 +78,7 @@ function LessonContent({ content }) {
 
 export default function SubtopicPage() {
   const { courseId, subtopicId } = useParams()
+  const location = useLocation()
   const { user } = useAuth()
   const isStudent = user?.role === 'STUDENT'
   const { topics, flatSubtopics, markSubtopic } = useCourse()
@@ -88,6 +90,9 @@ export default function SubtopicPage() {
   const [error, setError] = useState(null)
   const [quizOpen, setQuizOpen] = useState(false)
   const [quizScore, setQuizScore] = useState(null)
+  const [practiceOpen, setPracticeOpen] = useState(
+    new URLSearchParams(window.location.search).get('practice') === '1',
+  )
   // Un intento = un quiz: todas las respuestas comparten attempt_id.
   const [quizAttemptId, setQuizAttemptId] = useState(null)
 
@@ -123,6 +128,13 @@ export default function SubtopicPage() {
     load()
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [load])
+
+  // "Ponme a prueba" del asistente: abre la práctica cuando llega con ?practice=1.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('practice') === '1') {
+      setPracticeOpen(true)
+    }
+  }, [location.search])
 
   const toggleCompleted = async () => {
     setSaving(true)
@@ -251,9 +263,12 @@ export default function SubtopicPage() {
                   {questions.length} preguntas sobre este subtema, con explicación en cada una.
                 </p>
               </div>
-              <Button onClick={startQuiz} className="mt-4 w-full sm:mt-0 sm:w-auto">
-                Empezar el repaso
-              </Button>
+              <div className="mt-4 flex w-full flex-col gap-2.5 sm:mt-0 sm:w-auto sm:flex-row">
+                <Button onClick={startQuiz}>Empezar el repaso</Button>
+                <Button variant="secondary" onClick={() => setPracticeOpen(true)}>
+                  Modo práctica
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="rounded-2xl border border-ink-200 bg-white p-4 sm:p-6 lg:p-8">
@@ -297,6 +312,29 @@ export default function SubtopicPage() {
               />
             </div>
           )}
+        </section>
+      )}
+
+      {/* Modo práctica: banco + IA en una sesión corta del servidor */}
+      {practiceOpen && (
+        <section className="mt-8">
+          <div className="rounded-2xl border border-ink-200 bg-white p-4 sm:p-6 lg:p-8">
+            <h2 className="mb-6 text-lg font-semibold tracking-[-0.01em] text-ink-900">
+              Modo práctica · {subtopic?.name}
+            </h2>
+            <PracticeQuiz
+              subtopicId={Number(subtopicId)}
+              exit={
+                <button
+                  type="button"
+                  onClick={() => setPracticeOpen(false)}
+                  className="text-xs font-semibold text-ink-500 transition-colors duration-150 hover:text-blue-800"
+                >
+                  Salir de la práctica
+                </button>
+              }
+            />
+          </div>
         </section>
       )}
 
