@@ -21,10 +21,11 @@ function Badge({ tone, children }) {
         tone === 'teacher' && 'bg-soft-sky text-blue-900',
         tone === 'ai-pending' && 'bg-soft-butter text-deep-butter',
         tone === 'ai-approved' && 'bg-correct-50 text-correct-700',
+        tone === 'ai-practice' && 'bg-soft-lavender text-deep-lavender',
         tone === 'rejected' && 'bg-wrong-50 text-wrong-700',
       )}
     >
-      {tone === 'ai-pending' || tone === 'ai-approved' ? (
+      {tone === 'ai-pending' || tone === 'ai-approved' || tone === 'ai-practice' ? (
         <FontAwesomeIcon icon={faRobot} className="text-[0.625rem]" aria-hidden="true" />
       ) : null}
       {children}
@@ -34,10 +35,11 @@ function Badge({ tone, children }) {
 
 function badgeFor(question) {
   if (question.status === 'rejected') return { tone: 'rejected', label: 'Rechazada' }
-  if (question.source === 'ai')
-    return question.status === 'approved'
-      ? { tone: 'ai-approved', label: 'IA · aprobada' }
-      : { tone: 'ai-pending', label: 'IA · pendiente' }
+  if (question.source === 'ai') {
+    if (question.status === 'approved') return { tone: 'ai-approved', label: 'IA · aprobada' }
+    if (question.status === 'practice') return { tone: 'ai-practice', label: 'IA · práctica' }
+    return { tone: 'ai-pending', label: 'IA · pendiente' }
+  }
   if (question.source === 'teacher') return { tone: 'teacher', label: 'Docente' }
   return { tone: 'official', label: 'Oficial' }
 }
@@ -49,7 +51,11 @@ function badgeFor(question) {
 export default function QuestionCard({ question, onEdit, onDelete, onReview, busy }) {
   const badge = badgeFor(question)
   const canManage = question.is_owner && question.source !== 'official'
-  const canReview = question.is_owner && question.source === 'ai' && question.status === 'pending'
+  const canReview =
+    question.is_owner && question.source === 'ai' && question.status === 'pending'
+  // Práctica (created_by NULL): cualquier profesor con acceso al subtema puede
+  // promoverla al banco o descartarla (excepción a la regla "solo el autor").
+  const canReviewPractice = question.source === 'ai' && question.status === 'practice'
 
   return (
     <article
@@ -143,6 +149,32 @@ export default function QuestionCard({ question, onEdit, onDelete, onReview, bus
             disabled={busy}
           >
             Rechazar
+          </Button>
+        </div>
+      )}
+
+      {canReviewPractice && onReview && (
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink-100 pt-4">
+          <p className="mr-auto text-[0.8125rem] text-ink-500">
+            La usó el modo práctica. ¿La promueves al banco o la descartas?
+          </p>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={faCircleCheck}
+            onClick={() => onReview(question, 'approve')}
+            disabled={busy}
+          >
+            Aprobar para el banco
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={faCircleXmark}
+            onClick={() => onReview(question, 'reject')}
+            disabled={busy}
+          >
+            Descartar
           </Button>
         </div>
       )}

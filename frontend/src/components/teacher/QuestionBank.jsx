@@ -26,6 +26,7 @@ const STATUS_FILTERS = [
   { value: '', label: 'Todas' },
   { value: 'approved', label: 'Aprobadas' },
   { value: 'pending', label: 'Pendientes' },
+  { value: 'practice', label: 'Práctica IA' },
   { value: 'rejected', label: 'Rechazadas' },
 ]
 
@@ -392,6 +393,9 @@ export default function QuestionBank({
                           {item.total} pregunta{item.total === 1 ? '' : 's'}
                           {item.pending > 0 && (
                             <span className="ml-2 font-bold text-deep-butter">{item.pending} IA pend.</span>
+                          )}
+                          {item.practice > 0 && (
+                            <span className="ml-2 font-bold text-deep-lavender">{item.practice} práctica</span>
                           )}
                         </span>
                       </button>

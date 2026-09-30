@@ -533,3 +533,78 @@ def test_rate_limit_429(client, scenario):
         assert codes[-1] == 429, codes
     finally:
         live_settings.PRACTICE_RATE_LIMIT = original
+
+
+def test_review_promotes_or_discards_practice(client, scenario):
+    """Fase 4: el banco puede aprobar (→ approved) o descartar practice.
+
+    Excepción de permisos: created_by es NULL; cualquier profesor con acceso
+    al subtema puede revisarlas. Un profesor SIN acceso al subtema → 403.
+    """
+    with SessionLocal() as s:
+        promote = _create_question(
+            s,
+            scenario["subtopic_id"],
+            "¿Práctica a promover?",
+            source="ai",
+            status=QuestionStatus.PRACTICE,
+            order=120,
+        )
+        to_reject = _create_question(
+            s,
+            scenario["subtopic_id"],
+            "¿Práctica a descartar?",
+            source="ai",
+            status=QuestionStatus.PRACTICE,
+            order=121,
+        )
+        third = _create_question(
+            s,
+            scenario["subtopic_id"],
+            "¿Práctica action inválido?",
+            source="ai",
+            status=QuestionStatus.PRACTICE,
+            order=122,
+        )
+        promote_id, reject_id, third_id = promote.id, to_reject.id, third.id
+
+    # Profesor SIN cursos propios (sin acceso a ningún subtema) → 403
+    other_teacher = auth_headers(client, "pract-profe2@example.com", "Pract Profe 2", "TEACHER")
+    resp = client.post(
+        f"/api/content/questions/{promote_id}/review",
+        json={"action": "approve"},
+        headers=other_teacher,
+    )
+    assert resp.status_code == 403, resp.text
+
+    # El profesor con acceso al subtema puede promover (→ quiz normal)
+    resp = client.post(
+        f"/api/content/questions/{promote_id}/review",
+        json={"action": "approve"},
+        headers=scenario["teacher"],
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == QuestionStatus.APPROVED
+    resp = client.get(
+        f"/api/subtopics/{scenario['subtopic_id']}",
+        params={"course_id": scenario["course"]["id"]},
+        headers=scenario["student"],
+    )
+    assert promote_id in {q["id"] for q in resp.json()["questions"]}
+
+    # Descartar
+    resp = client.post(
+        f"/api/content/questions/{reject_id}/review",
+        json={"action": "reject"},
+        headers=scenario["teacher"],
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == QuestionStatus.REJECTED
+
+    # action inválido → 422
+    resp = client.post(
+        f"/api/content/questions/{third_id}/review",
+        json={"action": "delete"},
+        headers=scenario["teacher"],
+    )
+    assert resp.status_code == 422

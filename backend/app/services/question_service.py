@@ -312,15 +312,37 @@ def _question_has_student_answers(db: Session, question_id: int) -> bool:
 def review_ai_question(
     db: Session, teacher: User, question_id: int, action: str
 ) -> Question:
-    """Aprueba o rechaza una pregunta IA pendiente (solo el autor)."""
+    """Aprueba o rechaza una pregunta IA (pendiente o de práctica).
+
+    - Preguntas IA `pending`: solo el autor (`created_by`) puede revisarlas.
+    - Preguntas `practice` (creadas por el modo práctica con created_by=NULL):
+      excepción documentada — cualquier profesor con acceso al subtema puede
+      aprobarlas para el banco o descartarlas.
+    """
     question = content_repo.get_question(db, question_id)
     if question is None:
         raise HTTPException(status_code=404, detail="Pregunta no encontrada.")
-    assert_teacher_can_manage_question(db, teacher, question)
+
+    is_practice = question.source == QuestionSource.AI and question.status == QuestionStatus.PRACTICE
+    if is_practice:
+        assert_teacher_can_manage_subtopic(db, teacher, question.subtopic_id)
+    else:
+        assert_teacher_can_manage_question(db, teacher, question)
+
+    if is_practice:
+        if action == "approve":
+            question.status = QuestionStatus.APPROVED
+        elif action == "reject":
+            question.status = QuestionStatus.REJECTED
+        else:
+            raise HTTPException(status_code=422, detail="action debe ser 'approve' o 'reject'.")
+        db.commit()
+        db.refresh(question)
+        return question
 
     if question.source != QuestionSource.AI or question.status != QuestionStatus.PENDING:
         raise HTTPException(
-            status_code=409, detail="Solo se pueden revisar preguntas de IA pendientes."
+            status_code=409, detail="Solo se pueden revisar preguntas de IA pendientes o de práctica."
         )
     if action == "approve":
         question.status = QuestionStatus.APPROVED
