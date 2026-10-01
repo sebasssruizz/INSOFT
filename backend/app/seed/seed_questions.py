@@ -807,139 +807,142 @@ OFFICIAL_QUESTIONS: dict[str, list[dict]] = {
             ),
         },
     ],
-    # ── UNIDAD 6 ────────────────────────────────────────────────────────────
-    "Técnicas para Corrección de estrabismo": [
-        {
-            "prompt": "Una técnica de debilitamiento muscular consiste en:",
-            "options": [
-                "Retroceder la inserción del músculo",
-                "Resecar una porción del músculo",
-                "Suturar el párpado",
-                "Extraer el cristalino",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "La retroinserción desplaza el músculo hacia atrás y reduce su fuerza de tracción "
-                "sobre el globo."
-            ),
-        },
-        {
-            "prompt": "La resección de un músculo extraocular produce:",
-            "options": [
-                "Refuerzo de su acción",
-                "Debilitamiento de su acción",
-                "Parálisis definitiva",
-                "Ningún cambio en la alineación",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "Al acortar el músculo aumenta su tensión y su efecto sobre el ojo, corrigiendo la "
-                "desviación en sentido contrario."
-            ),
-        },
-        {
-            "prompt": "La sutura ajustable aporta la ventaja de:",
-            "options": [
-                "Permitir corregir la alineación en el posoperatorio inmediato",
-                "Eliminar la necesidad de anestesia",
-                "Acortar la cirugía a la mitad",
-                "Evitar cualquier reintervención futura",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "Con el paciente despierto y colaborador se afina la posición horas después, "
-                "mejorando la precisión del resultado."
-            ),
-        },
-    ],
-    # ── UNIDAD 7 ────────────────────────────────────────────────────────────
-    "Miopía, Hipermetropía y Astigmatismo": [
-        {
-            "prompt": "En la miopía, la imagen se enfoca:",
-            "options": [
-                "Delante de la retina",
-                "Detrás de la retina",
-                "Exactamente sobre la retina",
-                "Sobre el cristalino",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "El ojo es demasiado largo o el sistema óptico demasiado potente, de modo que el "
-                "foco cae por delante de la retina y la visión lejana se vuelve borrosa."
-            ),
-        },
-        {
-            "prompt": "El astigmatismo se debe principalmente a:",
-            "options": [
-                "Una curvatura corneal irregular en distintos meridianos",
-                "Una longitud axial excesiva",
-                "Una opacidad del cristalino",
-                "Una presión intraocular elevada",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "La córnea no es esférica: cada meridiano enfoca en un plano distinto, lo que "
-                "distorsiona la imagen a todas las distancias."
-            ),
-        },
-        {
-            "prompt": "Antes de una cirugía refractiva con láser es imprescindible:",
-            "options": [
-                "Comprobar el espesor corneal y la estabilidad de la graduación",
-                "Dilatar la vía lagrimal",
-                "Realizar una vitrectomía",
-                "Implantar una lente intraocular",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "Un lecho corneal insuficiente o una refracción no estabilizada contraindican el "
-                "procedimiento por riesgo de ectasia y de resultado inestable."
-            ),
-        },
-    ],
-    # ── UNIDAD 8 ────────────────────────────────────────────────────────────
-    "Cirugía en Párpados": [
-        {
-            "prompt": "La blefaroplastia consiste en:",
-            "options": [
-                "Resecar piel y grasa redundante del párpado",
-                "Extraer el cristalino",
-                "Reparar la retina",
-                "Dilatar la vía lagrimal",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "Se retira el exceso de piel, músculo o grasa para corregir la función palpebral y "
-                "el aspecto del párpado."
-            ),
-        },
-        {
-            "prompt": "La marcación previa del párpado se realiza:",
-            "options": [
-                "Con el paciente sentado y antes de infiltrar el anestésico",
-                "Después de infiltrar, para mayor comodidad",
-                "Al finalizar la cirugía",
-                "Solo si el paciente lo solicita",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "La infiltración deforma el tejido y la posición tumbada cambia la caída de la "
-                "piel: marcar antes y sentado preserva la simetría."
-            ),
-        },
-        {
-            "prompt": "Durante la cirugía palpebral, la protección de la superficie ocular se logra con:",
-            "options": [
-                "Protectores corneales y lubricación",
-                "Midriáticos en dosis altas",
-                "Compresión del globo",
-                "Retirada del blefaróstato",
-            ],
-            "correct_index": 0,
-            "explanation": (
-                "El concha o protector corneal aísla la córnea del instrumental y del cauterio "
-                "mientras se trabaja sobre el párpado."
-            ),
-        },
-    ],
+    # ── UNIDAD 6 ───────────────────────────────────────────────────
+    "Técnicas para Corrección de estrabismo": [{'prompt': '¿En qué tres grandes grupos se agrupan las técnicas para el tratamiento del '
+                'estrabismo?',
+      'options': ['Músculos de la visión, de la acomodación y del reflejo',
+                  'Solo cirugía de músculos rectos',
+                  'Cirugía de músculos horizontales, verticales y oblicuos',
+                  'Cirugía de párpados, conjuntiva y vías lagrimales'],
+      'correct_index': 2,
+      'explanation': 'El manual agrupa las técnicas en cirugía de músculos horizontales, verticales y '
+                     'oblicuos.'},
+     {'prompt': 'En la resección del músculo recto externo, ¿qué se hace con el extremo seccionado?',
+      'options': ['Se abandona sin sutura',
+                  'Se vuelve a insertar en el punto original de inserción',
+                  'Se sutura en un punto más posterior del músculo',
+                  'Se fija a la órbita ósea'],
+      'correct_index': 1,
+      'explanation': 'La resección extirpa una porción del músculo y el extremo seccionado se '
+                     'reinserta en su punto original.'},
+     {'prompt': 'La retroinserción del músculo recto interno consiste en:',
+      'options': ['Extirpar una porción del músculo',
+                  'Reforzar el músculo con injerto',
+                  'Seccionar el músculo en su inserción y suturarlo en un punto más posterior',
+                  'Seccionar el músculo y suturarlo más cerca del limbo'],
+      'correct_index': 2,
+      'explanation': 'En la retroinserción el músculo se secciona en su sitio de inserción y se sutura '
+                     'más posteriormente.'},
+     {'prompt': '¿Qué suturas y en qué calibres se usan en la corrección de estrabismo?',
+      'options': ['Seda 4/0 y nylon 10/0',
+                  'Vicryl 6/0 y vicryl 7/0',
+                  'Vicryl 3/0 y nylon 5/0',
+                  'Seda 8/0 y vicryl 9/0'],
+      'correct_index': 1,
+      'explanation': 'La mesa del manual declara vicryl 6/0 (músculo) y vicryl 7/0 (conjuntiva).'},
+     {'prompt': '¿Cuál de las siguientes es una indicación de la corrección quirúrgica de estrabismo?',
+      'options': ['Conjuntivitis activa',
+                  'Mal estado general del paciente',
+                  'Endotropía no acomodativa',
+                  'Pterigión grado II'],
+      'correct_index': 2,
+      'explanation': 'La endotropía no acomodativa y las parálisis de los pares III, IV y VI son '
+                     'indicaciones; conjuntivitis y mal estado general son contraindicaciones.'},
+     {'prompt': '¿Qué cuidados transoperatorios exige el manual durante toda la corrección de '
+                'estrabismo?',
+      'options': ['Irrigar la córnea con solución Hartmann y usar hisopos húmedos peinados',
+                  'Secar la córnea con gasas secas y no usar hisopos',
+                  'Aplicar compresas frías sobre el ojo operado',
+                  'Ocluir el ojo contralateral durante todo el procedimiento'],
+      'correct_index': 0,
+      'explanation': 'Las observaciones del manual indican mantener la córnea irrigada con Hartmann en '
+                     'jeringa de 10 ml con cánula oftálmica e hisopos húmedos peinados.'}],
+
+    # ── UNIDAD 7 ───────────────────────────────────────────────────
+    "Miopía, Hipermetropía y Astigmatismo": [{'prompt': '¿Sobre qué estructura aplica el láser excimer en la cirugía refractiva con LASIK?',
+      'options': ['La cápsula del cristalino', 'La retina', 'El lecho escleral', 'El estroma corneal'],
+      'correct_index': 3,
+      'explanation': 'El manual define el procedimiento como la aplicación del láser excimer '
+                     'directamente sobre el estroma corneal.'},
+     {'prompt': '¿Qué rango de refracciones corregibles declara el manual para el astigmatismo?',
+      'options': ['De 2 a −12 dioptrías',
+                  'De 1 a 6 dioptrías',
+                  'De +1 a +5 dioptrías',
+                  'El manual no lo declara'],
+      'correct_index': 1,
+      'explanation': 'El manual indica astigmatismo de 1 a 6 dioptrías; miopía de 2 a −12 e '
+                     'hipermetropía de +1 a +5 son los otros rangos.'},
+     {'prompt': '¿Cuánto tiempo antes de la cirugía deben retirarse los lentes de contacto según el '
+                'tipo?',
+      'options': ['Blandos 15 días antes y duros un mes antes',
+                  'Blandos un mes antes y duros dos meses antes',
+                  'Blandos y duros 5 días antes',
+                  'No es necesario retirarlos'],
+      'correct_index': 0,
+      'explanation': 'Los cuidados preoperatorios del manual establecen 15 días para blandos y un mes '
+                     'para duros.'},
+     {'prompt': '¿Qué estudios debe traer el paciente al quirófano según los cuidados preoperatorios?',
+      'options': ['Queratometría, topografía corneal y paquimetría (dos de ellos)',
+                  'Angiografía y ecografía ocular',
+                  'Solo biometría',
+                  'Campimetría y tonometría'],
+      'correct_index': 0,
+      'explanation': 'El manual exige ingresar con los resultados de dos de los estudios de '
+                     'queratometría, topografía corneal y paquimetría.'},
+     {'prompt': 'Durante la técnica, ¿qué acción del equipo de enfermería describe el manual al '
+                'aplicar el microquerátomo?',
+      'options': ['Presionar los pedales del succionador y del microquerátomo',
+                  'Sostener el colgajo corneal con pinza',
+                  'Aplicar el láser excimer',
+                  'Realizar la marcación corneal'],
+      'correct_index': 0,
+      'explanation': 'La enfermera retrae el párpado inferior, irriga y presiona los pedales; la '
+                     'marcación y el láser los realiza el cirujano.'},
+     {'prompt': '¿Cuál de las siguientes es una contraindicación de la cirugía refractiva según el '
+                'manual?',
+      'options': ['Defecto refractivo estable',
+                  'Edad entre 20 y 50 años',
+                  'Glaucoma',
+                  'Hipermetropía de +1 a +5 dioptrías'],
+      'correct_index': 2,
+      'explanation': 'El glaucoma está en la lista de contraindicaciones, junto con herpes simple, '
+                     'queratocono, diabetes, embarazo, entre otras.'}],
+
+    # ── UNIDAD 8 ───────────────────────────────────────────────────
+    "Cirugía en Párpados": [{'prompt': '¿Qué es un chalazión según el manual?',
+      'options': ['El quiste de una glándula de Meibomio del párpado',
+                  'Un tumor maligno del borde palpebral',
+                  'Una infección del saco lagrimal',
+                  'Un depósito de grasa orbitaria'],
+      'correct_index': 0,
+      'explanation': 'El manual lo define como el quiste de una glándula de Meibomio, una bolita dura '
+                     'e indolora en el párpado por infección crónica con el orificio obstruido.'},
+     {'prompt': '¿Con qué instrumento se delimita la tumoración antes de la incisión en el drenaje de '
+                'chalazión?',
+      'options': ['Con el gancho de estrabismo',
+                  'Con la pinza de chalazión de Lampert',
+                  'Con el compás de Castroviejo',
+                  'Con la cucharilla o legra'],
+      'correct_index': 1,
+      'explanation': 'La instrumentista proporciona la pinza de chalazión de Lampert y se coloca para '
+                     'delimitar la tumoración; la cucharilla sirve para el curetaje posterior.'},
+     {'prompt': '¿Qué tipo de anestesia declara el manual para el drenaje de chalazión?',
+      'options': ['General', 'Local', 'Regional', 'Tópica única'],
+      'correct_index': 1,
+      'explanation': 'El manual indica anestesia local, con infiltración del borde del párpado '
+                     'mediante xilocaína al 2%.'},
+     {'prompt': '¿Cuánto tiempo se mantiene la compresión con gasa seca al retirar la pinza de '
+                'chalazión?',
+      'options': ['Un minuto', 'Tres minutos', 'Diez minutos', 'No se realiza compresión'],
+      'correct_index': 1,
+      'explanation': 'El cierre del procedimiento indica compresión con gasa seca por tres minutos.'},
+     {'prompt': '¿Cuál es el objetivo quirúrgico del drenaje de chalazión según el manual?',
+      'options': ['Debridar al máximo la glándula para evitar una posible infección y mejorar la '
+                  'estética',
+                  'Remover la placa tarsal completa',
+                  'Reconstruir el lecho escleral',
+                  'Colocar una prótesis palpebral'],
+      'correct_index': 0,
+      'explanation': 'El objetivo declarado es debridar la glándula para evitar infección y mejorar la '
+                     'estética.'}],
 }
