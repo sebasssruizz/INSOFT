@@ -251,6 +251,48 @@ acierto propio. Las preguntas `practice` no salen en el quiz normal, ni en la
 cola de pendientes, ni cuentan como aprobadas; el profesor puede promoverlas
 ("Aprobar para el banco") o descartarlas desde el banco (filtro "Práctica IA").
 
+## Contenido y revisión docente
+
+El contenido oficial (9 unidades, 26 subtemas, 85 preguntas oficiales) vive en la
+base de datos. Cómo mantenerlo:
+
+- **Agregar o actualizar una unidad:** escriba un `.md` en
+  `docs/importacion/units_v2/` con el formato `# UNIDAD N. Nombre` /
+  `## Subtema` / `### Preguntas` (opciones `- [ ]`, correcta `- [x]`,
+  explicación en las líneas siguientes) e impórtelo con el importador no
+  destructivo (idempotente, no borra nada que el documento no mencione):
+
+  ```bash
+  docker cp docs/importacion/units_v2/unidad6.md insoft-backend:/tmp/unidad6.md
+  docker compose exec backend python -m app.scripts.import_document /tmp/unidad6.md
+  ```
+
+  Al terminar, reindexa el RAG del subtema y enlaza el contenido a los cursos.
+  El backend también resincroniza el seed oficial en cada arranque: si edita
+  unidades 6–8, actualice también `backend/app/seed/seed_content.py` y
+  `backend/app/seed/seed_questions.py` (o reconstruya la imagen tras importar:
+  `docker compose up -d --build backend`).
+
+- **Validar un documento antes de importar:**
+
+  ```bash
+  cd backend && source .venv/bin/activate
+  python -m app.scripts.validate_units ../docs/importacion/units_v2/unidad6.md
+  ```
+
+- **Regenerar el Word de revisión para la docente** (desde la BD, con casillas
+  de revisión y los pendientes resaltados):
+
+  ```bash
+  cd backend && source .venv/bin/activate
+  pip install -r requirements-dev.txt   # python-docx
+  DATABASE_URL='postgresql+psycopg2://oftallearn:oftallearn@localhost:5433/oftallearn' \
+    python -m app.scripts.export_content_docx ../docs/revision/Contenido_INSOFT_para_revision.docx
+  ```
+
+  El `.docx` no se commitea (binario); el script es reproducible.
+  La trazabilidad de fuentes y la matriz de brechas están en `docs/contenido/`.
+
 ## Seguridad
 
 - El ID token de Google se verifica criptográficamente en el backend.
