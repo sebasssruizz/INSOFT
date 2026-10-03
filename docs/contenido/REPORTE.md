@@ -139,6 +139,69 @@ El `.docx` generado no se commitea (binario); el script sí.
 
 ## 10. Tests
 
-Suite completa: **146 passed** (baseline 140 + 5 del validador + 1 de
-importación idempotente). Sin archivos fuente añadidos al repo (los documentos
-de `docs/` siguen sin seguimiento).
+Suite completa: **147 passed** (baseline 140 + 5 del validador + 1 de
+importación idempotente + 1 de exención de la unidad 9). Sin archivos fuente
+añadidos al repo (los documentos de `docs/` siguen sin seguimiento).
+
+## 11. Corrección posterior — Unidad 9 rehecha (solo texto)
+
+A pedido de la docente: la unidad 9 se rehizo **solo el texto de los subtemas**.
+**No se agregó ninguna pregunta nueva ni se cargó el banco de preguntas de la
+docente** (verificado en el historial: el equipo nunca las tocó; sus 11
+preguntas oficiales ya existían de su importación previa y quedaron intactas,
+hash por hash). Claudia agregará sus preguntas con la función "Agregar pregunta".
+
+**Antes → después (BD local):**
+
+| Subtema | Palabras antes → después | Preguntas | Chunks RAG antes → después |
+|---|---|---|---|
+| Definición y generalidades | 136 → 998 | 2 (intactas) | 1 → 5 |
+| Indicaciones y contraindicaciones | 78 → 548 | 1 (intacta) | 1 → 3 |
+| Técnica quirúrgica e instrumentación | 398 → 762 | 3 (intactas) | 2 → 4 |
+| Complicaciones | 64 → 446 | 5 (intactas) | 1 → 3 |
+
+Fuentes de la reescritura: `unidad9_pterigion_v1.md` (referencia), `PTERIGIÓN.docx`
+(secciones 1–5 y tabla de pasos), Manual p.17–21 y Guía (sección PTERYGIUM).
+Trazabilidad en `docs/contenido/TRAZABILIDAD.md`; backup del texto previo en
+`docs/contenido/backup_unidad9_antes.md`.
+
+**Desviaciones de la vara documentadas:**
+- "Indicaciones y contraindicaciones" (548) y "Complicaciones" (446) quedan por
+  debajo del rango 715–1191: las fuentes validadas se agotaron y el equipo no
+  inventa material. Cada subtema lleva su `[PENDIENTE CLAUDIA]`; el validador
+  admite la exención (`--min-words` por corrida; nota en el reporte).
+- "Definición y generalidades" (998) y "Técnica" (762) quedan dentro de la vara.
+
+**Validador:** `validate_units.py` exime por defecto a la unidad 9 del mínimo
+de preguntas (`--exempt-questions-units 9`), porque sus preguntas las carga la
+docente aparte.
+
+**Seeds:** la unidad 9 entró a `OFFICIAL_CONTENT` (texto nuevo) y a
+`OFFICIAL_QUESTIONS` (sus 11 preguntas verbatim desde la BD). Verificado: tras
+reiniciar el backend con `SEED_MODE=always`, los 15 hashes (4 contenidos + 11
+preguntas) quedan **idénticos**; con `SEED_MODE=if_empty` (producción) un
+reinicio no toca nada; en BD vacía el seed carga las 9 unidades (26 subtemas,
+85 preguntas).
+
+**Preguntas a revisar por posible desalineación con el texto nuevo** (no se
+editaron; la docente decide con el Word):
+- "¿Qué instrumento se usa para despegar el pterigio sobre la córnea?" — el
+  texto nuevo menciona la espátula de ciclodiálisis y el mango 3 con hoja 15
+  (Guía/PTERIGIÓN.docx); la opción marcada como correcta en la pregunta sigue
+  respondiéndose.
+- "¿A qué nivel se fija la plastía y con qué sutura?" — la opción correcta dice
+  "Episcleral, con dos puntos de nylon 10-0"; el texto nuevo dice fijación con
+  nylon 10/0 o seda 7/0 en puntos separados (Guía), pero no usa literalmente
+  "episcleral ni "dos puntos".
+- El resto (8 de 11) sigue respondiéndose literalmente con el texto nuevo.
+
+**Word de revisión:** regenerado completo (`Contenido_INSOFT_para_revision.docx`,
+9 unidades / 26 subtemas / 85 preguntas / 6 pendientes resaltados) y copia
+actualizada en la raíz de la carpeta INSOFT. Nuevo Word corto con la opción
+`--units 6,7,8,9`: `docs/revision/Contenido_INSOFT_unidades_6_a_9_prioridad.docx`
+(4 unidades / 7 subtemas / 28 preguntas / 6 pendientes).
+
+**PENDIENTE CLAUDIA:** 3 marcadores en el contenido de la plataforma (grados
+ilegibles + extensión limitada de 2 subtemas de U9) más los 3 previos de
+U6–U8; documento autocontenido renumerado (7 puntos) en
+`docs/contenido/PENDIENTES_CLAUDIA.md`.
