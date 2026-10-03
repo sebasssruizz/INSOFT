@@ -200,7 +200,13 @@ def add_markdown_content(document, content: str) -> None:
 
 # ── Exportación ─────────────────────────────────────────────────────────────
 
-def export(db, output_path: Path, version: str = "1.0") -> dict:
+def export(db, output_path: Path, version: str = "1.0", unit_numbers: set[int] | None = None) -> dict:
+    """Exporta las unidades al Word de revisión.
+
+    `unit_numbers`: si se indica (p. ej. {6,7,8,9}), exporta solo esas unidades
+    (número de UNIDAD según el título); siempre incluye portada, instrucciones,
+    resumen y la sección de pendientes.
+    """
     document = docx.Document()
 
     # Página y estilo base
@@ -302,6 +308,10 @@ def export(db, output_path: Path, version: str = "1.0") -> dict:
     # ── Contenido por unidad ──
     totals = {"unidades": 0, "subtemas": 0, "preguntas": 0, "pendientes": 0}
     for topic in topics:
+        if unit_numbers is not None:
+            m = re.match(r"^UNIDAD\s+(\d+)", topic.name, re.I)
+            if not m or int(m.group(1)) not in unit_numbers:
+                continue
         document.add_heading(topic.name, level=1)
         if topic.description:
             paragraph = document.add_paragraph()
@@ -388,11 +398,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("salida", type=Path, help="Ruta del .docx de salida")
     parser.add_argument("--version", default="1.0")
+    parser.add_argument(
+        "--units",
+        type=str,
+        default="",
+        help="Unidades a exportar, separadas por comas (p. ej. 6,7,8,9). Vacío = todas.",
+    )
     args = parser.parse_args(argv)
+
+    unit_numbers = (
+        {int(n.strip()) for n in args.units.split(",") if n.strip()}
+        if args.units.strip()
+        else None
+    )
 
     db = SessionLocal()
     try:
-        totals = export(db, args.salida, version=args.version)
+        totals = export(db, args.salida, version=args.version, unit_numbers=unit_numbers)
     finally:
         db.close()
     print(f"[export] LISTO: {args.salida}")

@@ -50,6 +50,27 @@ def test_duplicate_options_and_prompts():
     assert any("duplicado" in e for e in errors)
 
 
+def test_exencion_preguntas_unidad_9():
+    """Unidad exenta (default: 9) no exige mínimo de preguntas ni opciones."""
+    doc = """\
+# UNIDAD 9. Cirugía de Pterigión paso a paso
+Descripción.
+
+## Definición y generalidades
+Contenido sin preguntas, solo texto.
+
+## Complicaciones
+Texto sin preguntas.
+"""
+    errors, _ = validate_document(doc, min_words=0, min_questions=3)
+    assert not errors
+    # Sin exención, sí falla.
+    errors, _ = validate_document(
+        doc, min_words=0, min_questions=3, exempt_questions_units=set()
+    )
+    assert any("preguntas" in e for e in errors)
+
+
 def test_pending_claudia_not_error():
     doc = GOOD_DOC.format(content=_content(720) + "\n\n> [PENDIENTE CLAUDIA: falta X]")
     errors, pending = validate_document(doc, min_words=0, min_questions=1)
