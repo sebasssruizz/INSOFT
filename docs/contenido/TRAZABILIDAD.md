@@ -16,3 +16,20 @@ Fuentes revisadas **sin** cobertura para U6–U8: `docs/importacion/PTERIGIÓN.d
 pterigión; menciona astigmatismo como indicación), `docs/importacion/Diagrama 3 y 4.docx`,
 `docs/importacion/INYECCIÓN INTRAVITREA.pptx` (U2), banco de preguntas docente (solo
 pterigión, U9).
+
+---
+
+## REHECHO — Unidad 9 · Cirugía de Pterigión paso a paso (solo texto)
+
+La unidad 9 se rehizo siguiendo el mismo proceso que 6–8: mismo archivo y formato
+(`docs/importacion/units_v2/unidad9.md`), misma estructura de 4 subtemas existente en BD,
+texto reescrito y sintetizado desde las fuentes **sin sección de preguntas** (las 11
+preguntas oficiales ya existentes quedan intactas; la docente agregará las suyas con
+"Agregar pregunta"). Backup del texto previo: `docs/contenido/backup_unidad9_antes.md`.
+
+| Unidad | Subtema | Fuente(s) | Páginas / secciones | Cobertura |
+|---|---|---|---|---|
+| U9 · Pterigión | Definición y generalidades | `unidad9_pterigion_v1.md`; `PTERIGIÓN.docx`; `Manual…pdf`; `GUIA…docx` | v1 (Definición y generalidades; Indicaciones; secciones equivalentes); PTERIGIÓN.docx secciones 1 y 3; Manual p.17–18 (concepto, etiología, fisiopatología, cuadro clínico, diagnóstico, tratamiento, pronóstico); Guía PTERYGIUM (definición con 3 partes, clasificación por grados con valores ilegibles, etiología multifactorial, evolución, clases, población afectada, tratamiento inicial, mitomicina opcional, leucoma) | completa (salvo valores numéricos de grados → PENDIENTE CLAUDIA) |
+| U9 · Pterigión | Indicaciones y contraindicaciones | `unidad9_pterigion_v1.md`; `PTERIGIÓN.docx`; `Manual…pdf`; `GUIA…docx` | v1 (Indicaciones y contraindicaciones); PTERIGIÓN.docx sección 2 y sección 3 (injerto vs. esclera desnuda por grado); Manual p.18 (manejo preoperatorio: ayuno, B.H./Q.S./T.P., oftalmoscopía); Guía (indicaciones: eje visual, estética, no alivio; reacciones adversas; protocolo general prequirúrgico de cirugías oftálmicas) | parcial → nota PENDIENTE CLAUDIA por extensión limitada de las fuentes |
+| U9 · Pterigión | Técnica quirúrgica e instrumentación | `unidad9_pterigion_v1.md`; `PTERIGIÓN.docx`; `Manual…pdf`; `GUIA…docx` | v1 (Técnica quirúrgica e instrumentación); PTERIGIÓN.docx sección 4 (organización de mesa por función + tabla de 7 pasos con instrumental por paso); Manual p.18–20 (mesa: seda 7/0, consumo, medicamentos; descripción técnica de extirpación); Guía (resección simple paso a paso, plastia con injerto libre y con colgajo rotado) | completa |
+| U9 · Pterigión | Complicaciones | `unidad9_pterigion_v1.md`; `PTERIGIÓN.docx`; `Manual…pdf`; `GUIA…docx` | v1 (Complicaciones); PTERIGIÓN.docx sección 5 (intra/tempranas/tardías: quiste epitelial, escleromalacia); Manual p.18 y 21 (complicaciones y manejo posoperatorio: radiación 3 semanas, cloranfenicol, antiinflamatorios); Guía (reacciones adversas, recidiva, molestia posoperatoria) | parcial → nota PENDIENTE CLAUDIA por extensión limitada de las fuentes |

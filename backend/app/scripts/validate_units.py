@@ -6,7 +6,9 @@ Uso:
 
 Comprueba, para cada subtema del documento:
 - mínimo de palabras (default 715, -25% de la mediana de las unidades 1–5);
-- al menos 3 preguntas oficiales;
+- al menos 3 preguntas oficiales (unidades exentas con
+  --exempt-questions-units, por defecto la 9: la docente agrega sus
+  preguntas aparte con "Agregar pregunta");
 - cada pregunta con exactamente 4 opciones únicas y no vacías, y
   `correct_index` en 0..3 con explicación no vacía;
 - sin preguntas duplicadas (mismo enunciado) dentro del subtema;
@@ -29,7 +31,9 @@ MIN_QUESTIONS_DEFAULT = 3
 N_OPTIONS = 4
 
 
-def validate_topic(topic: dict, *, min_words: int, min_questions: int) -> list[str]:
+def validate_topic(
+    topic: dict, *, min_words: int, min_questions: int | None
+) -> list[str]:
     errors: list[str] = []
     for subtopic in topic["subtopics"]:
         name = subtopic["name"]
@@ -39,7 +43,7 @@ def validate_topic(topic: dict, *, min_words: int, min_questions: int) -> list[s
                 f"{name}: subtema con {words} palabras (< {min_words})"
             )
         questions = subtopic["questions"]
-        if len(questions) < min_questions:
+        if min_questions is not None and len(questions) < min_questions:
             errors.append(
                 f"{name}: {len(questions)} preguntas (< {min_questions})"
             )
@@ -64,8 +68,19 @@ def validate_topic(topic: dict, *, min_words: int, min_questions: int) -> list[s
     return errors
 
 
-def validate_document(text: str, *, min_words: int, min_questions: int) -> tuple[list[str], list[str]]:
-    """Devuelve (errores, pendientes). Los PENDIENTE CLAUDIA no son errores."""
+def validate_document(
+    text: str,
+    *,
+    min_words: int,
+    min_questions: int,
+    exempt_questions_units: set[int] | None = None,
+) -> tuple[list[str], list[str]]:
+    """Devuelve (errores, pendientes). Los PENDIENTE CLAUDIA no son errores.
+
+    `exempt_questions_units`: números de unidad (p. ej. {9}) que quedan
+    exentos de la regla de mínimo de preguntas (la docente las carga aparte).
+    """
+    exempt_questions_units = {9} if exempt_questions_units is None else exempt_questions_units
     errors: list[str] = []
     pending: list[str] = []
     topics = parse_document(text)
@@ -74,7 +89,19 @@ def validate_document(text: str, *, min_words: int, min_questions: int) -> tuple
     for topic in topics:
         if "TODO" in topic["name"] or "XXX" in topic["name"]:
             errors.append(f"Título de unidad con marcador TODO/XXX: {topic['name']}")
-        errors.extend(validate_topic(topic, min_words=min_words, min_questions=min_questions))
+        # Número de unidad a partir del nombre: "UNIDAD 9. ..." → 9
+        m_unit = re.match(r"^UNIDAD\s+(\d+)", topic["name"], re.I)
+        unit_number = int(m_unit.group(1)) if m_unit else None
+        effective_min_questions = (
+            None if unit_number in exempt_questions_units else min_questions
+        )
+        errors.extend(
+            validate_topic(
+                topic,
+                min_words=min_words,
+                min_questions=effective_min_questions,
+            )
+        )
         for subtopic in topic["subtopics"]:
             full_text = subtopic["content"] + "\n" + "\n".join(
                 q["prompt"] + " " + " ".join(q["options"]) + " " + str(q.get("explanation", ""))
@@ -93,7 +120,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("archivos", type=Path, nargs="+", help="Documentos .md de unidades")
     parser.add_argument("--min-words", type=int, default=MIN_WORDS_DEFAULT)
     parser.add_argument("--min-questions", type=int, default=MIN_QUESTIONS_DEFAULT)
+    parser.add_argument(
+        "--exempt-questions-units",
+        type=str,
+        default="9",
+        help="Unidades exentas del mínimo de preguntas, separadas por comas (default: 9; vacío = ninguna).",
+    )
     args = parser.parse_args(argv)
+
+    exempt = {
+        int(n.strip()) for n in args.exempt_questions_units.split(",") if n.strip()
+    } if args.exempt_questions_units.strip() else set()
 
     ok = True
     for path in args.archivos:
@@ -103,7 +140,10 @@ def main(argv: list[str] | None = None) -> int:
             continue
         text = path.read_text(encoding="utf-8")
         errors, pending = validate_document(
-            text, min_words=args.min_words, min_questions=args.min_questions
+            text,
+            min_words=args.min_words,
+            min_questions=args.min_questions,
+            exempt_questions_units=exempt,
         )
         print(f"[validate] {path.name}: {len(errors)} errores, {len(pending)} pendientes")
         for error in errors:
