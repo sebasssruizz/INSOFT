@@ -1,0 +1,41 @@
+# Imagen de producción del backend INSOFT.
+# Diferencias con el Dockerfile de desarrollo:
+#  - usuario no-root, HEALTHCHECK, comando uvicorn de producción
+#    (--workers WEB_CONCURRENCY, --proxy-headers).
+#  - el modelo de embeddings se descarga en el BUILD (no en el primer arranque).
+FROM python:3.12-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Torch solo CPU primero: evita que pip jale los wheels de CUDA (varios GB)
+# que sentence-transformers declararía como dependencia.
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Usuario no-root dueño de /app y del caché del modelo.
+RUN useradd --create-home --uid 1000 appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Modelo de embeddings descargado durante el build (debe coincidir con la
+# variable EMBEDDING_MODEL de .env.prod en tiempo de ejecución).
+ARG EMBEDDING_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+ENV HF_HOME=/home/appuser/.cache/huggingface
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${EMBEDDING_MODEL}')"
+
+COPY app ./app
+RUN chown -R appuser:appuser /app
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"
+
+# WEB_CONCURRENCY: default 1 (el modelo de embeddings ocupa RAM por proceso).
+# FORWARDED_ALLOW_IPS: rangos de los que se acepta X-Forwarded-For (el proxy).
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-1} --proxy-headers --forwarded-allow-ips ${FORWARDED_ALLOW_IPS:-127.0.0.1}"]

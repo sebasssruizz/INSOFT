@@ -1,0 +1,123 @@
+# ── Compose de PRODUCCIÓN (no reemplaza al de desarrollo) ────────────────
+# Uso:  cp .env.prod.example .env.prod   (edita los secretos)  y luego
+#       docker compose -f docker-compose.prod.yml up -d --build
+#
+# Solo Caddy publica puertos (80/443). La BD y el backend viven en la red
+# interna. Proyecto de prueba local: -p insoft_prod_test con DOMAIN=localhost.
+services:
+  db:
+    # Imagen con la extensión pgvector incluida (necesaria para el módulo RAG/IA).
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Sin puertos publicados: solo accesible por la red interna.
+    mem_limit: 1500m
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+      args:
+        EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+    restart: unless-stopped
+    # Inyecta .env.prod si existe (alternativa: docker compose --env-file .env.prod).
+    # Las entradas explícitas de `environment:` tienen prioridad.
+    env_file:
+      - path: .env.prod
+        required: false
+    environment:
+      ENV: ${ENV:-production}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
+      TEACHER_EMAILS: ${TEACHER_EMAILS}
+      DEV_AUTH_ENABLED: ${DEV_AUTH_ENABLED:-false}
+      SEED_MODE: ${SEED_MODE:-if_empty}
+      EXPOSE_DOCS: ${EXPOSE_DOCS:-false}
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_NORMALIZE_MODEL: ${OPENROUTER_NORMALIZE_MODEL}
+      OPENROUTER_ANSWER_MODEL: ${OPENROUTER_ANSWER_MODEL}
+      AI_ASK_RATE_LIMIT: ${AI_ASK_RATE_LIMIT:-60/hour}
+      OPENROUTER_GLOBAL_LIMIT_PER_MIN: ${OPENROUTER_GLOBAL_LIMIT_PER_MIN:-18}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      AI_PROVIDER: ${AI_PROVIDER:-openrouter}
+      AI_QUESTION_RATE_LIMIT: ${AI_QUESTION_RATE_LIMIT:-5/hour}
+      AI_QUESTION_MAX_ATTEMPTS: ${AI_QUESTION_MAX_ATTEMPTS:-2}
+      QUIZ_MAX_QUESTIONS: ${QUIZ_MAX_QUESTIONS:-10}
+      QUIZ_ANSWER_RATE_LIMIT: ${QUIZ_ANSWER_RATE_LIMIT:-120/hour}
+      PRACTICE_RATE_LIMIT: ${PRACTICE_RATE_LIMIT:-30/hour}
+      PRACTICE_DEFAULT_COUNT: ${PRACTICE_DEFAULT_COUNT:-5}
+      PRACTICE_MAX_COUNT: ${PRACTICE_MAX_COUNT:-10}
+      PRACTICE_AI_RATIO: ${PRACTICE_AI_RATIO:-0.4}
+      PRACTICE_MAX_GENERATIONS_PER_SUBTOPIC_PER_DAY: ${PRACTICE_MAX_GENERATIONS_PER_SUBTOPIC_PER_DAY:-4}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+    mem_limit: 2500m
+    logging: *logging
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        # "/" = rutas relativas /api (Caddy enruta); usa https://dominio:8000
+        # solo si el backend se publica aparte (no es lo recomendado).
+        VITE_API_URL: ${VITE_API_URL:-/}
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+        VITE_ENABLE_DEV_LOGIN: ${VITE_ENABLE_DEV_LOGIN:-false}
+    restart: unless-stopped
+    expose:
+      - "8080"
+    depends_on:
+      - backend
+    mem_limit: 256m
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data_prod:/data
+      - caddy_config_prod:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    mem_limit: 256m
+    logging: *logging
+
+volumes:
+  postgres_data_prod:
+  caddy_data_prod:
+  caddy_config_prod:

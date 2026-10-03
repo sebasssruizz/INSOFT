@@ -1,0 +1,37 @@
+# Imagen de producción del frontend INSOFT (estáticos con Nginx sin privilegios).
+# La URL del API se hornea en el build: VITE_API_URL="/" (default) = rutas
+# relativas /api para que el proxy inverso enrute sin exponer el backend.
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+ARG VITE_API_URL=/
+ARG VITE_GOOGLE_CLIENT_ID=
+ARG VITE_ENABLE_DEV_LOGIN=false
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID \
+    VITE_ENABLE_DEV_LOGIN=$VITE_ENABLE_DEV_LOGIN
+
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY . .
+RUN npm run build
+
+FROM nginx:1.27-alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+RUN chown -R nginx:nginx /usr/share/nginx/html
+
+# Config principal completa (pid/temporales en /tmp, listen 8080, gzip,
+# caché por tipo, cabeceras de seguridad, fallback SPA).
+COPY nginx.prod.conf /etc/nginx/nginx.conf
+
+EXPOSE 8080
+
+USER nginx
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1:8080/index.html || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

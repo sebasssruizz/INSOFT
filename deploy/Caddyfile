@@ -1,0 +1,46 @@
+# Caddy — proxy inverso y HTTPS automático (único servicio con puertos públicos).
+# DOMAIN viene de .env.prod: con un dominio real emite certificado de
+# Let's Encrypt; con DOMAIN=localhost usa certificado interno (para pruebas).
+
+{
+	log {
+		output stdout
+		format json
+	}
+}
+
+https://{$DOMAIN:localhost} {
+	# HTTPS automático (Let's Encrypt) o interno si DOMAIN=localhost.
+	# Compresión
+	encode gzip
+
+	# HSTS y cabeceras seguras (lo demás lo agrega el Nginx del frontend)
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Límite razonable de tamaño de petición (el flujo del app solo envía JSON)
+	request_body {
+		max_size 10MB
+	}
+
+	# API → backend FastAPI (red interna de Docker)
+	handle /api/* {
+		reverse_proxy backend:8000 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	# /health público por el proxy (útil para UptimeRobot sin exponer el backend)
+	handle /health {
+		reverse_proxy backend:8000
+	}
+
+	# Todo lo demás → Nginx estático del frontend (8080 interno)
+	handle {
+		reverse_proxy frontend:8080
+	}
+}

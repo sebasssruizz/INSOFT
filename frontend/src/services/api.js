@@ -1,6 +1,12 @@
 const DEFAULT_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function getApiUrl() {
+  // Sentinel de producción: VITE_API_URL="/" usa rutas relativas (mismo
+  // origen) para que el proxy inverso enrute /api al backend sin exponer
+  // el puerto del backend.
+  if (DEFAULT_API_URL === '/') {
+    return ''
+  }
   // Si VITE_API_URL está configurado, usarlo
   if (DEFAULT_API_URL && DEFAULT_API_URL !== 'http://localhost:8000') {
     return DEFAULT_API_URL
