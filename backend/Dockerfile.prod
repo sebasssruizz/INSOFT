@@ -29,7 +29,6 @@ ENV HF_HOME=/home/appuser/.cache/huggingface
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${EMBEDDING_MODEL}')"
 
 COPY app ./app
-RUN chown -R appuser:appuser /app
 
 EXPOSE 8000
 
