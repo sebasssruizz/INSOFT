@@ -293,6 +293,33 @@ base de datos. Cómo mantenerlo:
   El `.docx` no se commitea (binario); el script es reproducible.
   La trazabilidad de fuentes y la matriz de brechas están en `docs/contenido/`.
 
+## Despliegue en producción
+
+Guía completa paso a paso: **`docs/despliegue/RUNBOOK_DIGITALOCEAN.md`**
+(droplet, endurecimiento, Docker, DNS, Google OAuth, primer despliegue,
+backups y actualizaciones). Arquitectura: `Caddy (80/443, HTTPS automático) →
+nginx estático + backend uvicorn → PostgreSQL`; **solo Caddy publica puertos**.
+
+```bash
+cp .env.prod.example .env.prod   # edita secretos y DOMAIN
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+./deploy/smoke.sh https://tu-dominio   # verificación sin LLM
+```
+
+Archivos clave: `docker-compose.prod.yml`, `backend/Dockerfile.prod`,
+`frontend/Dockerfile.prod`, `frontend/nginx.prod.conf`, `deploy/Caddyfile`,
+`deploy/backup.sh`, `deploy/restore.sh`, `deploy/smoke.sh`,
+`deploy/insoft-backup.{service,timer}`.
+
+Variables nuevas frente al desarrollo (todas con comentario en
+`.env.prod.example`): `ENV` (`production` activa guardas de arranque),
+`SEED_MODE` (`always|if_empty|never`; producción recomienda `if_empty`),
+`EXPOSE_DOCS` (cierra `/docs`), `WEB_CONCURRENCY` (workers uvicorn, default 1
+por la RAM del modelo de embeddings), `FORWARDED_ALLOW_IPS` (rangos que pueden
+mandar `X-Forwarded-For` detrás del proxy), `DOMAIN` (certificado HTTPS de
+Caddy), y las de respaldo (`BACKUP_DIR`, `RCLONE_REMOTE`, `RCLONE_CONFIG_PATH`,
+retenciones).
+
 ## Seguridad
 
 - El ID token de Google se verifica criptográficamente en el backend.
