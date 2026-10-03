@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.database.base import Base
 from app.database.migrations import ensure_schema_compatibility
 from app.database.session import SessionLocal, engine
-from app.seed.seed_content import seed_official_content
+from app.seed.seed_content import run_seed_by_mode
 from app.services.exceptions import ServiceError
 
 # Importar modelos para registrarlos en la metadata antes de create_all
@@ -23,7 +23,7 @@ import app.models  # noqa: F401
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Crear tablas y cargar el contenido oficial + Curso General (idempotente).
+    # Crear tablas y cargar el contenido oficial + Curso General.
     # Reintenta mientras la base de datos termina de estar disponible.
     attempts = 30
     while True:
@@ -40,18 +40,30 @@ async def lifespan(app: FastAPI):
             time.sleep(1)
     db = SessionLocal()
     try:
-        seed_official_content(db)
+        run_seed_by_mode(db, settings.seed_mode_effective)
     finally:
         db.close()
     yield
 
 
 def create_app() -> FastAPI:
+    if settings.is_production:
+        errors = settings.production_validation_errors()
+        if errors:
+            raise RuntimeError(
+                "El backend se negó a arrancar con ENV=production por "
+                "configuración insegura:\n- " + "\n- ".join(errors)
+            )
+
+    expose_docs = not settings.is_production or settings.EXPOSE_DOCS
     app = FastAPI(
         title=settings.PROJECT_NAME,
         description=settings.PROJECT_DESCRIPTION,
         version="1.0.0",
         lifespan=lifespan,
+        docs_url="/docs" if expose_docs else None,
+        redoc_url="/redoc" if expose_docs else None,
+        openapi_url=f"{settings.API_PREFIX}/openapi.json" if expose_docs else None,
     )
 
     # slowapi: el estado del app referencia el limiter principal; cada router

@@ -1477,3 +1477,28 @@ def seed_official_content(db: Session) -> None:
 
     # Asegurar que el Curso General y los cursos de profesores tengan todo el contenido.
     course_service.ensure_general_course(db)
+
+
+def run_seed_by_mode(db: Session, mode: str) -> dict | None:
+    """Corre el seed oficial según SEED_MODE y devuelve un resumen (o None).
+
+    - "always": seed completo en cada arranque (histórico de desarrollo).
+    - "if_empty": solo carga el contenido si no existe ninguna unidad
+      (default en producción): un reinicio nunca modifica contenido existente,
+      incluidas las unidades importadas fuera del seed (p. ej. 6–9).
+    - "never": no toca la base de datos.
+    """
+    if mode == "always":
+        seed_official_content(db)
+        return {"seed": "always"}
+    if mode == "if_empty":
+        from sqlalchemy import func, select
+
+        from app.models.content import Topic
+
+        n_topics = db.scalar(select(func.count(Topic.id))) or 0
+        if n_topics == 0:
+            seed_official_content(db)
+            return {"seed": "if_empty", "cargado": True}
+        return {"seed": "if_empty", "cargado": False, "unidades_existentes": n_topics}
+    return {"seed": "never"}

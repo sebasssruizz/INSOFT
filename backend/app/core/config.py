@@ -16,6 +16,27 @@ class Settings(BaseSettings):
     PROJECT_DESCRIPTION: str = "Sistema web de apoyo al aprendizaje de Oftalmología e Instrumentación Quirúrgica."
     API_PREFIX: str = "/api"
 
+    # Entorno: "development" o "production". En producción se validan los
+    # requisitos de seguridad al crear la app (ver production_validation_errors).
+    ENV: str = "development"
+
+    # Control del seed oficial en el arranque: "always" (comportamiento
+    # histórico de desarrollo), "if_empty" (solo si no hay unidades; default en
+    # producción) o "never". El valor "auto" resuelve por ENV.
+    SEED_MODE: str = "auto"
+
+    # Exponer /docs, /redoc y /openapi.json (solo tiene efecto en producción;
+    # en desarrollo siempre están abiertos).
+    EXPOSE_DOCS: bool = False
+
+    # IPs de confianza para los encabezados X-Forwarded-For (uvicorn
+    # --forwarded-allow-ips). En Docker interno se usan las redes privadas.
+    FORWARDED_ALLOW_IPS: str = "127.0.0.1"
+
+    # Procesos Uvicorn en producción. 1 por defecto: el modelo de embeddings
+    # carga ~500 MB de RAM por proceso (ver docs/despliegue/REPORTE.md).
+    WEB_CONCURRENCY: int = 1
+
     # Base de datos PostgreSQL
     DATABASE_URL: str = "postgresql+psycopg2://oftallearn:oftallearn@db:5432/oftallearn"
 
@@ -100,6 +121,52 @@ class Settings(BaseSettings):
     @property
     def teacher_emails(self) -> list[str]:
         return [e.lower() for e in self._split_csv(self.TEACHER_EMAILS)]
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENV.strip().lower() == "production"
+
+    @property
+    def seed_mode_effective(self) -> str:
+        """Resuelve SEED_MODE: 'auto' → 'if_empty' en producción, 'always' en desarrollo."""
+        mode = self.SEED_MODE.strip().lower()
+        if mode in ("always", "if_empty", "never"):
+            return mode
+        return "if_empty" if self.is_production else "always"
+
+    def production_validation_errors(self) -> list[str]:
+        """Requisitos de seguridad para arrancar con ENV=production.
+
+        Devuelve la lista de problemas (vacía si todo está en orden). La app
+        se niega a arrancar si la lista no está vacía.
+        """
+        errors: list[str] = []
+        if self.DEV_AUTH_ENABLED:
+            errors.append(
+                "DEV_AUTH_ENABLED está activo: el login de desarrollo sin Google "
+                "no puede usarse en producción (configúralo en false)."
+            )
+        if self.SECRET_KEY in ("", "change-me-in-production") or len(self.SECRET_KEY) < 32:
+            errors.append(
+                "SECRET_KEY está vacío, es el valor por defecto o mide menos de 32 "
+                "caracteres. Genera uno con: openssl rand -hex 32"
+            )
+        if not self.GOOGLE_CLIENT_ID.strip():
+            errors.append(
+                "GOOGLE_CLIENT_ID está vacío: en producción el login de Google OAuth "
+                "es obligatorio (configúralo en Google Cloud Console)."
+            )
+        if not self.cors_origins:
+            errors.append(
+                "BACKEND_CORS_ORIGINS está vacío: lista los orígenes permitidos "
+                "(p. ej. https://tudominio.com)."
+            )
+        elif "*" in self.cors_origins:
+            errors.append(
+                "BACKEND_CORS_ORIGINS contiene '*': no se permite CORS abierto en "
+                "producción."
+            )
+        return errors
 
 
 @lru_cache
