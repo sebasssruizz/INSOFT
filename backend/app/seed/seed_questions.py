@@ -945,4 +945,96 @@ OFFICIAL_QUESTIONS: dict[str, list[dict]] = {
       'correct_index': 0,
       'explanation': 'El objetivo declarado es debridar la glándula para evitar infección y mejorar la '
                      'estética.'}],
+
+    # ── UNIDAD 9 ──
+    "Definición y generalidades": [{'prompt': '¿Cuál es el estándar de oro para la reconstrucción del lecho escleral y prevención de '
+                'recidiva?',
+      'options': ['Esclera desnuda en todos los casos',
+                  'Autoinjerto conjuntival o membrana amniótica',
+                  'Sutura directa sin injerto',
+                  'Cauterización única de la zona'],
+      'correct_index': 1,
+      'explanation': ''},
+     {'prompt': '¿Qué tasa aproximada de recidiva presenta la técnica de esclera desnuda?',
+      'options': ['2-5%', '10-15%', '40-50%', 'Menos del 1%'],
+      'correct_index': 2,
+      'explanation': ''}],
+
+    # ── UNIDAD 9 ──
+    "Indicaciones y contraindicaciones": [{'prompt': '¿Cuál de las siguientes es una contraindicación relativa para la cirugía de '
+                'pterigión?',
+      'options': ['Falta de sitio donante conjuntival',
+                  'Infección ocular activa',
+                  'Pterigión grado I pequeño',
+                  'Disponibilidad de membrana amniótica'],
+      'correct_index': 1,
+      'explanation': ''}],
+
+    # ── UNIDAD 9 ──
+    "Técnica quirúrgica e instrumentación": [{'prompt': '¿Qué calibre de sutura se recomienda para fijar el injerto y por qué se prefiere '
+                'circular cortante espatulada sobre redonda?',
+      'options': ['Nylon 10-0 redonda, porque penetra más fácil',
+                  'Nylon 10-0 espatulada, porque da mejor control de la profundidad de la aguja',
+                  'Seda 8-0, porque es más económica',
+                  'Vicryl 3-0, porque no requiere retiro'],
+      'correct_index': 1,
+      'explanation': ''},
+     {'prompt': '¿Por qué se prefieren puntos continuos (no independientes) en la zona nasal?',
+      'options': ['Porque cicatrizan más rápido',
+                  'Porque generan menos molestia, no asfixian el tejido y sellan de forma más '
+                  'hermética',
+                  'Porque requieren menos anestesia',
+                  'Porque son más económicos'],
+      'correct_index': 1,
+      'explanation': ''},
+     {'prompt': '¿Qué estructura debe evitarse lesionar durante la disección de Tenon cerca de la zona '
+                'nasal medial?',
+      'options': ['El limbo corneal',
+                  'Los vasos gruesos y el músculo recto medial',
+                  'La cápsula de Bowman',
+                  'El canal de Schlemm'],
+      'correct_index': 1,
+      'explanation': ''}],
+
+    # ── UNIDAD 9 ──
+    "Complicaciones": [{'prompt': '¿Cuál de las siguientes es una complicación intraoperatoria?',
+  'options': ['Recidiva del pterigión',
+              'Granuloma de cuerpo extraño',
+              'Lesión del músculo recto medial',
+              'Hematoma subinjerto'],
+  'correct_index': 2,
+  'explanation': ''},
+ {'prompt': '¿Cuál es la complicación tardía más importante de esta cirugía?',
+  'options': ['Ojo rojo postoperatorio',
+              'Dehiscencia del injerto',
+              'Recidiva o recurrencia del pterigión',
+              'Granuloma'],
+  'correct_index': 2,
+  'explanation': ''},
+ {'prompt': '**¿Qué instrumento se usa para despegar el pterigio sobre la córnea?**',
+  'options': ['Tijera de Westcott',
+              'Pinza de colibrí, en un solo movimiento',
+              'Hoja de bisturí número 11',
+              'Espátula de iris'],
+  'correct_index': 1,
+  'explanation': 'El despegue se realiza con la pinza de colibrí, en un solo movimiento y de forma '
+                 'suave, para no maltratar el tejido ni causar sangrado.'},
+ {'prompt': '**¿Cuál es la importancia de extraer bien el tenón y los alerones?**',
+  'options': ['Disminuye el tiempo quirúrgico',
+              'Evita la anestesia general',
+              'Evita el sangrado y las recurrencias; la sangre impregna el tenón y provoca ojo '
+              'rojo en el postoperatorio',
+              'Facilita la cauterización'],
+  'correct_index': 2,
+  'explanation': 'La extracción fina del tenón y de los alerones con técnica de esquivar vasos '
+                 'evita el sangrado y reduce la recurrencia. La sangre se impregna en el tenón '
+                 'circundante y el paciente presenta ojo rojo que lo alarma.'},
+ {'prompt': '**¿A qué nivel se fija la plastía y con qué sutura?**',
+  'options': ['Escleral con seda 6-0',
+              'Corneal con vicryl 8-0',
+              'Episcleral, con dos puntos de nylon 10-0',
+              'Limbar con proleno 3-0'],
+  'correct_index': 2,
+  'explanation': 'La plastía se fija con dos puntos a nivel episcleral usando nylon 10-0; se '
+                 'recomienda aguja espatulada y en la zona nasal el cierre con puntos continuos.'}],
 }
