@@ -1,0 +1,7 @@
+# Alternativa con cron: respaldo diario de INSOFT a las 03:00
+# Instalar con:  crontab -e   (como el usuario que corre docker compose)
+# Ajustar rutas según el despliegue (repo en /opt/insoft/app, respaldos en
+# /opt/insoft/backups). /etc/environment suele tener PATH corto; usa rutas
+# absolutas a docker o define PATH.
+
+# 0 3 * * *  cd /opt/insoft/app && ./deploy/backup.sh >> /opt/insoft/backups/backup.log 2>&1

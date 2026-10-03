@@ -1,0 +1,14 @@
+# Temporizador systemd: respaldo diario de INSOFT a las 03:00.
+# Copiar a /etc/systemd/system/insoft-backup.timer junto a insoft-backup.service.
+# Activar:  systemctl daemon-reload && systemctl enable --now insoft-backup.timer
+# Verificar: systemctl list-timers | grep insoft
+[Unit]
+Description=Respaldo diario de INSOFT (03:00)
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

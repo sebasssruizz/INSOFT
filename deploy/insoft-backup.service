@@ -1,0 +1,19 @@
+# Unidad systemd para el respaldo diario de INSOFT.
+# Copiar a /etc/systemd/system/insoft-backup.service y ajustar:
+#   - User=      (usuario que corre docker compose sin sudo, p. ej. insoft)
+#   - WorkingDirectory=  (ruta del repo desplegado, p. ej. /opt/insoft)
+# Luego:  systemctl daemon-reload && systemctl enable --now insoft-backup.timer
+[Unit]
+Description=Respaldo diario de la base de datos de INSOFT
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=insoft
+WorkingDirectory=/opt/insoft/app
+# Variables del respaldo (las de POSTGRES_* se leen del .env.prod del compose
+# para interpolación; el resto son del propio script):
+EnvironmentFile=/opt/insoft/app/.env.prod
+Environment=BACKUP_DIR=/opt/insoft/backups
+ExecStart=/opt/insoft/app/deploy/backup.sh
