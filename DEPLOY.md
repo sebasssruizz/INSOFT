@@ -97,7 +97,7 @@ Variables (Project Settings → Environment Variables):
 |---|---|
 | `VITE_API_URL` | `https://insoft-backend.onrender.com` |
 | `VITE_GOOGLE_CLIENT_ID` | `<client-id>.apps.googleusercontent.com` |
-| `VITE_ENABLE_DEV_LOGIN` | `false` |
+| `VITE_DEV_AUTH` | `false` |
 
 La reescritura SPA ya está en `frontend/vercel.json`:
 
@@ -180,7 +180,7 @@ docker compose up --build -d
 en la carpeta raíz del proyecto).
 
 **Frontend (Vercel / build args):** `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`,
-`VITE_ENABLE_DEV_LOGIN`.
+`VITE_DEV_AUTH`.
 
 **Neon:** no hay ninguna administración manual salvo la URL directa vs pooler.
 
