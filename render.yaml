@@ -1,0 +1,29 @@
+# Blueprint de Render: backend FastAPI en Docker, plan gratis.
+# Crea el servicio web; NO incluye base de datos (Neon se conecta aparte).
+services:
+  - type: web
+    name: insoft-backend
+    plan: free
+    runtime: docker
+    healthCheckPath: /health
+    # Las variables son SENSIBLES o dependen del entorno: se editan a mano
+    # en el panel (sync:false evita que el blueprint las pise).
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: TEACHER_EMAILS
+        sync: false
+      - key: BACKEND_CORS_ORIGINS
+        value: https://insoft.vercel.app
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: openrouter
+      - key: DEV_AUTH_ENABLED
+        value: "false"

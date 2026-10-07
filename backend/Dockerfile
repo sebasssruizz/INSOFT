@@ -20,4 +20,6 @@ COPY app ./app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# El puerto lo decide la plataforma (PORT en Render); por defecto 8000.
+# Sin --reload: imagen de producción.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
