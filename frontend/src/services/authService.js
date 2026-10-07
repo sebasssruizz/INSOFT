@@ -12,10 +12,6 @@ export function fetchMe() {
   return apiFetch('/users/me')
 }
 
-export function updateMyRole(role) {
-  return apiFetch('/users/me/role', { method: 'PATCH', body: { role } })
-}
-
 export function updateMyProfile(profile) {
   return apiFetch('/users/me/profile', { method: 'PATCH', body: profile })
 }
