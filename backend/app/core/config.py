@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     # DATABASE_SSL=true en los proveedores que no entregan host *.neon.tech.
     DATABASE_SSL: bool = False
 
+    # ── Observabilidad ─────────────────────────────────────────────────
+    LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
+    LOG_FORMAT: str = "plain"            # "json" | "plain"
+
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
 
