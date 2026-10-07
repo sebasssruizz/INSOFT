@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowRight,
   faCircleCheck,
-  faClock,
   faLayerGroup,
   faListCheck,
 } from '@fortawesome/free-solid-svg-icons'
@@ -14,7 +13,6 @@ import { Badge, Meta } from '../components/ui/Meta'
 import { Button } from '../components/ui/Button'
 import { Counter } from '../components/ui/Counter'
 import { ProgressBar } from '../components/ui/Progress'
-import { formatDuration } from '../lib/curriculum'
 import { cn } from '../lib/utils'
 import { useAuth } from '../hooks/useAuth'
 import { useCourses } from '../hooks/useCourses'
@@ -66,7 +64,6 @@ function CourseCard({ course, index }) {
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <Meta icon={faLayerGroup}>{course.total_units} unidades</Meta>
         <Meta icon={faListCheck}>{course.total_subtopics} subtemas</Meta>
-        <Meta icon={faClock}>{formatDuration(course.estimated_minutes)}</Meta>
       </div>
 
       <div className="mt-auto pt-6">
@@ -114,9 +111,8 @@ export default function StudentDashboard() {
     (acc, course) => ({
       completed: acc.completed + (course.completed_subtopics || 0),
       subtopics: acc.subtopics + (course.total_subtopics || 0),
-      minutes: acc.minutes + (course.estimated_minutes || 0),
     }),
-    { completed: 0, subtopics: 0, minutes: 0 },
+    { completed: 0, subtopics: 0 },
   )
   const overall = totals.subtopics ? Math.round((totals.completed / totals.subtopics) * 100) : 0
   const remaining = Math.max(0, totals.subtopics - totals.completed)
@@ -191,7 +187,7 @@ export default function StudentDashboard() {
               <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">Mis cursos</h2>
               {!loading && courses.length > 0 && (
                 <span className="tabular text-xs font-medium text-ink-500">
-                  {formatDuration(totals.minutes)} de estudio en total
+                  {courses.length} {courses.length === 1 ? 'curso' : 'cursos'} en total
                 </span>
               )}
             </div>
