@@ -160,23 +160,28 @@ def test_ask_ai_sin_token_401(mock_call, client: TestClient):
 
 
 @patch("app.services.ai_service.call_openrouter", new_callable=AsyncMock)
-def test_ask_ai_openrouter_saturated_429(mock_call, client: TestClient, indexed_subtopic_id):
-    """OpenRouterSaturatedError -> 429."""
+def test_ask_ai_openrouter_saturated_429_sin_chunks(
+    mock_call, client: TestClient, monkeypatch
+):
+    from app.services import ai_service
+    """Sin chunks y límite global agotado: 429 estable (Retry-After)."""
     from app.core.openrouter_client import OpenRouterSaturatedError
     mock_call.side_effect = OpenRouterSaturatedError("Límite global alcanzado")
+    # fuerza el plan "sin chunks" aunque el seed haya indexado contenido
+    monkeypatch.setattr(ai_service, "_retrieve_chunks", AsyncMock(return_value=[]))
 
     student = auth_headers(client, "ai-est4@example.com", "AI Est 4", "STUDENT")
     resp = client.post(
-        "/api/ai/ask",
-        json={"question": "glaucoma", "subtopic_id": indexed_subtopic_id},
-        headers=student,
+        "/api/ai/ask", json={"question": "pregunta sin contexto"}, headers=student
     )
     assert resp.status_code == 429, resp.text
 
 
 @patch("app.services.ai_service.call_openrouter", new_callable=AsyncMock)
-def test_ask_ai_openrouter_call_error_503(mock_call, client: TestClient, indexed_subtopic_id):
-    """OpenRouterCallError -> 503."""
+def test_ask_ai_call_error_con_chunks_degradado_200(
+    mock_call, client: TestClient, indexed_subtopic_id
+):
+    """Con chunks disponibles y LA IA caída: 200 degradado con respaldo."""
     from app.core.openrouter_client import OpenRouterCallError
     mock_call.side_effect = OpenRouterCallError("Timeout llamando a OpenRouter")
 
@@ -186,7 +191,24 @@ def test_ask_ai_openrouter_call_error_503(mock_call, client: TestClient, indexed
         json={"question": "glaucoma", "subtopic_id": indexed_subtopic_id},
         headers=student,
     )
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["degraded"] is True
+    assert "MODO RESPALDO" in data["respuesta"]
+
+
+@patch("app.services.ai_service.call_openrouter", new_callable=AsyncMock)
+def test_ask_ai_call_error_sin_chunks_503(mock_call, client, monkeypatch):
+    from app.services import ai_service
+    """Sin chunks y IA caída: 503 estable con Retry-After (sin stacktrace)."""
+    from app.core.openrouter_client import OpenRouterCallError
+    mock_call.side_effect = OpenRouterCallError("Timeout llamando a OpenRouter")
+    monkeypatch.setattr(ai_service, "_retrieve_chunks", AsyncMock(return_value=[]))
+
+    student = auth_headers(client, "ai-est5b@example.com", "AI Est 5b", "STUDENT")
+    resp = client.post("/api/ai/ask", json={"question": "cuestiones sin contexto X"}, headers=student)
     assert resp.status_code == 503, resp.text
+    assert "asistente-no-disponible" in resp.json()["detail"]
 
 
 def test_ask_ai_question_max_length_422(client: TestClient):
