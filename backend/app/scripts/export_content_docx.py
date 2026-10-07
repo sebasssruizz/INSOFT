@@ -120,16 +120,8 @@ def add_markdown_content(document, content: str) -> None:
             i += 1
             continue
 
-        # Línea de fuente
-        m = FUENTE_RE.match(line)
-        if m:
-            paragraph = document.add_paragraph()
-            run = paragraph.add_run("Fuente: ")
-            run.bold = True
-            run.font.size = Pt(10)
-            run2 = paragraph.add_run(m.group(1))
-            run2.font.size = Pt(10)
-            run2.italic = True
+        # Línea de fuente: se omite (no debe aparecer en el documento)
+        if FUENTE_RE.match(line):
             i += 1
             continue
 

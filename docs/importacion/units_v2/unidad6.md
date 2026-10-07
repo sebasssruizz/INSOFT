@@ -72,7 +72,6 @@ El cierre del procedimiento incluye la instilación de prednisolona y cloranfeni
 - **Peritomía de base fornix:** apertura de la conjuntiva en su base para acceder al músculo.
 - **Rienda:** sutura de tracción que se corta y retira al final del procedimiento.
 
-Fuente: docs/Manual-de-tecnicas-quirurgicas-de-oftalmologia.pdf, págs. 13–16 (y p. 5 para la musculatura extraocular).
 
 ### Preguntas
 1. ¿En qué tres grandes grupos se agrupan las técnicas para el tratamiento del estrabismo?

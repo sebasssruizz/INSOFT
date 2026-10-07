@@ -60,7 +60,6 @@ La fuente indica cloranfenicol ungüento en el material de consumo del procedimi
 - **Curetaje (legrado):** vaciado del contenido del quiste con cucharilla hasta dejar limpia la cavidad.
 - **Blefaróstato:** separador que mantiene abiertos los párpados durante el procedimiento.
 
-Fuente: docs/Manual-de-tecnicas-quirurgicas-de-oftalmologia.pdf, págs. 58–59 (chalazión) y 5–6 (anatomía palpebral); docs/GUIA TECNICAS QUIRURGICAS DE OFTALMOLOGIA PARA ESTUDIANTES.docx, secciones "PARPADOS" y mesas con blefaróstato de Castroviejo.
 
 ### Preguntas
 1. ¿Qué es un chalazión según el manual?

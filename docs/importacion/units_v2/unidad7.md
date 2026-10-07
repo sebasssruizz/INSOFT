@@ -71,7 +71,6 @@ La cirugía refractiva con LASIK corrige errores visuales de refracción mediant
 - **Paquimetría:** medición del espesor corneal que determina la platina a usar.
 - **Colgajo corneal:** capa de córnea que se levanta para aplicar el láser y se recoloca al final.
 
-Fuente: docs/Manual-de-tecnicas-quirurgicas-de-oftalmologia.pdf, págs. 39–41 (marco de refracción: docs/GUIA TECNICAS QUIRURGICAS DE OFTALMOLOGIA PARA ESTUDIANTES.docx, sección Anatomía y fisiología).
 
 ### Preguntas
 1. ¿Sobre qué estructura aplica el láser excimer en la cirugía refractiva con LASIK?

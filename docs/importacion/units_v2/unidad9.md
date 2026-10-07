@@ -35,7 +35,6 @@ La guía clasifica el pterigión en **cuatro grados** según la invasión de la 
 > [PENDIENTE CLAUDIA: la Guía de técnicas trae la clasificación por grados con los valores numéricos ilegibles o faltantes (p. ej. "Grado I. Invasión de ... de la curvatura corneal"). ¿Cuáles valores debe consignar el compendio y de qué fuente?]
 Por su ubicación existen varias clases: **pterigium nasal, temporal, bilateral y en ambos ojos** (cuando está situado en un solo ojo pero en ambos se denomina bilateral; cuando está situado en ambos ojos se denomina en ambos lados).
 
-Fuente: docs/importacion/PTERIGIÓN.docx (secciones 1 y 3); docs/Manual-de-tecnicas-quirurgicas-de-oftalmologia.pdf, págs. 17–18; docs/GUIA TECNICAS QUIRURGICAS DE OFTALMOLOGIA PARA ESTUDIANTES.docx (sección PTERYGIUM: definición, etiología, signos, tratamiento e indicaciones).
 
 ## Indicaciones y contraindicaciones
 
@@ -77,7 +76,6 @@ Esta elección condiciona directamente la mesa: el autoinjerto suma el instrumen
 
 > [PENDIENTE CLAUDIA: las fuentes validadas cubren este subtema de forma parcial (indicaciones, contraindicaciones, preoperatorio y elección de técnica); con ese material el subtema quedó por debajo de la extensión típica de las unidades 1–8. ¿Existe fuente adicional validada para ampliarlo?]
 
-Fuente: docs/importacion/PTERIGIÓN.docx (sección 2); docs/Manual-de-tecnicas-quirurgicas-de-oftalmologia.pdf, pág. 18; docs/GUIA TECNICAS QUIRURGICAS DE OFTALMOLOGIA PARA ESTUDIANTES.docx (secciones INDICACIONES y REACCIONES ADVERSAS; protocolo general de actividades).
 
 ## Técnica quirúrgica e instrumentación
 
@@ -106,7 +104,6 @@ La guía describe, además de la resección simple, dos variantes: **pterigium m
 ### Procedimiento básico del manual (variante resumida)
 El manual también describe una extirpación breve: anestesia tópica con colirio de propacaína (jeringa con aguja n.º 26), separación de párpados con blefaróstato de Castroviejo, lavado del saco conjuntival con perilla de solución fisiológica, mango de bisturí n.º 3 Bard Parker con hoja n.º 15 para la queratectomía lamelar, disección de la cabeza con tijera de Stevens y pinza con dientes, y cierre con seda 7/0 montada en portaagujas de Castroviejo, sutura de conjuntiva con tijeras de iris y limpieza final con gasa húmeda, ungüento de cloranfenicol tópico y apósito con gasas dobladas fijado con micropore.
 
-Fuente: docs/importacion/PTERIGIÓN.docx (secciones 4 y tabla de pasos); docs/Manual-de-tecnicas-quirurgicas-de-oftalmologia.pdf, págs. 18–20; docs/GUIA TECNICAS QUIRURGICAS DE OFTALMOLOGIA PARA ESTUDIANTES.docx (variantes de plastía y técnica de resección).
 
 ## Complicaciones
 
@@ -140,4 +137,3 @@ En síntesis, las fuentes coinciden en que la **recidiva es la complicación má
 
 > [PENDIENTE CLAUDIA: las fuentes validadas listan las complicaciones y el manejo posoperatorio, pero el material disponible alcanza para una sección más breve que en las unidades 1–8. ¿Existe fuente adicional validada para ampliar esta subunidad?]
 
-Fuente: docs/importacion/PTERIGIÓN.docx (sección 5); docs/Manual-de-tecnicas-quirurgicas-de-oftalmologia.pdf, págs. 18 y 21; docs/GUIA TECNICAS QUIRURGICAS DE OFTALMOLOGIA PARA ESTUDIANTES.docx (reacciones adversas, recidiva y posoperatorio).

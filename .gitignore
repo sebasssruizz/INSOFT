@@ -22,3 +22,6 @@ postgres_data/
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/
+
+# Entregables binarios de revision (se envian directo a la docente, no por git)
+docs/revision/*.docx
