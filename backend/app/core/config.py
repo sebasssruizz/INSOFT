@@ -5,7 +5,7 @@ entorno (ver .env.example). Nunca hardcodear credenciales en el código.
 """
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -93,6 +93,26 @@ class Settings(BaseSettings):
         if isinstance(value, str) and value.startswith("postgresql://"):
             return value.replace("postgresql://", "postgresql+psycopg2://", 1)
         return value
+
+    @model_validator(mode="after")
+    def _require_secret_key_outside_dev(self) -> "Settings":
+        """Producción no arranca con SECRET_KEY placeholder.
+
+        Con DEV_AUTH_ENABLED=false el backend se niega a arrancar si
+        SECRET_KEY está vacía o en su valor placeholder: los JWT firmados
+        con una clave pública conocida no son seguros.
+        """
+        if not self.DEV_AUTH_ENABLED and self.SECRET_KEY.strip() in (
+            "",
+            "change-me-in-production",
+        ):
+            raise RuntimeError(
+                "SECRET_KEY ausente o placeholder y DEV_AUTH_ENABLED=false: "
+                "define SECRET_KEY (por variable de entorno o .env) para iniciar "
+                "el backend en producción, o activa DEV_AUTH_ENABLED=true solo "
+                "en desarrollo local."
+            )
+        return self
 
     @property
     def database_ssl_args(self) -> dict:

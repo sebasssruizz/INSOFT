@@ -59,7 +59,7 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-        VITE_ENABLE_DEV_LOGIN: ${DEV_AUTH_ENABLED:-false}
+        VITE_DEV_AUTH: ${DEV_AUTH_ENABLED:-false}
     container_name: insoft-frontend
     restart: unless-stopped
     ports:
