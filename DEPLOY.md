@@ -45,6 +45,16 @@ Reglas:
   internas en app/database/migrations.py). Si se introduce Alembic en el futuro,
   apuntar `alembic.ini` a la URL directa.
 
+> **ADVERTENCIA seguridad — login de desarrollo**
+> - `DEV_AUTH_ENABLED` debe ser `false` (o no definirse) en producción. Render y
+>   docker-compose ya lo dejan `false` por defecto.
+> - Con `DEV_AUTH_ENABLED=false`, `POST /api/auth/dev` responde **403** sin crear
+>   usuario ni sesión, y el build de producción del frontend **no contiene** la
+>   tarjeta "Acceso de desarrollo" (depende de `import.meta.env.DEV` o de
+>   `VITE_DEV_AUTH=true`, que en Vercel no se define).
+> - Además, si `DEV_AUTH_ENABLED=false` y `SECRET_KEY` está vacía o es el
+>   placeholder "change-me-in-production", el backend **se niega a arrancar**.
+
 ### 3. Backend en Render (Docker, plan free)
 
 1. Render → *New Blueprint* → selecciona el repo. Usage de `render.yaml`
