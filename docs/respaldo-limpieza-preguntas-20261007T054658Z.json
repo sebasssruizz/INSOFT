@@ -1,0 +1,651 @@
+{
+  "generated_at": "20261007T054658Z",
+  "questions": [
+    {
+      "id": 80,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta de humo f916f7?",
+      "options": [
+        "opción A",
+        "opción B",
+        "opción C",
+        "opción D"
+      ],
+      "correct_index": 1,
+      "explanation": "La B es la correcta.",
+      "order": 4,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 38,
+      "created_at": "2026-09-30T19:55:51.387640+00:00"
+    },
+    {
+      "id": 81,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 73e4af?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 5,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 42,
+      "created_at": "2026-09-30T19:56:31.998130+00:00"
+    },
+    {
+      "id": 82,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco afe963?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 6,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 42,
+      "created_at": "2026-09-30T19:56:32.035325+00:00"
+    },
+    {
+      "id": 83,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco d6f6f8?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 7,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 42,
+      "created_at": "2026-09-30T19:56:32.064118+00:00"
+    },
+    {
+      "id": 84,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco e552ef?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 8,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 42,
+      "created_at": "2026-09-30T19:56:32.099080+00:00"
+    },
+    {
+      "id": 85,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 568c83?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 9,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 42,
+      "created_at": "2026-09-30T19:56:32.133645+00:00"
+    },
+    {
+      "id": 86,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 1bb70d?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 10,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 42,
+      "created_at": "2026-09-30T19:56:32.167495+00:00"
+    },
+    {
+      "id": 89,
+      "subtopic_id": 1,
+      "prompt": "¿Práctica smoke 1 f8f4b202-812e-4e9e-81e7-88d526cf8aa5",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 2,
+      "explanation": "exp",
+      "order": 13,
+      "source": "ai",
+      "previous_status": "practice",
+      "new_status": "rejected",
+      "created_by": null,
+      "created_at": "2026-09-30T19:56:58.087753+00:00"
+    },
+    {
+      "id": 90,
+      "subtopic_id": 1,
+      "prompt": "¿Práctica smoke 2 da9b2aff-5a04-4f23-aebf-8efac9260a31",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 2,
+      "explanation": "exp",
+      "order": 14,
+      "source": "ai",
+      "previous_status": "practice",
+      "new_status": "rejected",
+      "created_by": null,
+      "created_at": "2026-09-30T19:56:58.087753+00:00"
+    },
+    {
+      "id": 91,
+      "subtopic_id": 1,
+      "prompt": "¿Práctica smoke 3 dad7fe1b-cb22-4c80-96e0-cb74b5353672",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 2,
+      "explanation": "exp",
+      "order": 15,
+      "source": "ai",
+      "previous_status": "practice",
+      "new_status": "rejected",
+      "created_by": null,
+      "created_at": "2026-09-30T19:56:58.087753+00:00"
+    },
+    {
+      "id": 92,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 087b92?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 16,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 45,
+      "created_at": "2026-09-30T19:57:14.997356+00:00"
+    },
+    {
+      "id": 93,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco a3958e?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 17,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 45,
+      "created_at": "2026-09-30T19:57:15.028319+00:00"
+    },
+    {
+      "id": 94,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 94d384?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 18,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 45,
+      "created_at": "2026-09-30T19:57:15.059067+00:00"
+    },
+    {
+      "id": 95,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco eab00d?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 19,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 45,
+      "created_at": "2026-09-30T19:57:15.087168+00:00"
+    },
+    {
+      "id": 96,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 702eb9?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 20,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 45,
+      "created_at": "2026-09-30T19:57:15.116460+00:00"
+    },
+    {
+      "id": 97,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 989e37?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 21,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 45,
+      "created_at": "2026-09-30T19:57:15.145206+00:00"
+    },
+    {
+      "id": 98,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 5dfab5?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 22,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 47,
+      "created_at": "2026-09-30T19:57:24.082875+00:00"
+    },
+    {
+      "id": 99,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 5746ba?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 23,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 47,
+      "created_at": "2026-09-30T19:57:24.117613+00:00"
+    },
+    {
+      "id": 100,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 0b051a?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 24,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 47,
+      "created_at": "2026-09-30T19:57:24.149190+00:00"
+    },
+    {
+      "id": 101,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 34491d?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 25,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 47,
+      "created_at": "2026-09-30T19:57:24.178309+00:00"
+    },
+    {
+      "id": 102,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco de4a26?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 26,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 47,
+      "created_at": "2026-09-30T19:57:24.209510+00:00"
+    },
+    {
+      "id": 103,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 60ad67?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 27,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 47,
+      "created_at": "2026-09-30T19:57:24.240915+00:00"
+    },
+    {
+      "id": 104,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 3d471e?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 28,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 49,
+      "created_at": "2026-09-30T19:57:28.851600+00:00"
+    },
+    {
+      "id": 105,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco f6d1f2?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 29,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 49,
+      "created_at": "2026-09-30T19:57:28.888078+00:00"
+    },
+    {
+      "id": 106,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 467ba2?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 30,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 49,
+      "created_at": "2026-09-30T19:57:28.918031+00:00"
+    },
+    {
+      "id": 107,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 9d6f8a?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 31,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 49,
+      "created_at": "2026-09-30T19:57:28.949689+00:00"
+    },
+    {
+      "id": 108,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 20f0ff?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 32,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 49,
+      "created_at": "2026-09-30T19:57:28.981380+00:00"
+    },
+    {
+      "id": 109,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco b15067?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 33,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 49,
+      "created_at": "2026-09-30T19:57:29.014138+00:00"
+    },
+    {
+      "id": 110,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 38c647?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 34,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 51,
+      "created_at": "2026-09-30T19:57:41.073460+00:00"
+    },
+    {
+      "id": 111,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco aa33ee?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 35,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 51,
+      "created_at": "2026-09-30T19:57:41.104446+00:00"
+    },
+    {
+      "id": 112,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 20c45e?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 36,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 51,
+      "created_at": "2026-09-30T19:57:41.133544+00:00"
+    },
+    {
+      "id": 113,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco e85737?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 37,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 51,
+      "created_at": "2026-09-30T19:57:41.165346+00:00"
+    },
+    {
+      "id": 114,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 0174e0?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 38,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 51,
+      "created_at": "2026-09-30T19:57:41.197834+00:00"
+    },
+    {
+      "id": 115,
+      "subtopic_id": 1,
+      "prompt": "¿Pregunta banco 69abfe?",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correct_index": 1,
+      "explanation": "porque sí",
+      "order": 39,
+      "source": "teacher",
+      "previous_status": "approved",
+      "new_status": "rejected",
+      "created_by": 51,
+      "created_at": "2026-09-30T19:57:41.231843+00:00"
+    }
+  ]
+}
