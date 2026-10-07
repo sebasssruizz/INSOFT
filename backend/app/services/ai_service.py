@@ -369,14 +369,16 @@ async def generate_questions_for_subtopic(
         )
     context = _build_question_context(chunks)
 
-    existing_prompts = [
-        q.prompt for q in db.scalars(
-            select(Question).where(Question.subtopic_id == subtopic_id)
-        ).all()
-    ][:MAX_EXISTING_PROMPTS]
+    # Enunciados existentes del subtema: TODO el set para deduplicar; una
+    # lista recortada como contexto del LLM (presupuesto de tokens).
+    all_existing_prompts = list(db.scalars(
+        select(Question.prompt).where(Question.subtopic_id == subtopic_id)
+    ).all())
+    # Lista recortada que se muestra al LLM (presupuesto de tokens).
+    existing_prompts_llm = all_existing_prompts[:MAX_EXISTING_PROMPTS]
     existing_block = (
-        "\n".join(f"- {prompt}" for prompt in existing_prompts)
-        if existing_prompts
+        "\n".join(f"- {prompt}" for prompt in existing_prompts_llm)
+        if existing_prompts_llm
         else "(ninguna)"
     )
 
@@ -404,7 +406,7 @@ async def generate_questions_for_subtopic(
     # (el LLM puede ignorar la lista de exclusión).
     from app.services.question_service import normalize_prompt
 
-    existing_normalized = {normalize_prompt(prompt) for prompt in existing_prompts}
+    existing_normalized = {normalize_prompt(prompt) for prompt in all_existing_prompts}
     valid = [
         q
         for q in valid
