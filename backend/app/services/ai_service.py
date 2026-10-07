@@ -222,6 +222,15 @@ async def ask_ai(
     if subtopic_id is not None:
         _ensure_subtopic_access(db, current_user, subtopic_id, course_id)
 
+    # Modo MOCK (solo pruebas de carga; bloqueado en producción al arrancar).
+    if settings.AI_MOCK:
+        return {
+            "respuesta": "[AI_MOCK] Respuesta de prueba para la carga.\nPregunta recibida: " + question[:200],
+            "subtopic_id": subtopic_id,
+            "chunks_usados": 0,
+            "degraded": False,
+        }
+
     # 2. Normalizar la pregunta (siempre usa OpenRouter por consistencia)
     normalized = await call_openrouter(
         model=settings.OPENROUTER_NORMALIZE_MODEL,

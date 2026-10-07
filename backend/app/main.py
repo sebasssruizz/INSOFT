@@ -47,6 +47,8 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    if settings.AI_MOCK and settings.ENVIRONMENT == "production":
+        raise RuntimeError("AI_MOCK no está permitido con ENVIRONMENT=production.")
     app = FastAPI(
         title=settings.PROJECT_NAME,
         description=settings.PROJECT_DESCRIPTION,
