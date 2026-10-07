@@ -27,6 +27,12 @@ services:
     build: ./backend
     container_name: insoft-backend
     restart: unless-stopped
+    # Rotación de logs en producción: 3 archivos de 10 MB por contenedor.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-oftallearn}:${POSTGRES_PASSWORD:-oftallearn}@db:5432/${POSTGRES_DB:-oftallearn}
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
@@ -58,6 +64,11 @@ services:
         condition: service_healthy
 
   frontend:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     build:
       context: ./frontend
       args:
