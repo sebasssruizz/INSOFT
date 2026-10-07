@@ -48,6 +48,10 @@ def suspicious_reasons(question: Question, seen_prompts: set[str]) -> list[str]:
 
     if lowered.startswith(PLACEHOLDER_PREFIX):
         reasons.append("Enunciado de relleno ('Pregunta banco …')")
+    if lowered.startswith("¿pregunta de humo"):
+        reasons.append("Enunciado de prueba ('Pregunta de humo/smoke')")
+    if "práctica smoke" in lowered:
+        reasons.append("Enunciado de prueba ('Pregunta de humo/smoke')")
     if question.id is not None and HEX_ID.search(prompt):
         reasons.append("Enunciado contiene un id hexadecimal")
 
@@ -81,10 +85,13 @@ def suspicious_reasons(question: Question, seen_prompts: set[str]) -> list[str]:
 
 def classify_severity(reasons: list[str]) -> str:
     """Sospecha fuerte = casi seguro relleno; leve = revisar a mano."""
+    # Nota: solo el ENUNCIado de relleno (o el hex id) marca "fuerte" por sí
+    # solo. "Opciones de una sola letra" (ej. calibre real de sutura "0",
+    # pregunta oficial id=13) NO basta: solo eleva si coincide con lo demás.
     strong = {
         "Enunciado de relleno ('Pregunta banco …')",
+        "Enunciado de prueba ('Pregunta de humo/smoke')",
         "Enunciado contiene un id hexadecimal",
-        "Opciones de una sola letra (a, b, c, d)",
         "correct_index fuera de rango",
         "No tiene 4 opciones (0)",
     }
