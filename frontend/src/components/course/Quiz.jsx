@@ -30,7 +30,7 @@ function OptionRow({ label, text, state, onSelect, disabled }) {
           'border-ink-200 bg-white hover:-translate-y-px hover:border-blue-400 hover:bg-blue-50 hover:shadow-e2',
         isChosenRight && 'border-correct-500 bg-correct-50',
         isChosenWrong && 'border-wrong-500 bg-wrong-50',
-        isRevealed && 'border-correct-200 bg-correct-50/60',
+        isRevealed && 'border-correct-500 bg-correct-50',
         state === 'muted' && 'border-ink-200 bg-white opacity-55',
         disabled && 'cursor-default',
       )}
@@ -130,11 +130,17 @@ function Results({ answers, questions, onRestart, footer, exit }) {
                   </p>
                   <p className="mt-3 flex items-start gap-2 text-sm text-correct-700">
                     <FontAwesomeIcon icon={faCheck} className="mt-1 shrink-0" aria-hidden="true" />
-                    {answer.question.options[answer.correct_index]}
+                    {answer.question.options[answer.correct_index] ?? '—'}
                   </p>
-                  <p className="mt-2.5 text-sm leading-relaxed text-ink-600">
-                    {answer.explanation}
-                  </p>
+                  {answer.explanation ? (
+                    <p className="mt-2.5 text-sm leading-relaxed text-ink-600">
+                      {answer.explanation}
+                    </p>
+                  ) : (
+                    <p className="mt-2.5 text-sm italic text-ink-400">
+                      Esta pregunta aún no tiene explicación.
+                    </p>
+                  )}
                 </div>
               ))}
           </div>
@@ -307,7 +313,9 @@ export default function Quiz({
               {wasRight ? 'Correcto' : 'Por qué la respuesta es otra'}
             </p>
             <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-700">
-              {current.explanation}
+              {current.explanation?.trim()
+                ? current.explanation
+                : 'Esta pregunta aún no tiene explicación.'}
             </p>
             <Button onClick={advance} className="group/btn mt-5" iconRight={faArrowRight}>
               {isLast ? 'Ver resultado' : 'Siguiente pregunta'}
