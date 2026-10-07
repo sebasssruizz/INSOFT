@@ -8,12 +8,21 @@ seguimiento del progreso del estudiante.
 
 ## Arquitectura
 
-```text
-┌───────────────────┐      ┌───────────────────┐      ┌───────────────────┐
-│ React + Vite      │ ───> │ FastAPI (REST)    │ ───> │ PostgreSQL        │
-│ Frontend :3000    │      │ Backend :8000     │      │ Base de datos     │
-└───────────────────┘      └───────────────────┘      └───────────────────┘
+```mermaid
+flowchart LR
+    U[Estudiante / Docente] --> F["React + Vite (Vercel / nginx)"]
+    F -->|VITE_API_URL + JWT| B["FastAPI :8000 (REST)"]
+    B --> P[("PostgreSQL + pgvector")]
+    B -->|RAG local| M["Embeddings MiniLM (torch / fastembed ONNX)"]
+    B -->|preguntas de IA (con respaldo)| O["OpenRouter / Gemini"]
+    G[Google OAuth] -.-> F
+    B -.verifica el token de Google.- G
 ```
+
+Componentes: FastAPI (SQLAlchemy + JWT + Google OAuth, RAG con pgvector,
+asistente de IA con cadena de modelos y modo degradado), React/Vite con
+Tailwind, PostgreSQL con la extension `vector` y Docker Compose (proyecto
+`insoft`).
 
 - **Frontend:** React, Vite, React Router, Tailwind CSS, `@react-oauth/google`.
 - **Backend:** Python, FastAPI, SQLAlchemy, JWT, verificación de Google OAuth en servidor.
@@ -55,6 +64,20 @@ seguimiento del progreso del estudiante.
 > **¿Vas a tocar la interfaz?** Lee antes el [sistema de diseño](DESIGN.md).
 > **¿Quieres activar el login con Google?** Consulta la [Guía de Google OAuth](GUIA_GOOGLE_OAUTH.md).
 
+## Estado del proyecto (7-oct-2026)
+
+- Plataforma 100 % operativa local con 9 unidades de contenido validado
+  (26 subtemas, 85+ preguntas) y Curso General con auto-inscripción.
+- Asistente RAG con pgvector + embeddings locales + OpenRouter/Gemini
+  (cadena de modelos, respaldo y modo degradado), límites por día y usuario.
+- Generador de preguntas IA (source=ai, status=pending) con cola de revisión
+  y banco de preguntas manual para el docente.
+- Vista 3D de instrumentos, modo práctica, estadísticas de uso para el docente.
+- Pendientes: dominio/HTTPS en la VM producción, backups agendados (rama
+  `feat/deploy-prod` lista para integrar) y piloto con estudiantes 16–31-oct.
+
+Ver `docs/plan/ESTADO_VS_PLAN.md` y `docs/ENLACES_FINALES.md`.
+
 ## Puesta en marcha con Docker (recomendado)
 
 1. Copia las variables de entorno y edítalas:
@@ -78,7 +101,7 @@ seguimiento del progreso del estudiante.
    - API (docs Swagger): http://localhost:8000/docs
 
 Al arrancar, el backend crea las tablas, carga el **contenido oficial de Oftalmología**
-(8 unidades, 22 subtemas y 66 preguntas de repaso) y el **Curso General de Oftalmología**
+(9 unidades, 26 subtemas y 85 preguntas oficiales) y el **Curso General de Oftalmología**
 automáticamente.
 
 ### Rol de profesor
@@ -121,17 +144,36 @@ echo "VITE_DEV_AUTH=true" >> .env.local
 npm run dev
 ```
 
-## Tests del backend
+## Pruebas (backend y frontend)
 
-Los tests cubren el flujo completo (registro, curso general, progreso, creación de
-curso con código, unión por código, listado de estudiantes y reglas de autorización)
-usando SQLite y el login de desarrollo:
+- **Backend** (158 tests de humos, roles, IA/thread-safety, robustez):
+  ```bash
+  cd backend
+  pip install -r requirements-dev.txt   # ó pip install -r requirements.txt (venv)
+  python -m pytest tests/ -q            # SQLite temporal; sin red ni claves
+  ```
+- **Frontend** (vitest + testing-lib: validación del formulario y wizard):
+  ```bash
+  cd frontend && npm install && npm test     # build: npm run build
+  ```
+- La matriz completa de roles: `docs/pruebas/MATRIZ_ROLES.md`.
 
-```bash
-cd backend
-pip install pytest httpx
-python -m pytest tests/ -v
-```
+## Variables de entorno
+
+Fuente única: `docs/despliegue/VARIABLES.md` (obligatorias, ejemplos,
+dónde van y si son sensibles). Se Copian a `.env` de la raíz (compose) o al
+panel de Vercel/Render según despliegue (`DEPLOY.md`).
+
+## Scripts útiles
+
+| Script | Para qué |
+|---|---|
+| `backend/scripts/audit_questions.py` | auditoría solo-lectura del banco |
+| `backend/scripts/cleanup_placeholder_questions.py` | limpieza suave (--apply, NUNCA por defecto) |
+| `backend/app/scripts/import_pilot_users.py` | carga del piloto (dry-run, --apply) |
+| `scripts/loadtest.py` | carga ligera 30/60 estudiantes (AI_MOCK, sin prod) |
+| `scripts/smoke_prod.sh` | smoke del MVP desplegado |
+| `scripts/score_sus.py` | puntuación SUS de la encuesta |
 
 ## API REST principal
 
