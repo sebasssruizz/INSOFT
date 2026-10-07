@@ -33,6 +33,11 @@ _TEST_DB = os.path.join(_TMP_DIR, "test.db")
 _TEST_DB_URL = f"sqlite:///{_TEST_DB}"
 os.environ["DATABASE_URL"] = _TEST_DB_URL
 
+# Secret de tests: el guard de producción exige SECRET_KEY real cuando
+# DEV_AUTH_ENABLED=false, y la Settings singleton se crea antes de que los
+# módulos fijen sus propias variables.
+os.environ.setdefault("SECRET_KEY", "test-secret")
+
 os.environ.setdefault("OPENROUTER_GLOBAL_LIMIT_PER_MIN", "18")
 
 import pytest  # noqa: E402
