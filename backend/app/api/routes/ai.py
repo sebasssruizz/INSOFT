@@ -25,10 +25,19 @@ from app.repositories import ai_query_repository as ai_query_repo
 from app.repositories import content_repository as content_repo
 from app.schemas.ai import AskRequest, AskResponse, GenerateQuestionsRequest, GenerateQuestionsResponse
 from app.services import ai_service, question_service
-from app.services.ai_service import GeminiCallError, ask_ai
+from app.services.ai_service import (
+    ConcurrencyExceeded,
+    DailyLimitError,
+    GeminiCallError,
+    ask_ai,
+)
 from app.services.content_service import serialize_question_for_teacher
 from app.services.exceptions import ForbiddenError, NotFoundError
-from app.core.openrouter_client import OpenRouterCallError, OpenRouterSaturatedError
+from app.core.openrouter_client import (
+    OpenRouterCallError,
+    OpenRouterQuotaError,
+    OpenRouterSaturatedError,
+)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -92,11 +101,26 @@ async def ask_ai_endpoint(
     except ForbiddenError as exc:
         raise HTTPException(status_code=403, detail=exc.detail)
     except OpenRouterSaturatedError as exc:
-        raise HTTPException(status_code=429, detail=str(exc))
-    except OpenRouterCallError as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
-    except GeminiCallError as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
+        # 429 estable + Retry-After: la frontend muestra reintento en 60 s.
+        raise HTTPException(
+            status_code=429, detail=str(exc), headers={"Retry-After": "60"}
+        )
+    except DailyLimitError as exc:
+        raise HTTPException(
+            status_code=429, detail=str(exc), headers={"Retry-After": "3600"}
+        )
+    except (OpenRouterQuotaError, OpenRouterCallError, GeminiCallError) as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"[asistente-no-disponible] {exc}",
+            headers={"Retry-After": "60"},
+        )
+    except ConcurrencyExceeded as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"[asistente-saturado] {exc}",
+            headers={"Retry-After": "10"},
+        )
 
 # ── Generación de preguntas con IA (solo profesores) ───────────────────────
 

@@ -22,6 +22,7 @@ NEW_COLUMNS = {
     # Sesión/modelo/tiempo de las consultas al asistente (stats de IA).
     ("ai_queries", "session_id"): "VARCHAR(36)",
     ("ai_queries", "model_used"): "VARCHAR",
+    ("ai_queries", "status"): "VARCHAR(20)",
     ("ai_queries", "response_time_ms"): "INTEGER",
     # Fecha de creación de preguntas (tope diario de práctica por subtema).
     ("questions", "created_at"): "TIMESTAMPTZ_NOT_NULL_NOW",

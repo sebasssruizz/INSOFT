@@ -26,6 +26,10 @@ class AskResponse(BaseModel):
     """Respuesta del asistente de IA."""
 
     respuesta: str = Field(..., description="Respuesta generada por el modelo")
+    degraded: bool = Field(
+        default=False,
+        description="True cuando la IA no respondió y se entregaron fragmentos del contenido como respaldo",
+    )
     subtopic_id: int | None = Field(
         default=None, description="Subtema usado como filtro (si se pasó)"
     )

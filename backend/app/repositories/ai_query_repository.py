@@ -3,7 +3,6 @@
 Incluye historiales (propio y de profesor) y estadísticas de uso de IA,
 siempre acotadas a los estudiantes inscritos en los cursos del profesor.
 """
-from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -11,6 +10,10 @@ from sqlalchemy.orm import Session
 
 from app.models.ai_query import AiQuery
 from app.models.content import Subtopic
+from datetime import date, datetime, timedelta, timezone
+
+from sqlalchemy import Date, cast, func, select
+
 from app.models.course import CourseMembership
 from app.models.user import User, UserRole
 
@@ -26,6 +29,7 @@ def create(
     session_id: UUID | None = None,
     model_used: str | None = None,
     response_time_ms: int | None = None,
+    status: str = "ok",
 ) -> AiQuery:
     """Registra una pregunta del estudiante (y su subtema asociado si aplica)."""
     query = AiQuery(
@@ -37,11 +41,23 @@ def create(
         question_original=question_original,
         question_normalizada=question_normalizada,
         respuesta=respuesta,
+        status=status,
     )
     db.add(query)
     db.commit()
     db.refresh(query)
     return query
+
+
+def count_today_for_user(db: Session, user_id: int) -> int:
+    """Consultas registradas DEL usuario en el día UTC actual (tope diario)."""
+    today = datetime.now(timezone.utc).date()
+    return db.scalar(
+        select(func.count(AiQuery.id)).where(
+            AiQuery.user_id == user_id,
+            cast(AiQuery.created_at, Date) == today,
+        )
+    ) or 0
 
 
 def get_by_user(

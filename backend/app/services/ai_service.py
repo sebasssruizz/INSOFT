@@ -6,6 +6,7 @@ Soporte alternable por variable de entorno AI_PROVIDER=openrouter|gemini.
 """
 from __future__ import annotations
 
+import asyncio
 import time
 
 import google.generativeai as genai
@@ -14,7 +15,12 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.core.config import settings
-from app.core.openrouter_client import OpenRouterCallError, OpenRouterSaturatedError, call_openrouter
+from app.core.openrouter_client import (
+    OpenRouterCallError,
+    OpenRouterQuotaError,
+    OpenRouterSaturatedError,
+    call_openrouter,
+)
 from app.models.content import CourseTopic, Subtopic
 from app.models.user import User, UserRole
 from app.repositories import ai_query_repository as ai_query_repo
@@ -185,6 +191,48 @@ async def call_gemini(
     return response.text
 
 
+_ai_semaphore: tuple = None
+
+
+def _get_ai_semaphore() -> asyncio.Semaphore | None:
+    """Semáforo global de concurrencia (AI_MAX_CONCURRENCY).
+
+    Se recree si el límite configurado cambia (env por prueba): el singleton
+    guarda (límite, semáforo) para no servir un semáforo obsoleto.
+    """
+    global _ai_semaphore
+    limit = settings.AI_MAX_CONCURRENCY
+    if limit <= 0:
+        return None
+    if _ai_semaphore is None or _ai_semaphore[0] != limit:
+        _ai_semaphore = (limit, asyncio.Semaphore(limit))
+    return _ai_semaphore[1]
+
+
+class DailyLimitError(Exception):
+    """El usuario alcanzó su tope diario de consultas al asistente (HTTP 429)."""
+
+
+class ConcurrencyExceeded(Exception):
+    """El asistente alcanzó su tope global de concurrencia (HTTP 503)."""
+
+
+def _degraded_answer(chunks: list, question: str) -> tuple[str, str]:
+    """Respuesta de respaldo cuando la IA no responde: fragmentos oficiales.
+
+    Devuelve (texto, model_used). Siempre marcado como respaldo para que el
+    Edy/widget lo muestre distinto y el docente no confunda la respuesta.
+    """
+    parts = [
+        "[MODO RESPALDO] El asistente con IA no está disponible ahora mismo.",
+        "Estos son los fragmentos relacionados del contenido oficial:",
+    ]
+    for i, chunk in enumerate(chunks[:3], 1):
+        snippet = " ".join((chunk.content or "").split())[:400]
+        parts.append(f"{i}. {snippet}…")
+    return "\n\n".join(parts), f"fallback:chunks:{min(len(chunks), 3)}"
+
+
 async def ask_ai(
     question: str,
     user_id: int,
@@ -222,14 +270,33 @@ async def ask_ai(
     if subtopic_id is not None:
         _ensure_subtopic_access(db, current_user, subtopic_id, course_id)
 
-    # 2. Normalizar la pregunta (siempre usa OpenRouter por consistencia)
-    normalized = await call_openrouter(
-        model=settings.OPENROUTER_NORMALIZE_MODEL,
-        system_prompt=NORMALIZE_SYSTEM,
-        user_content=question,
-    )
+    # 2a. Tope diario por usuario (AI_DAILY_LIMIT_PER_USER, 0 = sin tope)
+    if settings.AI_DAILY_LIMIT_PER_USER > 0:
+        today_count = ai_query_repo.count_today_for_user(db, user_id)
+        if today_count >= settings.AI_DAILY_LIMIT_PER_USER:
+            raise DailyLimitError(
+                "Alcanzaste el límite de consultas del día para el asistente."
+            )
 
-    # 3. Buscar chunks similares (contextuales al curso/subtema si se pasan)
+    # 2b. Concurrencia global del proceso (semáforo configurable)
+    sem = _get_ai_semaphore()
+    if sem is not None and sem.locked():  # falla rápido, no encolamos eternamente
+        raise ConcurrencyExceeded(
+            "El asistente está saturado ahora mismo; intenta de nuevo en unos segundos."
+        )
+
+    # 3. Normalizar la pregunta. Si la IA cae aquí, seguimos con el texto
+    #    original: la normalización es una mejora, no un requisito.
+    try:
+        normalized = await call_openrouter(
+            model=settings.OPENROUTER_NORMALIZE_MODEL,
+            system_prompt=NORMALIZE_SYSTEM,
+            user_content=question,
+        )
+    except (OpenRouterCallError, OpenRouterQuotaError, OpenRouterSaturatedError):
+        normalized = question.strip()
+
+    # 4. Buscar chunks similares (contextuales al curso/subtema si se pasan)
     chunks = await _retrieve_chunks(db, normalized, subtopic_id, course_id)
 
     # 4. Respuesta final con contexto (usar el proveedor configurado).
@@ -238,18 +305,35 @@ async def ask_ai(
     context = "\n\n".join(chunk.content for chunk in chunks) if chunks else "(sin contexto disponible)"
 
     start_ms = time.perf_counter()
-    if settings.AI_PROVIDER == "gemini":
-        answer = await call_gemini(
-            model=settings.GEMINI_MODEL,
-            system_prompt=ANSWER_SYSTEM,
-            user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
-        )
-    else:
-        answer = await call_openrouter(
-            model=settings.OPENROUTER_ANSWER_MODEL,
-            system_prompt=ANSWER_SYSTEM,
-            user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
-        )
+    status = "ok"
+    degraded = False
+    status_model = (
+        settings.GEMINI_MODEL if settings.AI_PROVIDER == "gemini"
+        else settings.OPENROUTER_ANSWER_MODEL
+    )
+    try:
+        if settings.AI_PROVIDER == "gemini":
+            answer = await call_gemini(
+                model=settings.GEMINI_MODEL,
+                system_prompt=ANSWER_SYSTEM,
+                user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
+            )
+        else:
+            answer = await call_openrouter(
+                model=settings.OPENROUTER_ANSWER_MODEL,
+                system_prompt=ANSWER_SYSTEM,
+                user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
+            )
+    except (GeminiCallError, OpenRouterCallError, OpenRouterQuotaError, OpenRouterSaturatedError):
+        # Modo degradado: si hay chunks disponibles, respuesta de respaldo con
+        # fragmentos oficiales (marcada). Sin chunks, propagamos el error
+        # tipado (la ruta responde 503 estable y no se registra la consulta).
+        if not chunks:
+            raise
+        answer, status_model = _degraded_answer(chunks, question)
+        status = "degraded"
+        degraded = True
+
     response_time_ms = int((time.perf_counter() - start_ms) * 1000)
 
     # 5. Guardar en historial (ai_queries)
@@ -259,18 +343,18 @@ async def ask_ai(
         question_original=question,
         subtopic_id=subtopic_id,
         session_id=session_id,
-        model_used=settings.OPENROUTER_ANSWER_MODEL
-        if settings.AI_PROVIDER != "gemini"
-        else settings.GEMINI_MODEL,
+        model_used=status_model,
         response_time_ms=response_time_ms,
         question_normalizada=normalized,
         respuesta=answer,
+        status=status,
     )
 
     return {
         "respuesta": answer,
         "subtopic_id": subtopic_id,
         "chunks_usados": len(chunks),
+        "degraded": degraded,
     }
 
 # ── Generación de preguntas con IA (solo profesores) ───────────────────────

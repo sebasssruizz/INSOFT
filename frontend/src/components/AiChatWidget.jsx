@@ -129,14 +129,15 @@ export default function AiChatWidget() {
           scope: Boolean(data.subtopic_id),
           course: courseId != null,
           chunks: data.chunks_usados,
+          degraded: Boolean(data.degraded),
         },
       ])
     } catch (err) {
       const hint =
         err.status === 429
-          ? '\n\n(Alcanzaste el límite de preguntas por hora; intentá más tarde.)'
+          ? '\n\n(Alcanzaste el límite de consultas; reintenta en el tiempo indicado.)'
           : err.status === 503
-            ? '\n\n(El proveedor de IA no responde ahora; intentá de nuevo en unos minutos.)'
+            ? '\n\n(El asistente no está disponible en este momento; en un minuto reintentamos.)'
             : ''
       setMessages((prev) => [
         ...prev,
