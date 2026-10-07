@@ -5,7 +5,6 @@ import {
   faArrowLeft,
   faArrowRight,
   faCheck,
-  faClock,
   faCube,
   faLayerGroup,
   faListCheck,
@@ -16,7 +15,7 @@ import PracticeQuiz from '../../components/course/PracticeQuiz'
 import { Button } from '../../components/ui/Button'
 import { Meta } from '../../components/ui/Meta'
 import { cn } from '../../lib/utils'
-import { formatDuration, splitUnitName } from '../../lib/curriculum'
+import { splitUnitName } from '../../lib/curriculum'
 import { getSubtopic } from '../../services/contentService'
 import { newQuizAttemptId, submitQuizAnswer } from '../../services/quizService'
 import { useAuth } from '../../hooks/useAuth'
@@ -199,7 +198,6 @@ export default function SubtopicPage() {
           {subtopic?.name}
         </h1>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 sm:gap-x-5">
-          <Meta icon={faClock}>{formatDuration(subtopic?.estimated_minutes)} de estudio</Meta>
           {questions.length > 0 && (
             <Meta icon={faListCheck}>{questions.length} preguntas de repaso</Meta>
           )}

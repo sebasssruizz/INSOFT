@@ -5,12 +5,7 @@ import { faArrowLeft, faArrowRight, faCheck, faListCheck } from '@fortawesome/fr
 import { Button } from '../../components/ui/Button'
 import { ProgressRing } from '../../components/ui/Progress'
 import { cn } from '../../lib/utils'
-import {
-  formatDuration,
-  formatDurationShort,
-  splitUnitName,
-  unitIdentity,
-} from '../../lib/curriculum'
+import { splitUnitName, unitIdentity } from '../../lib/curriculum'
 import { useCourse } from '../../hooks/useCourse'
 
 export default function UnitPage() {
@@ -69,8 +64,7 @@ export default function UnitPage() {
             {title}
           </h1>
           <p className="tabular mt-2 text-xs text-ink-500">
-            {total} subtemas · {formatDuration(topic.estimated_minutes)} · {topic.question_count}{' '}
-            preguntas
+            {total} subtemas · {topic.question_count} preguntas
           </p>
         </div>
 
@@ -113,8 +107,7 @@ export default function UnitPage() {
                   {subtopic.name}
                 </span>
                 <span className="tabular mt-0.5 block text-xs text-ink-500">
-                  {formatDurationShort(subtopic.estimated_minutes)}
-                  {subtopic.question_count > 0 && ` · ${subtopic.question_count} preguntas`}
+                  {subtopic.question_count > 0 && `${subtopic.question_count} preguntas`}
                 </span>
               </span>
 
