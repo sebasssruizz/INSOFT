@@ -16,6 +16,7 @@ import { CoursesProvider, useCourses } from '../hooks/useCourses'
 import Logo from './Logo'
 import ProfileDrawer from './ProfileDrawer'
 import AiChatWidget from './AiChatWidget'
+import SlowServerBanner from './ui/SlowServerBanner'
 
 function CourseLink({ course, isTeacher }) {
   const to = isTeacher ? `/teacher/courses/${course.id}` : `/courses/${course.id}`
@@ -231,6 +232,8 @@ function Shell() {
       {/* Fuera de la barra lateral: dentro, el `transform` del cajón móvil
           crearía un bloque contenedor y atraparía este panel `fixed`. */}
       <ProfileDrawer open={profileOpen} onClose={() => setProfileOpen(false)} />
+
+      <SlowServerBanner />
 
       <AiChatWidget />
     </div>

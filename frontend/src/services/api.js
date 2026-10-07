@@ -61,15 +61,45 @@ export async function downloadCsv(path, filename) {
   URL.revokeObjectURL(url)
 }
 
+// Servidores gratuitos (Render free) se quedan dormidos: la primera petición
+// puede superar los 5 s. Al excederse se avisa a la UI con eventos
+// 'insoft:api-slow' / 'insoft:api-slow-end' (componente SlowServerBanner).
+const SLOW_THRESHOLD_MS = 5000
+let slowRequestCount = 0
+
+const notifySlowCount = () =>
+  window.dispatchEvent(
+    new CustomEvent(slowRequestCount > 0 ? 'insoft:api-slow' : 'insoft:api-slow-end'),
+  )
+
 export async function apiFetch(path, { method = 'GET', body } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   const token = session.getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const response = await fetch(`${API_URL}/api${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
+  const response = await new Promise((resolve, reject) => {
+    let wentSlow = false
+    const timer = setTimeout(() => {
+      if (!wentSlow) {
+        wentSlow = true
+        slowRequestCount += 1
+        notifySlowCount()
+      }
+    }, SLOW_THRESHOLD_MS)
+    fetch(`${API_URL}/api${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    })
+      .then(resolve, reject)
+      .finally(() => {
+        clearTimeout(timer)
+        if (wentSlow) {
+          wentSlow = false
+          slowRequestCount -= 1
+          notifySlowCount()
+        }
+      })
   })
 
   if (response.status === 401) {

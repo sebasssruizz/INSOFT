@@ -18,6 +18,9 @@ class Settings(BaseSettings):
 
     # Base de datos PostgreSQL
     DATABASE_URL: str = "postgresql+psycopg2://oftallearn:oftallearn@db:5432/oftallearn"
+    # Fuerza SSL en la conexión (se activa sola para neon.tech). Para Neon:
+    # DATABASE_SSL=true en los proveedores que no entregan host *.neon.tech.
+    DATABASE_SSL: bool = False
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
@@ -32,12 +35,14 @@ class Settings(BaseSettings):
 
     # CORS para pruebas desde el móvil por IP (localhost, 127.0.0.1, rangos privados
     # 10.x, 192.168.x, 172.16-31.x y CGNAT/Tailscale 100.64-127.x, cualquier puerto).
+    # Añadido: previews/producción de Vercel (https://*.vercel.app).
     BACKEND_CORS_ORIGIN_REGEX: str = (
         r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0|"
         r"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
         r"192\.168\.\d{1,3}\.\d{1,3}|"
         r"172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|"
         r"100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3})(:\d+)?$"
+        r"|^https://.*\.vercel\.app$"
     )
 
     # Correos que obtienen automáticamente el rol de profesor al registrarse (separados por comas)
@@ -88,6 +93,20 @@ class Settings(BaseSettings):
         if isinstance(value, str) and value.startswith("postgresql://"):
             return value.replace("postgresql://", "postgresql+psycopg2://", 1)
         return value
+
+    @property
+    def database_ssl_args(self) -> dict:
+        """Argumentos de conexión para proveedores gestionados (Neon/Render).
+
+        Se activa SSL automáticamente si el host es neon.tech o si se define
+        DATABASE_SSL=true. Para Neon se exige `sslmode=require` (el pool de
+        Neon a veces pide verify-full; require es lo mínimo válido).
+        """
+        url = self.DATABASE_URL
+        needs_ssl = "neon.tech" in url or self.DATABASE_SSL
+        if "sqlite" in url or not needs_ssl:
+            return {}
+        return {"sslmode": "require"}
 
     @staticmethod
     def _split_csv(value: str) -> list[str]:
