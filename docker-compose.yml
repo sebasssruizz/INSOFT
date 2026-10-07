@@ -1,3 +1,7 @@
+# Nombre de proyecto FIJO: si se ejecuta `docker compose` desde otra carpeta
+# (p. ej. INSOFT-deploy) sigue usando el mismo stack y el mismo volumen de datos.
+name: insoft
+
 services:
   db:
     # Imagen con la extensión pgvector incluida (necesaria para el módulo RAG/IA).
@@ -68,4 +72,7 @@ services:
       - backend
 
 volumes:
+  # Nombre estable en Docker, independiente del proyecto/carpeta: siempre los
+  # datos reales (cursos, preguntas, usuarios). No crear uno distinto.
   postgres_data:
+    name: insoft_postgres_data
