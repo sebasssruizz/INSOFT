@@ -190,7 +190,10 @@ export default function ContentRail({ className }) {
         </p>
       </div>
 
-      <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
+      {/* En escritorio el índice va anclado bajo la cabecera del curso: su lista
+          se desplaza por dentro para que el conjunto quepa siempre en pantalla.
+          En móvil no se ancla y se muestra entero, sin scroll anidado. */}
+      <div className="lg:max-h-[calc(100vh-19rem)] lg:overflow-y-auto">
         {topics.map((topic) => (
           <UnitSection
             key={topic.id}

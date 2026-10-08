@@ -91,15 +91,38 @@ export default function TeacherCoursePage() {
 
       {!loading && !error && (
         <>
-          <header className="mt-4">
-            <h1 className="text-[1.5rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900 sm:text-[2rem]">
-              {course?.name}
-            </h1>
-            {course?.description && (
-              <p className="mt-2.5 max-w-[62ch] text-[0.9375rem] leading-relaxed text-ink-500">
-                {course.description}
-              </p>
-            )}
+          <header className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-[1.5rem] font-semibold leading-tight tracking-[-0.02em] text-ink-900 sm:text-[2rem]">
+                {course?.name}
+              </h1>
+              {course?.description && (
+                <p className="mt-2.5 max-w-[62ch] text-[0.9375rem] leading-relaxed text-ink-500">
+                  {course.description}
+                </p>
+              )}
+            </div>
+            {/* Acciones del curso. La principal de la pantalla es copiar el
+                código, así que estas van en secundario. */}
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center lg:shrink-0">
+              <Button
+                as={Link}
+                to={`/courses/${courseId}`}
+                variant="ghost"
+                iconRight={faArrowRight}
+                className="group/btn w-full sm:w-auto"
+              >
+                Ver el contenido
+              </Button>
+              <Button
+                variant="secondary"
+                icon={faPlus}
+                onClick={() => setWizardOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                Agregar pregunta
+              </Button>
+            </div>
           </header>
 
           {/* Código de acceso: el dato que el profesor viene a buscar */}
@@ -129,23 +152,6 @@ export default function TeacherCoursePage() {
                 {students.length}
               </span>
             </h2>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                variant="primary"
-                icon={faPlus}
-                onClick={() => setWizardOpen(true)}
-                className="order-first w-full sm:order-none sm:w-auto"
-              >
-                Agregar pregunta
-              </Button>
-              <Link
-                to={`/courses/${courseId}`}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-blue-800 transition-colors duration-150 hover:text-blue-800"
-              >
-                Ver el contenido del curso
-                <FontAwesomeIcon icon={faArrowRight} className="text-[0.7rem]" aria-hidden="true" />
-              </Link>
-            </div>
           </div>
 
           {students.length === 0 ? (

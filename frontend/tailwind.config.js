@@ -93,6 +93,60 @@ export default {
           '0%, 100%': { transform: 'translate3d(0,0,0)' },
           '50%': { transform: 'translate3d(0,-14px,0)' },
         },
+        // Parpadeo del ojo del cargador: el párpado baja y sube una vez por ciclo.
+        blink: {
+          '0%, 86%, 100%': { transform: 'scaleY(1)' },
+          '92%': { transform: 'scaleY(0.08)' },
+        },
+        // El iris recorre el campo visual de un lado a otro mientras se espera.
+        'iris-scan': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '25%': { transform: 'translateX(-22%)' },
+          '75%': { transform: 'translateX(22%)' },
+        },
+        // La pupila se contrae y se dilata, como ante un cambio de luz.
+        pupil: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(0.72)' },
+        },
+        // Respuesta incorrecta: un vaivén corto, nunca un temblor largo.
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%, 60%': { transform: 'translateX(-5px)' },
+          '40%, 80%': { transform: 'translateX(5px)' },
+        },
+        // Confirmación: crece un poco y se asienta.
+        pop: {
+          '0%': { transform: 'scale(0.6)', opacity: '0' },
+          '60%': { transform: 'scale(1.12)', opacity: '1' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        // De desenfocado a nítido: lo que hace el ojo al acomodar.
+        'focus-in': {
+          from: { filter: 'blur(10px)', opacity: '0.35' },
+          to: { filter: 'blur(0)', opacity: '1' },
+        },
+        'route-progress': {
+          '0%': { transform: 'scaleX(0)', opacity: '1' },
+          '70%': { transform: 'scaleX(0.85)', opacity: '1' },
+          '100%': { transform: 'scaleX(1)', opacity: '0' },
+        },
+        'scroll-cue': {
+          '0%': { transform: 'translateY(0)', opacity: '0' },
+          '30%': { opacity: '1' },
+          '100%': { transform: 'translateY(10px)', opacity: '0' },
+        },
+        'soft-ping': {
+          '0%': { transform: 'scale(1)', opacity: '0.55' },
+          '100%': { transform: 'scale(2.4)', opacity: '0' },
+        },
+        'spin-iris': {
+          to: { transform: 'rotate(360deg)' },
+        },
+        'slide-in-left': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(0)' },
+        },
       },
       animation: {
         'rise-in': 'rise-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both',
@@ -100,6 +154,17 @@ export default {
         'scale-in': 'scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both',
         shimmer: 'shimmer 1.6s infinite',
         'drift-slow': 'drift-slow 9s ease-in-out infinite',
+        blink: 'blink 3.6s ease-in-out infinite',
+        'iris-scan': 'iris-scan 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite',
+        pupil: 'pupil 1.8s ease-in-out infinite',
+        shake: 'shake 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97) both',
+        pop: 'pop 0.42s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'focus-in': 'focus-in 1.1s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'route-progress': 'route-progress 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'scroll-cue': 'scroll-cue 1.8s ease-out infinite',
+        'soft-ping': 'soft-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite',
+        'spin-iris': 'spin-iris 0.9s linear infinite',
+        'slide-in-left': 'slide-in-left 0.32s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
     },
   },

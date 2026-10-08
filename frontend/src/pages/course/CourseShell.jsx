@@ -26,7 +26,9 @@ function CourseHeader() {
   } = useCourse()
 
   return (
-    <header className="sticky top-0 z-10 border-b border-ink-200 bg-white/95 backdrop-blur">
+    // Anclada solo en escritorio: en móvil la cabecera ocupa media pantalla y
+    // quedaría además debajo de la barra superior de la aplicación.
+    <header className="relative z-10 border-b border-ink-200 bg-white/95 backdrop-blur lg:sticky lg:top-0">
       <div className="mx-auto max-w-[82rem] px-5 pb-4 pt-4 sm:px-6 lg:px-10 lg:pb-5 lg:pt-5">
         <Link
           to="/dashboard"

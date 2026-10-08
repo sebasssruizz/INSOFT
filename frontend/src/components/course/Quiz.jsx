@@ -9,6 +9,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 import { Button } from '../ui/Button'
+import { Counter } from '../ui/Counter'
+import { IrisSpinner } from '../ui/EyeLoader'
 import { cn } from '../../lib/utils'
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -17,19 +19,24 @@ function OptionRow({ label, text, state, onSelect, disabled }) {
   const isChosenRight = state === 'chosen-right'
   const isChosenWrong = state === 'chosen-wrong'
   const isRevealed = state === 'revealed'
+  const isPending = state === 'pending'
 
   return (
     <button
       type="button"
       onClick={onSelect}
       disabled={disabled}
+      aria-busy={isPending || undefined}
       className={cn(
         'flex w-full items-start gap-3.5 rounded-xl border px-4 py-3.5 text-left',
         'transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out',
         state === 'idle' &&
-          'border-ink-200 bg-white hover:-translate-y-px hover:border-blue-400 hover:bg-blue-50 hover:shadow-e2',
+          'border-ink-200 bg-white hover:-translate-y-px hover:border-blue-400 hover:bg-blue-50 hover:shadow-e2 active:scale-[0.99]',
+        isPending && 'border-blue-400 bg-blue-50 shadow-e2',
+        // Acierto: la tarjeta se queda quieta y el icono hace "pop". Fallo: un
+        // vaivén corto, como quien niega con la cabeza.
         isChosenRight && 'border-correct-500 bg-correct-50',
-        isChosenWrong && 'border-wrong-500 bg-wrong-50',
+        isChosenWrong && 'animate-shake border-wrong-500 bg-wrong-50',
         isRevealed && 'border-correct-200 bg-correct-50/60',
         state === 'muted' && 'border-ink-200 bg-white opacity-55',
         disabled && 'cursor-default',
@@ -39,6 +46,7 @@ function OptionRow({ label, text, state, onSelect, disabled }) {
         className={cn(
           'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-sans text-xs font-bold transition-colors duration-150',
           state === 'idle' && 'bg-ink-100 text-ink-600',
+          isPending && 'bg-blue-900 text-white',
           isChosenRight && 'bg-correct-500 text-white',
           isChosenWrong && 'bg-wrong-500 text-white',
           isRevealed && 'bg-correct-500 text-white',
@@ -46,10 +54,16 @@ function OptionRow({ label, text, state, onSelect, disabled }) {
         )}
         aria-hidden="true"
       >
-        {isChosenRight || isRevealed ? (
-          <FontAwesomeIcon icon={faCheck} />
+        {isPending ? (
+          <IrisSpinner />
+        ) : isChosenRight || isRevealed ? (
+          <FontAwesomeIcon
+            icon={faCheck}
+            className="animate-pop"
+            style={isRevealed ? { animationDelay: '220ms' } : undefined}
+          />
         ) : isChosenWrong ? (
-          <FontAwesomeIcon icon={faXmark} />
+          <FontAwesomeIcon icon={faXmark} className="animate-pop" />
         ) : (
           label
         )}
@@ -86,11 +100,11 @@ function Results({ answers, questions, onRestart, footer, exit }) {
         <p className="eyebrow text-ink-500">Resultado del repaso</p>
         <p
           className={cn(
-            'tabular mt-3 font-display text-6xl font-semibold leading-none',
+            'mt-3 font-display text-6xl font-semibold leading-none',
             passed ? 'text-correct-700' : 'text-blue-800',
           )}
         >
-          {score}%
+          <Counter to={score} suffix="%" duration={1100} />
         </p>
         <p className="tabular mt-3 text-sm text-ink-600">
           {right} de {questions.length} respuestas correctas
@@ -274,6 +288,7 @@ export default function Quiz({
         <div className="mt-5 space-y-2.5">
           {question.options.map((option, optionIndex) => {
             let state = 'idle'
+            if (!answered && submitting && optionIndex === chosen) state = 'pending'
             if (answered) {
               if (optionIndex === chosen) state = wasRight ? 'chosen-right' : 'chosen-wrong'
               else if (optionIndex === current.correct_index) state = 'revealed'

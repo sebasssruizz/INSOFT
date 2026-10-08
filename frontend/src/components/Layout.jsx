@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faBars,
+  faChartColumn,
+  faFileArrowUp,
   faGraduationCap,
   faHouse,
   faRightFromBracket,
@@ -64,10 +66,22 @@ function CourseLink({ course, isTeacher }) {
   )
 }
 
+// Secciones fijas del menú. El profesor tiene además sus herramientas, que
+// antes solo se alcanzaban desde tarjetas del panel de inicio.
+const NAV_ITEMS = {
+  STUDENT: [{ to: '/dashboard', label: 'Inicio', icon: faHouse, end: true }],
+  TEACHER: [
+    { to: '/dashboard', label: 'Inicio', icon: faHouse, end: true },
+    { to: '/teacher/ai-stats', label: 'Estadísticas de IA', icon: faChartColumn },
+    { to: '/teacher/import', label: 'Importar contenido', icon: faFileArrowUp },
+  ],
+}
+
 function SidebarContent({ onNavigate, onOpenProfile }) {
   const { user, logout } = useAuth()
   const { courses, loading } = useCourses()
   const isTeacher = user?.role === 'TEACHER'
+  const items = NAV_ITEMS[isTeacher ? 'TEACHER' : 'STUDENT']
 
   return (
     <div className="flex h-full flex-col">
@@ -77,23 +91,30 @@ function SidebarContent({ onNavigate, onOpenProfile }) {
         </Link>
       </div>
 
-      <nav className="px-3 pt-6">
-        <NavLink
-          to="/dashboard"
-          end
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors duration-150',
-              isActive
-                ? 'bg-blue-900 text-white'
-                : 'text-ink-700 hover:bg-ink-100 hover:text-ink-900',
-            )
-          }
-        >
-          <FontAwesomeIcon icon={faHouse} className="w-4" aria-hidden="true" />
-          Inicio
-        </NavLink>
+      <nav aria-label="Secciones" className="space-y-1 px-3 pt-6">
+        {items.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-[background-color,color] duration-150',
+                isActive
+                  ? 'bg-blue-900 text-white shadow-e2'
+                  : 'text-ink-700 hover:bg-ink-100 hover:text-ink-900',
+              )
+            }
+          >
+            <FontAwesomeIcon
+              icon={item.icon}
+              className="w-4 transition-transform duration-200 ease-out group-hover:scale-110"
+              aria-hidden="true"
+            />
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="mt-8 min-h-0 flex-1 overflow-y-auto px-3 pb-4">
@@ -168,6 +189,34 @@ function SidebarContent({ onNavigate, onOpenProfile }) {
   )
 }
 
+/**
+ * Barra fina en el borde superior al cambiar de pantalla: confirma que el clic
+ * se registró aunque la nueva vista aparezca al instante. No sale en la
+ * primera carga, solo al navegar.
+ */
+function RouteProgress() {
+  const { pathname } = useLocation()
+  const [run, setRun] = useState(0)
+  const first = useRef(true)
+
+  useEffect(() => {
+    if (first.current) {
+      first.current = false
+      return
+    }
+    setRun((value) => value + 1)
+  }, [pathname])
+
+  if (!run) return null
+  return (
+    <span
+      key={run}
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5 origin-left animate-route-progress bg-blue-900"
+    />
+  )
+}
+
 function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -177,8 +226,24 @@ function Shell() {
     setMobileOpen(false)
   }, [location.pathname])
 
+  // Con el menú móvil abierto, la página de detrás no se desplaza.
+  useEffect(() => {
+    if (!mobileOpen) return undefined
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMobileOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previous
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [mobileOpen])
+
   return (
     <div className="min-h-screen bg-ink-50 lg:flex">
+      <RouteProgress />
       {/* Barra lateral fija en escritorio */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[16.5rem] flex-col border-r border-ink-200 bg-white lg:flex">
         <SidebarContent onOpenProfile={() => setProfileOpen(true)} />
@@ -205,7 +270,7 @@ function Shell() {
             onClick={() => setMobileOpen(false)}
             className="absolute inset-0 animate-fade-in bg-ink-950/40 backdrop-blur-sm"
           />
-          <div className="absolute inset-y-0 left-0 w-[17rem] animate-rise-in bg-white shadow-e4">
+          <div className="absolute inset-y-0 left-0 w-[min(17rem,85vw)] animate-slide-in-left bg-white shadow-e4">
             <button
               onClick={() => setMobileOpen(false)}
               aria-label="Cerrar el menú"
