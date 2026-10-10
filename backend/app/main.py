@@ -94,6 +94,12 @@ def create_app() -> FastAPI:
         description=settings.PROJECT_DESCRIPTION,
         version="1.0.0",
         lifespan=lifespan,
+        # Con el backend expuesto al público, la documentación interactiva
+        # (DOCS_ENABLED=false en producción) no se publica: reduce superficie
+        # de reconocimiento sin quitar nada operativo.
+        docs_url="/docs" if settings.DOCS_ENABLED else None,
+        redoc_url="/redoc" if settings.DOCS_ENABLED else None,
+        openapi_url=f"{settings.API_PREFIX}/openapi.json" if settings.DOCS_ENABLED else None,
     )
 
     # slowapi: el estado del app referencia el limiter principal; cada router
@@ -158,6 +164,13 @@ def create_app() -> FastAPI:
         start = time.perf_counter()
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
+        # Cabeceras de seguridad básicas (el HSTS lo añade el túnel/proxy que
+        # termina TLS: aplicar https en la capa de transporte). Sin CSP:
+        # la API no sirve HTML (docs se apagan en producción).
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer-when-downgrade")
+        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
         logging.getLogger("request").info(
             "%s %s -> %s (%.1f ms) request_id=%s",
             request.method,

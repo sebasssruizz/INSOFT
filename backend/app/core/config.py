@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
     LOG_FORMAT: str = "plain"            # "json" | "plain"
 
+    # Documentación OpenAPI. Con backend EXPUESTO al público debe ser false:
+    # /docs, /redoc y /openapi.json enriquecen a un atacante sin valor
+    # operativo. En desarrollo local (docker compose: DOCS_ENABLED=true) se
+    # mantienen para iterar.
+    DOCS_ENABLED: bool = True
+
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
 
@@ -106,6 +112,11 @@ class Settings(BaseSettings):
 
     # Respuestas de quiz calificadas en servidor (por usuario; default alto)
     QUIZ_ANSWER_RATE_LIMIT: str = "120/hour"
+
+    # Endpoints de login (públicos): tope por IP contra credential stuffing.
+    # El default EN CÓDIGO es permissivo (local/tests); al exponer el compose
+    # impone el valor estricto AUTH_RATE_LIMIT=60/hour (docker-compose.yml).
+    AUTH_RATE_LIMIT: str = "99999/hour"
 
     # Modo práctica (banco + IA reutilizable)
     PRACTICE_RATE_LIMIT: str = "30/hour"
