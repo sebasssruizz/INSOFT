@@ -7,6 +7,7 @@ import json
 import os
 
 os.environ["DEV_AUTH_ENABLED"] = "true"
+os.environ["AI_PROVIDER"] = "openrouter"  # explícito: no heredar "gemini" de otros módulos
 os.environ["AI_QUESTION_RATE_LIMIT"] = "5/hour"
 os.environ["AI_QUESTION_MAX_ATTEMPTS"] = "2"
 
