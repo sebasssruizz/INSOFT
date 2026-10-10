@@ -93,7 +93,9 @@ def embed_text(text: str | None) -> list[float]:
     backend = (settings.EMBEDDINGS_BACKEND or "torch").lower()
     if backend == "onnx":
         model = get_embedding_model()
-        return [float(value) for value in model.embed([_validate_text(text)])[0]]
+        # model.embed() devuelve un GENERADOR de filas (no un array): hay que
+        # materializarla con next(iter(...)), no se puede indexar.
+        return [float(value) for value in next(iter(model.embed([_validate_text(text)])))]
     vector = get_embedding_model().encode(_validate_text(text))
     return [float(value) for value in vector.tolist()]
 
