@@ -160,6 +160,12 @@ def _fmt_rows(data):
          {ANON: 401, IN: 200, NO_IN: 200, OWNER_T: 200, OTHER_T: 200}),
         ("perfil propio", "PATCH", "/api/users/me/profile", {"country": "Colombia", "age": 25},
          {ANON: 401, IN: 200, NO_IN: 200, OWNER_T: 200, OTHER_T: 200}),
+        # Autogestión de rol: SOLO con DEV_AUTH_ENABLED=true (la matriz corre en
+        # dev). En producción devuelve 403 y el rol queda intacto (ver
+        # test_users_role_guard.py). Docente desechable NO se usa aquí para
+        # no contaminar las filas docente siguientes.
+        ("autogestión de rol (solo dev)", "PATCH", "/api/users/me/role", {"role": "STUDENT"},
+         {ANON: 401, IN: 200, NO_IN: 200}),
         # ── cursos ──
         ("crear curso (solo docente)", "POST", "/api/courses", {"name": "Curso Otra X M"},
          {ANON: 401, IN: 403, NO_IN: 403, OWNER_T: 201, OTHER_T: 201}),
@@ -238,8 +244,6 @@ ROWS_LAST = [
     ("generar preguntas IA (solo docente, sin chunks indexados -> 422)", "POST",
      "/api/ai/questions/generate", {"subtopic_id": "{subtopic_id}", "count": 2},
      {ANON: 401, IN: 403, NO_IN: 403, OWNER_T: 422, OTHER_T: 422}),
-    ("cambiar rol propio (docente desechable)", "PATCH", "/api/users/me/role", {"role": "STUDENT"},
-     {TMP_T: 200}),
 ]
 
 

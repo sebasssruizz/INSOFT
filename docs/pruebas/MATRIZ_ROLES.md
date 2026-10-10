@@ -33,11 +33,12 @@ dupe lógico) y se detectó **ningún aprendizaje de rol** (escaladas: 0).
   oficial del subtema a través de su membresía del Curso General. Refleja el
   diseño de contenido compartido; no es fuga — el banco ese subtema comparte
   también aporta las preguntas del curso "X".
-- **PATCH /api/users/me/role permite autodescuentar/dar rol** (200 si es el
-  propio usuario). Riesgo conocidamente ACEPTADO para esta fase: en
-  producción/despliegue final conviene deshabilitarlo (issue de cambio: solo
-  con DEV_AUTH o remove del endpoint en producción). Recomendación: protegerlo
-  con env ADMIN_ROLE_CHANGES.
+- **PATCH /api/users/me/role CERRADO (fix rol-autogestionado)**: con
+  DEV_AUTH_ENABLED=false responde 403 SIEMPRE y el rol queda intacto (ver
+  backend/tests/test_users_role_guard.py). Con dev=true sigue disponible
+  solo para pruebas locales. Para promover cuentas existentes existe
+  `backend/app/scripts/promote_teacher.py` (dry-run por defecto; --apply).
+- PATCH /api/users/me/profile ignora campos extra (role/id/email no cambian).
 - `/health` público por diseño (T5 agrega `/ready` para apoyo inverso sin
   secretos).
 
