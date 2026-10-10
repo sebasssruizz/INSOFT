@@ -80,6 +80,14 @@ primera petición tarda 30-60 s y el frontend muestra el aviso
 "El servidor se está despertando, un momento…" (componente
 `SlowServerBanner`).
 
+**RAM y plan gratis (medido 7-oct-2026, ver `docs/perf/INFORME_MEMORIA.md`):**
+Render free = 0.1 CPU / **512 MB**. El backend NO cabe continuo ni con
+`EMBEDDINGS_BACKEND=torch` (~1,1 GB) ni con `onnx` (~0,67 GB). Opciones:
+1. **PC local + túnel** (ruta B) — costo 0, sin límites de RAM (recomendado).
+2. **VM ≥ 1 GB RAM** (DigitalOcean $6/$12, Render `1c-2g` $25) con
+   `EMBEDDINGS_BACKEND=onnx` y build-arg del Dockerfile de la misma vara.
+3. Ejecutar el RAG fuera del MVP (no recomendado para el piloto).
+
 ### 4. Google OAuth (para Google Cloud Console)
 
 En *APIs & Services → Credentials → OAuth 2.0 Client ID* agrega los

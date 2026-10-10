@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     # Modelo local de embeddings para el RAG (sentence-transformers, corre en CPU).
     # Multilingüe (español incluido), 384 dimensiones y liviano para CPU.
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    # Motor de embeddings local: "torch" (sentence-transformers, como siempre)
+    # u "onnx" (fastembed: mismo modelo, vectores idénticos, ~40% menos RAM y
+    # ~100x más rápido por consulta). Con "onnx" NO se reindexa: dimensión y
+    # modelo son los mismos. Ver docs/perf/INFORME_MEMORIA.md.
+    EMBEDDINGS_BACKEND: str = "torch"
 
     # OpenRouter (IA)
     OPENROUTER_API_KEY: str = ""
