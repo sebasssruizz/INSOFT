@@ -1,9 +1,20 @@
-# Blueprint de Render: backend FastAPI en Docker, plan gratis.
+# Blueprint de Render: backend FastAPI en Docker.
 # Crea el servicio web; NO incluye base de datos (Neon se conecta aparte).
+#
+# ⚠️ PLAN GRATIS: NO LO USES. Medido el 10-oct-2026
+# (docs/perf/SIMULACION_RENDER_FREE.md): con 0.1 CPU / 512 MB el backend
+# muere con OOM (exit 137) al instanciar el modelo de embeddings en la
+# primera consulta del asistente, incluso con OMP_NUM_THREADS=1. El mínimo
+# estable medido es ~768 MB. Para Render de pago elegir 1 CPU / 2 GB
+# (plan '1c-2g'); el plan de $7 (0.5c-512mb) muere igual (mismo límite de
+# RAM). Ruta principal del MVP: PC del equipo + túnel (ver
+# docs/despliegue/PASO_A_PASO_STAGING.md).
 services:
   - type: web
     name: insoft-backend
-    plan: free
+    plan: free  # ⚠️ NO FUNCIONA con el backend actual (OOM): solo está como
+                # placeholder del blueprint; NO apliques este YAML sin cambiar
+                # a '1c-2g' o mejor, usa el PC+túnel (ruta principal del MVP)
     runtime: docker
     healthCheckPath: /health
     # Las variables son SENSIBLES o dependen del entorno: se editan a mano
