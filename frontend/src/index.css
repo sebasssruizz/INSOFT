@@ -5,18 +5,24 @@
 @tailwind utilities;
 
 @layer base {
+  /* Red de seguridad: ninguna pantalla debe desbordar a lo ancho. Los bloques
+     que sí necesitan desplazamiento lateral (tablas, código) lo hacen dentro de
+     su propio contenedor con `overflow-x-auto`.
+     `clip` y no `hidden`: `hidden` convierte a body en contenedor de scroll y
+     rompe todo `position: sticky` (cabeceras, índice del curso, el temario
+     anclado de la portada). `hidden` queda solo como respaldo para navegadores
+     que no conocen `clip`. */
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
-    /* Red de seguridad: ninguna pantalla debe desbordar a lo ancho. Los
-       bloques que sí necesitan desplazamiento lateral (tablas, código) lo
-       hacen dentro de su propio contenedor con `overflow-x-auto`. */
     overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body {
     @apply bg-ink-50 text-ink-700 antialiased;
     overflow-x: hidden;
+    overflow-x: clip;
     overflow-wrap: break-word;
   }
 

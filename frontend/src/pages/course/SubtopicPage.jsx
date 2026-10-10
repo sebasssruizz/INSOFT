@@ -253,7 +253,7 @@ export default function SubtopicPage() {
               >
                 <FontAwesomeIcon icon={faListCheck} />
               </span>
-              <div className="mt-3 min-w-0 sm:mt-0 sm:flex-1">
+              <div className="mt-3 min-w-0 sm:mt-0 sm:flex-[1_1_16rem]">
                 <h2 className="text-lg font-semibold tracking-[-0.01em] text-ink-900">
                   Comprueba lo que acabas de leer
                 </h2>

@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
+import { EyeLoader } from './components/ui/EyeLoader'
 import { useAuth } from './hooks/useAuth'
 import CompleteProfilePage from './pages/CompleteProfilePage'
 import DashboardPage from './pages/DashboardPage'
@@ -52,7 +53,13 @@ export default function App() {
         <Route
           path="/courses/:courseId/subtopics/:subtopicId/interactive"
           element={
-            <Suspense fallback={<div className="fixed inset-0 bg-blue-950" />}>
+            <Suspense
+              fallback={
+                <div className="fixed inset-0 flex items-center justify-center bg-blue-950">
+                  <EyeLoader tone="inverse" size={64} label="Preparando el quirófano en 3D" />
+                </div>
+              }
+            >
               <InteractiveViewPage />
             </Suspense>
           }
