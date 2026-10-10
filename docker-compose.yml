@@ -2,19 +2,39 @@
 # (p. ej. INSOFT-deploy) sigue usando el mismo stack y el mismo volumen de datos.
 name: insoft
 
+# ── Endurecido para exponer con túnel (ver F5b) ──────────────────────────
+# - puertos solo en 127.0.0.1: nada escucha en 0.0.0.0; el túnel (Tailscale
+#   Funnel/ngrok) corre en el MISMO PC y apunta a localhost, así el único
+#   acceso público es el del túnel.
+# - SECRET_KEY y POSTGRES_PASSWORD sin valor débil por defecto: `docker
+#   compose up` falla si el .env no las define (evita despliegues con claves
+#   conocidas). IMPORTANTE: si el volumen real se inicializó con otra
+#   contraseña, esta var NO cambia la existente; es la que usa la APP para
+#   conectarse (ver docs/despliegue/PASO_A_PASO_STAGING.md).
+# - DOCS_ENABLED=false por defecto: /docs /redoc y /openapi.json no se sirven
+#   (config.py). DEV_AUTH_ENABLED=false siempre expuesto.
+# - CORS: BACKEND_CORS_ORIGINS obligatorio con el origen EXACTO del frontend,
+#   sin comodines de LAN (BACKEND_CORS_ORIGIN_REGEX "" por defecto).
+
 services:
   db:
     # Imagen con la extensión pgvector incluida (necesaria para el módulo RAG/IA).
     image: pgvector/pgvector:pg16
     container_name: insoft-db
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-oftallearn}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oftallearn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env (sin valor débil en compose)}
       POSTGRES_DB: ${POSTGRES_DB:-oftallearn}
     ports:
-      # Puerto del host configurable para no chocar con un PostgreSQL local
-      - "${POSTGRES_PORT:-5433}:5432"
+      # Solo loopback utilitarior para psql/backups desde el propio PC;
+      # el puerto del host configurable para no chocar con un PostgreSQL local.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,22 +44,33 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        # onnx: -40% de RAM y -78% de imagen, vectores idénticos (ram #32);
+        # para alternar: EMBEDDINGS_BACKEND=torch docker compose build backend.
+        EMBEDDINGS_BACKEND: ${EMBEDDINGS_BACKEND:-onnx}
     container_name: insoft-backend
     restart: unless-stopped
-    # Rotación de logs en producción: 3 archivos de 10 MB por contenedor.
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
     environment:
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-oftallearn}:${POSTGRES_PASSWORD:-oftallearn}@db:5432/${POSTGRES_DB:-oftallearn}
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-oftallearn}:${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env}@db:5432/${POSTGRES_DB:-oftallearn}
+      SECRET_KEY: ${SECRET_KEY:?define SECRET_KEY en .env (openssl rand -hex 32)}
+      EMBEDDINGS_BACKEND: ${EMBEDDINGS_BACKEND:-onnx}
+      # Documentación OpenAPI apagada por defecto cuando el backend se expone.
+      DOCS_ENABLED: ${DOCS_ENABLED:-false}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://localhost:5173,http://0.0.0.0:3000}
+      # Origen EXACTO del frontend (sin comodines); varios: separar por comas.
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:?define el/los origenes exactos del frontend, ej https://mi-app.vercel.app}
+      BACKEND_CORS_ORIGIN_REGEX: ${BACKEND_CORS_ORIGIN_REGEX:-}
       TEACHER_EMAILS: ${TEACHER_EMAILS:-}
       DEV_AUTH_ENABLED: ${DEV_AUTH_ENABLED:-false}
+      # Tope de login por IP (endpoints de /api/auth/*).
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-60/hour}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_NORMALIZE_MODEL: ${OPENROUTER_NORMALIZE_MODEL:-liquid/lfm-2.5-2.6b:free}
       OPENROUTER_ANSWER_MODEL: ${OPENROUTER_ANSWER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}
@@ -58,7 +89,14 @@ services:
       PRACTICE_AI_RATIO: ${PRACTICE_AI_RATIO:-0.4}
       PRACTICE_MAX_GENERATIONS_PER_SUBTOPIC_PER_DAY: ${PRACTICE_MAX_GENERATIONS_PER_SUBTOPIC_PER_DAY:-4}
     ports:
-      - "8000:8000"
+      # Solo el túnel (en el propio PC) alcanza el backend.
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,os; urllib.request.urlopen(f\"http://127.0.0.1:{os.environ.get('PORT','8000')}/health\", timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
     depends_on:
       db:
         condition: service_healthy
@@ -78,7 +116,7 @@ services:
     container_name: insoft-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:80"
     depends_on:
       - backend
 
