@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # DATABASE_SSL=true en los proveedores que no entregan host *.neon.tech.
     DATABASE_SSL: bool = False
 
+    # ── Observabilidad ─────────────────────────────────────────────────
+    LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
+    LOG_FORMAT: str = "plain"            # "json" | "plain"
+
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
 
@@ -65,6 +69,19 @@ class Settings(BaseSettings):
     OPENROUTER_ANSWER_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
     AI_ASK_RATE_LIMIT: str = "60/hour"
     OPENROUTER_GLOBAL_LIMIT_PER_MIN: int = 18
+    # ── Robustez IA (T3) ────────────────────────────────────────────────
+    # Cadena de modelos con respaldo: se prueba en orden; el primero que
+    # responde gana. CSV. Valor por defecto = modelo de respuestas actual.
+    AI_MODEL_CHAIN: str = ""  # vacío = solo OPENROUTER_ANSWER_MODEL
+    AI_TIMEOUT_SECS: float = 20.0
+    AI_MAX_ATTEMPTS: int = 2           # intentos por modelo (backoff+jitter entre)
+    AI_BACKOFF_BASE_SECS: float = 0.5  # backoff exponencial: base * 2^(n-1) + jitter
+    # Circuit breaker: tras N fallos consecutivos se abre M segundos.
+    AI_CB_THRESHOLD: int = 5
+    AI_CB_COOLDOWN_SECS: float = 30.0
+    # Límites adicionales del asistente:
+    AI_DAILY_LIMIT_PER_USER: int = 50   # 0 = sin límite diario
+    AI_MAX_CONCURRENCY: int = 4         # semáforo global del proceso; 0 = sin tope
 
     # Google Gemini (IA) - proveedor alternativo gratuito
     GEMINI_API_KEY: str = ""

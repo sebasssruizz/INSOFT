@@ -192,7 +192,7 @@ def test_gemini_sin_acceso_403_antes_del_proveedor(
 def test_gemini_error_del_proveedor_503(
     mock_or, mock_gemini, client: TestClient, indexed_subtopic_id, monkeypatch
 ):
-    """Fallo de Gemini -> 503 controlado, sin excepción sin manejar."""
+    """Fallo de Gemini CON chunks disponibles -> 200 degradado (respaldo)."""
     use_gemini(monkeypatch)
     mock_or.side_effect = ["¿Qué es el glaucoma?"]
     mock_gemini.side_effect = GeminiCallError("Error al generar respuesta con Gemini: boom")
@@ -203,7 +203,10 @@ def test_gemini_error_del_proveedor_503(
         json={"question": "glaucoma?", "subtopic_id": indexed_subtopic_id},
         headers=student,
     )
-    assert resp.status_code == 503, resp.text
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["degraded"] is True
+    assert "MODO RESPALDO" in data["respuesta"]
 
 
 @patch("app.services.ai_service.call_openrouter", new_callable=AsyncMock)
@@ -220,5 +223,10 @@ def test_gemini_sin_api_key_503_controlado(
         json={"question": "glaucoma?", "subtopic_id": indexed_subtopic_id},
         headers=student,
     )
-    assert resp.status_code == 503, resp.text
-    assert "GEMINI_API_KEY" in resp.json()["detail"]
+    # Con chunks disponibles el asistente degrada (200) pero deixando claro
+    # que el proveedor no está configurado; el detalle con GEMINI_API_KEY se
+    # conserva en el texto de respaldo del modo degradado.
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["degraded"] is True
+    assert "MODO RESPALDO" in data["respuesta"]
