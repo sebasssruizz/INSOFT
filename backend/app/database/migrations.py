@@ -7,7 +7,7 @@ Las migraciones son SIEMPRE aditivas: nunca borran tablas, columnas ni datos.
 """
 from sqlalchemy import inspect, text
 
-from app.database.session import engine
+from app.database.session import ddl_engine
 
 # (tabla, columna) -> definición SQL de la columna
 NEW_COLUMNS = {
@@ -38,19 +38,20 @@ NEW_INDEXES = {
 
 
 def ensure_schema_compatibility() -> None:
-    inspector = inspect(engine)  # sin caché de reflexión: ve el estado actual del esquema
+    """Migraciones idempotentes, siempre por el engine DDL (conexión directa)."""
+    inspector = inspect(ddl_engine)  # sin caché de reflexión: ve el estado actual del esquema
     existing_tables = set(inspector.get_table_names())
-    with engine.begin() as conn:
+    with ddl_engine.begin() as conn:
         # Habilita la extensión pgvector en PostgreSQL (requerida por las
         # columnas `vector` de subtopic_chunks). No-op en SQLite/tests.
-        if engine.dialect.name == "postgresql":
+        if ddl_engine.dialect.name == "postgresql":
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
         # Tabla nueva de respuestas de quiz (aditiva; nunca borra datos).
         # create_all ya cubre arranques limpios; este CREATE cubre bases de
         # datos preexistentes con datos (idempotente via chequeo previo).
         if "question_answers" not in existing_tables and "users" in existing_tables and "questions" in existing_tables:
-            if engine.dialect.name == "postgresql":
+            if ddl_engine.dialect.name == "postgresql":
                 pk = "SERIAL PRIMARY KEY"
                 answered_at = "TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()"
             else:
@@ -69,7 +70,7 @@ def ensure_schema_compatibility() -> None:
                     CONSTRAINT uq_attempt_question UNIQUE (attempt_id, question_id)
                 )
             """))
-            inspector = inspect(engine)
+            inspector = inspect(ddl_engine)
             existing_tables = set(inspector.get_table_names())
         for (table, column), ddl in NEW_COLUMNS.items():
             if table not in existing_tables:
@@ -78,7 +79,7 @@ def ensure_schema_compatibility() -> None:
             if column not in existing_columns:
                 if ddl == "TIMESTAMPTZ_NOT_NULL_NOW":
                     # DDL específico por dialecto (misma semántica: ahora, no nulo).
-                    if engine.dialect.name == "postgresql":
+                    if ddl_engine.dialect.name == "postgresql":
                         conn.execute(text(
                             f"ALTER TABLE {table} ADD COLUMN {column} "
                             "TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()"

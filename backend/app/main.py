@@ -17,8 +17,7 @@ from app.api.routes.ai import limiter as ai_limiter
 from app.core.config import settings
 from app.database.base import Base
 from app.database.migrations import ensure_schema_compatibility
-from app.database.session import SessionLocal, engine
-from app.database.session import engine as _engine
+from app.database.session import SessionLocal, ddl_engine, engine
 from app.seed.seed_content import seed_official_content
 from app.services.exceptions import ServiceError
 
@@ -74,7 +73,7 @@ async def lifespan(app: FastAPI):
             # Migraciones antes de create_all: habilita pgvector (lo necesitan
             # las columnas `vector`) y añade columnas faltantes en tablas viejas.
             ensure_schema_compatibility()
-            Base.metadata.create_all(bind=engine)
+            Base.metadata.create_all(bind=ddl_engine)
             break
         except OperationalError:
             attempts -= 1
