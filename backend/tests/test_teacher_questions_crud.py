@@ -163,11 +163,20 @@ def test_permisos_creacion(client, teacher, other_teacher, student, subtopic_id)
 
 
 def test_enunciado_duplicado_409(client, teacher, subtopic_id):
-    # El VALID_Q ya fue creado por tests anteriores; reutilízalo como base
-    # Mismo enunciado con variación de espacios/mayúsculas → 409
+    # Auto-contenido (orden-independiente): crea la base en este mismo test
+    # en lugar de reutilizar la creada por test_crear_pregunta_valida_201
+    # (con pytest-randomly el orden no está garantizado).
+    base_prompt = "¿Enunciado base para el 409 de duplicado?"
     resp = client.post(
         f"/api/content/subtopics/{subtopic_id}/questions",
-        json={**VALID_Q, "prompt": "  ¿cuál   ES la cámara del ojo entre el iris y la córnea? "},
+        json={**VALID_Q, "prompt": base_prompt},
+        headers=teacher,
+    )
+    assert resp.status_code == 201, resp.text
+    # Igual tras normalizar (espacios/mayúsculas) → 409
+    resp = client.post(
+        f"/api/content/subtopics/{subtopic_id}/questions",
+        json={**VALID_Q, "prompt": "  ¿enunciado   BASE para el 409 de duplicado? "},
         headers=teacher,
     )
     assert resp.status_code == 409, resp.text
