@@ -1,13 +1,15 @@
 import { forwardRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSpinner } from '@fortawesome/free-solid-svg-icons'
 
 import { cn } from '../../lib/utils'
+import { IrisSpinner } from './EyeLoader'
 
+// Al pulsar, el botón cede un poco (escala 0.97): una respuesta táctil que se
+// nota sin llamar la atención.
 const BASE =
   'relative inline-flex select-none items-center justify-center gap-2 rounded-xl font-sans font-semibold ' +
   'transition-[background-color,color,box-shadow,transform,border-color] duration-150 ease-out ' +
-  'active:translate-y-px disabled:pointer-events-none disabled:opacity-45'
+  'active:scale-[0.97] disabled:pointer-events-none disabled:opacity-45'
 
 const VARIANTS = {
   // Acción principal de la pantalla. Solo una por vista.
@@ -65,7 +67,7 @@ export const Button = forwardRef(function Button(
       {...props}
     >
       {loading ? (
-        <FontAwesomeIcon icon={faSpinner} className="animate-spin" aria-hidden="true" />
+        <IrisSpinner />
       ) : (
         icon && <FontAwesomeIcon icon={icon} aria-hidden="true" />
       )}

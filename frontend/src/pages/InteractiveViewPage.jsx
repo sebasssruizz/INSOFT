@@ -13,6 +13,8 @@ import {
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
+import { EyeLoader } from '../components/ui/EyeLoader'
+
 const MODEL_URL = '/models/Prueba_12.glb'
 const INITIAL_CAMERA = { x: -0.5, y: 5.18, z: -2.63 }
 const TOOL_INFO = {
@@ -876,8 +878,8 @@ export default function InteractiveViewPage() {
       )}
 
       {status === 'loading' && (
-        <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-white/10 bg-blue-950/80 px-4 py-3 text-sm text-blue-100 backdrop-blur">
-          Cargando modelo 3D…
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-blue-950/80 px-6 py-5 backdrop-blur">
+          <EyeLoader tone="inverse" size={52} label="Cargando el modelo 3D" />
         </div>
       )}
 

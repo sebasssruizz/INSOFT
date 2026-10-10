@@ -82,7 +82,16 @@ Vocabulario único; no crees variantes nuevas sin quitar la vieja.
 - `course/Quiz` — repaso con retroalimentación inmediata. Acepta `exit`: una
   salida visible durante todo el repaso, para que nadie quede atrapado dentro
   de las preguntas sin poder volver al temario.
-- `.skeleton` para cargas; nunca un spinner en medio del contenido.
+- `ui/EyeLoader` — `EyeLoader` (ojo que parpadea mientras el iris recorre el
+  campo visual), `PageLoader` (el mismo, centrado en una pantalla) e
+  `IrisSpinner` (iris que gira, dentro de los botones). Tono `inverse` para
+  fondos azules.
+- `ui/Timeline` — recorrido horizontal anclado del temario de la portada.
+- `ui/IrisMark` — iris en línea fina para el fondo de superficies azules. Siempre
+  decorativo y muy tenue (`text-white/[0.06]`).
+- `.skeleton` para cargas de contenido con forma conocida (listas, tarjetas,
+  lecciones). `EyeLoader` solo para esperas sin forma previsible: una vista
+  que se carga en diferido, un modelo 3D, una práctica que genera la IA.
 
 ## Movimiento
 
@@ -94,6 +103,26 @@ Vocabulario único; no crees variantes nuevas sin quitar la vieja.
   usan CSS (`animate-rise-in`) y las revelaciones al hacer scroll usan
   `useReveal`, que arranca visible si no hay `IntersectionObserver`.
 - `prefers-reduced-motion` está neutralizado globalmente en `index.css`.
+
+### Microinteracciones
+
+Cada una confirma algo que acaba de pasar; ninguna es decorativa por sí sola.
+
+| Dónde | Qué hace |
+|---|---|
+| Botones | Ceden a `scale(0.97)` al pulsarse; al cargar muestran el `IrisSpinner` |
+| Cambio de pantalla | Barra fina azul en el borde superior (`RouteProgress` en `Layout`) |
+| Barras y anillos de progreso | Se llenan desde cero al aparecer (`useFillFromZero`) |
+| Opción de repaso | Estado «enviando» con iris mientras califica el servidor; vaivén corto (`animate-shake`) al fallar; *pop* del icono al acertar |
+| Nota del repaso | Cuenta hasta el porcentaje |
+| Menú lateral en móvil | Se desliza desde la izquierda; bloquea el scroll de fondo; cierra con Escape |
+| Iconos de herramientas y rasgos | Giro leve (`-rotate-6`) y cambio de tinte al pasar el cursor |
+| Unirse a un curso | Plegado en una línea; se despliega en el sitio y enfoca el campo |
+| 404 | Carta de Snellen: las filas entran desenfocadas y se enfocan (`animate-focus-in`); las dos últimas esconden un mensaje que se lee al pasar el cursor o tocar |
+
+Las animaciones de bucle (`blink`, `iris-scan`, `pupil`, `spin-iris`,
+`soft-ping`, `scroll-cue`) están en `tailwind.config.js`. Con movimiento
+reducido quedan quietas en su fotograma final, que siempre es legible.
 
 ## Prohibido
 
@@ -112,6 +141,10 @@ Vocabulario único; no crees variantes nuevas sin quitar la vieja.
 Si añades una escena 3D, sigue el mismo patrón y detén el bucle de render
 cuando el elemento salga de pantalla o se oculte la pestaña.
 
+GSAP (con ScrollTrigger y SplitText) solo lo usa el temario de la portada y
+también entra en diferido: `LandingPage` importa `ui/Timeline` con `lazy`. Quien
+ya inició sesión no lo descarga.
+
 ## Estilo de código
 
 Comillas simples, sin punto y coma, ancho 100. Si formateas, usa:
@@ -123,13 +156,17 @@ npx prettier --write --single-quote --no-semi --print-width 100 "src/**/*.{js,js
 ## Adaptación a móvil
 
 **Ninguna pantalla puede desplazarse en horizontal.** `index.css` fija
-`overflow-x: hidden` en `html` y `body` y limita `img`, `video`, `svg` y
+`overflow-x: clip` en `html` y `body` y limita `img`, `video`, `svg` y
 `canvas` a `max-width: 100%`, pero eso es la red de seguridad, no la solución:
 cada pantalla debe caber por sí misma. Lo que sí puede desplazarse a lo ancho
 es un bloque concreto dentro de su propio contenedor con `overflow-x-auto`
 —la tabla de estudiantes, el ejemplo de Markdown—, nunca la página.
 
-Cuatro reglas aprendidas:
+Cinco reglas aprendidas:
+
+- **`clip`, nunca `hidden`, en `html` y `body`.** `overflow-x: hidden` en `body`
+  lo convierte en contenedor de scroll y desactiva todo `position: sticky`:
+  la cabecera del curso, el índice lateral y el anclaje del temario.
 
 - **`min-w-0` en toda celda de rejilla** que contenga algo que no se encoge
   (un `input[type=file]`, una tabla, código). Por omisión una celda se
@@ -138,7 +175,9 @@ Cuatro reglas aprendidas:
   panel de perfil) van dentro de un contenedor con `overflow-hidden`: si no,
   empujan el ancho del documento aunque no se vean.
 - **Los adornos que no caben, no se ponen.** El ojo 3D del panel del estudiante
-  solo aparece a partir de `xl`; por debajo estorba en vez de decorar.
+  solo aparece a partir de `xl`; por debajo estorba en vez de decorar. Por lo
+  mismo, la cabecera del curso solo se ancla desde `lg`: en móvil ocuparía
+  media pantalla.
 - **Botones de rótulo largo a ancho completo en móvil** (`w-full sm:w-auto`):
   dentro de un botón de altura fija, el texto plegado se corta.
 
@@ -158,4 +197,22 @@ con una regla superior más su versalita. Radios contenidos (`rounded-lg`,
 
 Bajo el titular van tres cifras del temario que se pueden contar (unidades,
 subtemas, preguntas) en una línea reglada. **Nada de porcentajes inventados**
-tipo «98 % verificado»: si no sale de `seed_content.py`, no se enseña.
+tipo «98 % verificado»: si no sale de `seed_content.py` y `seed_questions.py`,
+no se enseña. Las cifras viven en `CURRICULUM_FACTS` (`lib/curriculum.js`) y
+hay que actualizarlas cuando cambia el seed.
+
+Estructura, de arriba abajo:
+
+1. **Navegación fija** con tres estados: transparente sobre el vídeo, velo
+   oscuro translúcido al empezar a bajar (para no mezclarse con el contenido de
+   la portada) y fondo papel pasada la portada. En móvil, panel desplegable.
+2. **Portada** con dos acciones: «Empezar a estudiar» y «Ver el temario».
+3. **Temario** como recorrido horizontal anclado (`ui/Timeline`): la sección se
+   fija, la pista se desplaza con el scroll y cada unidad dibuja su tallo y
+   descubre su texto línea a línea. Con movimiento reducido no se ancla: queda
+   un carrusel desplazable con todo visible.
+4. **Plataforma**: rasgos en lista reglada a la izquierda, mosaico de tres
+   imágenes a la derecha.
+5. **Cómo funciona**: tres pasos unidos por una línea que se dibuja al entrar.
+6. **Cierre** concreto, no genérico: el primer día del estudiante (siguiente
+   subtema, su progreso y el asistente respondiendo una duda real del temario).
