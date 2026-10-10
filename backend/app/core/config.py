@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     # Fuerza SSL en la conexión (se activa sola para neon.tech). Para Neon:
     # DATABASE_SSL=true en los proveedores que no entregan host *.neon.tech.
     DATABASE_SSL: bool = False
+    # URL opcional de conexión DIRECTA para DDL (migraciones/create_all).
+    # Vacío: se deriva de DATABASE_URL quitando "-pooler" del host (Neon).
+    DATABASE_URL_DDL: str = ""
+    # Pool de la app (ajustado para Neon: tope 100 conexiones/free).
+    DB_POOL_SIZE: int = 5          # conexiones permanentes
+    DB_MAX_OVERFLOW: int = 2       # extra temporales bajo picos
+    DB_POOL_RECYCLE: int = 1800    # re-abrir antes de que el proxy corte (s)
+    DB_CONNECT_TIMEOUT: int = 10   # timeout de conexión TCP (s)
 
     # ── Observabilidad ─────────────────────────────────────────────────
     LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
@@ -144,6 +152,20 @@ class Settings(BaseSettings):
         if "sqlite" in url or not needs_ssl:
             return {}
         return {"sslmode": "require"}
+
+    @property
+    def database_ddl_url(self) -> str:
+        """URL de conexión DIRECTA para DDL (migraciones + create_all).
+
+        Neon expone dos endpoints por branch: el agrupado (ep-xxx-pooler…) es
+        para la app con PgBouncer, y NO soporta DDL fiable; el DDL va por el
+        endpoint directo (sin -pooler). Si DATABASE_URL_DDL está definido se
+        usa tal cual; si no, se deriva de DATABASE_URL quitando "-pooler" del
+        host. En SQLite/Docker local la URL es la misma.
+        """
+        if self.DATABASE_URL_DDL or self.DATABASE_URL.startswith("sqlite"):
+            return self.DATABASE_URL_DDL or self.DATABASE_URL
+        return self.DATABASE_URL.replace("-pooler.", ".")
 
     @staticmethod
     def _split_csv(value: str) -> list[str]:

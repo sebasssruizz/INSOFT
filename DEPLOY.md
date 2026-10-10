@@ -35,10 +35,19 @@ USAR la conexión SIN el sufijo `-pooler`. En Neon hay dos cadenas:
 Reglas:
 
 - La app de INSOFT lee `DATABASE_URL` desde el entorno (backend/app/core/config.py).
+- Desde el PR de Neon (chore/neon-conexion): puedes apuntar `DATABASE_URL` a la
+  cadena AGRUPADA (`-pooler`) — el backend la usa con un pool pequeño
+  (`DB_POOL_SIZE=5`, `DB_MAX_OVERFLOW=2`, `pool_pre_ping`, `pool_recycle=1800`),
+  y las migraciones/create_all van solas por la conexión directa para DDL:
+  se deriva de `DATABASE_URL` quitando `-pooler`, o se fija explícita con
+  `DATABASE_URL_DDL`. El primer arranque tras suspensión de Neon reintenta
+  30 veces (1 s por intento) antes de fallar.
 - Las migraciones corren automáticamente al arrancar el backend (`lifespan` ->
   `ensure_schema_compatibility`), que además ejecuta:
   `CREATE EXTENSION IF NOT EXISTS vector` (necesario para el RAG).
-  **Toda migración debe usar la URL DIRECTA de Neon**, no la agrupada.
+  En Neon el usuario del proyecto es dueño de la DB y puede crearla; si un
+  rol restringido no puede, el comando exacto es:
+  `psql "<DATABASE_URL_DDL>" -c "CREATE EXTENSION IF NOT EXISTS vector;"`
 - SSL: se activa solo si el host contiene `neon.tech`, o forzándolo con
   la variable `DATABASE_SSL=true`. El driver añade `sslmode=require`.
 - Alembic: este repo NO usa Alembic (migraciones ligeras aditivas idempotentes
