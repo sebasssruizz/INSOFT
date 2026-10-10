@@ -2,8 +2,12 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Cache de HuggingFace DENTRO de la imagen: el disco de Render libre es
+# EFÍMERO, así que el modelo de embeddings queda horneado en la imagen
+# (sin descargas en el arranque de cada cold start).
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    HF_HOME=/app/hf-cache
 
 # Motor de embeddings: "torch" (por defecto, como siempre) u "onnx" (fastembed,
 # -40% de RAM y -~2.4 GB de imagen, vectores idénticos; ver
@@ -29,9 +33,12 @@ RUN if [ "$EMBEDDINGS_BACKEND" = "onnx" ]; then \
     fi
 
 # Precarga el modelo de embeddings en la imagen (sin esto se descargaría
-# en el primer request del contenedor). Solo aplica al backend torch: el
-# runtime ONNX lo descarga en el primer arranque (~220 MB HF cache).
-RUN if [ "$EMBEDDINGS_BACKEND" != "onnx" ]; then \
+# en el primer request del contenedor). Igual de obligatorio en ONNX: la
+# descarga en runtime no sirve en Render (disco efímero = re-descarga en
+# cada cold start y arranque de +minutos).
+RUN if [ "$EMBEDDINGS_BACKEND" = "onnx" ]; then \
+        python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='paraphrase-multilingual-MiniLM-L12-v2')"; \
+    else \
         python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"; \
     fi
 

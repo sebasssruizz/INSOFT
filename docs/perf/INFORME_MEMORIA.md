@@ -50,14 +50,14 @@ Render (0.1 CPU / **512 MB**) ni torch ni ONNX aguantan con el modelo cargado.
   MVP del 15-oct); se reevalúa si el MVP exige <400 MB; hoy no aplica.
 - **API externa de embeddings** (solo diseño, NO implementado): cambiar
   `EMBEDDINGS_BACKEND` a modo "api" (env `EMBEDDINGS_API_URL` + auth) para
-  terceros con imágenes/tiernancia tipo OpenAI embeddings o Gemini
+  proveedores tipo OpenAI embeddings o Gemini
   text-embedding-004: depende de cuota y SLA, agrega latencia por llamada y
   **requeriría reindexado** si el modelo es distinto. Para el piloto la
   recomendación es la ruta local = no llamada API externa.
 
 ## 4. Recomendación de despliegue
 
-| Decisión |Ⴉ Pro | Contra |
+| Decisión | Pro | Contra |
 |---|---|---|
 | **A. PC local + Docker + túnel** (Cloudflare/Tailscale), como en `feat/deploy-prod` | costo 0, sin límites de RAM, ya probado — **recomendado para el MVP** | depende del PC encendido | 
 | **B. DigitalOcean VM 1 GB/$6 o similar** (pricing Render 1c-2g = $25) puede ser excesivo | estable, IP fija | $6-12/mes; requiere admin de Linux |
@@ -71,6 +71,15 @@ EMBEDDINGS_BACKEND=onnx   # -40% de RAM frente a torch; misma calidad y sin rein
 
 En `DEPLOY.md` se actualiza la sección "Plan gratis" con estas cifras.
 
-*A todas luces*: con `EMBEDDINGS_BACKEND=onnx` no se reindexa; si
-universitariamente se adota potion (256 dims), correr el script que debe
-quedar pendiente: (no incluido — ver §3).
+**Reindexado al cambiar de backend:** `torch → onnx` con el mismo modelo
+(`paraphrase-multilingual-MiniLM-L12-v2`) **NO obliga a reindexar**: mismo
+modelo 384d, vectores idénticos (coseno 1.0000). Solo hay que reindexar si
+cambia el modelo (p. ej. potion, 256 dims): en ese caso vaciar la columna
+`embedding` de los chunks y regenerarla con `embed_batch` (el pipeline de
+ingesta existente; script único de reindexado queda como deuda definida),
+sin tocar los datos de la base real (trabajar sobre una base desechable).
+
+**Horneado del modelo en la imagen (2026-10-09):** el Dockerfile ahora fija
+`HF_HOME=/app/hf-cache` y precarga el modelo en build tanto para torch como
+para onnx, de modo que no hay descargas en el arranque (el disco de Render
+free es efímero y cada cold start re-descargaría ~220 MB).
