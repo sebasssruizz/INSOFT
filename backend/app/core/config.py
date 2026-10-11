@@ -132,6 +132,10 @@ class Settings(BaseSettings):
         SECRET_KEY está vacía o en su valor placeholder: los JWT firmados
         con una clave pública conocida no son seguros.
         """
+        if not 5 <= self.ACCESS_TOKEN_EXPIRE_MINUTES <= 60 * 24 * 30:
+            raise RuntimeError(
+                "ACCESS_TOKEN_EXPIRE_MINUTES fuera de rango: entre 5 minutos y 30 días."
+            )
         if not self.DEV_AUTH_ENABLED and self.SECRET_KEY.strip() in (
             "",
             "change-me-in-production",
