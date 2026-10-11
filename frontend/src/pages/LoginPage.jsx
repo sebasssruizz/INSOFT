@@ -11,15 +11,11 @@ import { useAuth } from '../hooks/useAuth'
 import { useMeasure } from '../hooks/useMeasure'
 
 const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
-// El acceso de desarrollo (estudiante/profesor) está disponible siempre que se
-// indique explícitamente o cuando se ejecuta el servidor de desarrollo, para
-// poder probar desde el móvil por IP aunque Google OAuth no acepte el origen.
-// El acceso de desarrollo (estudiante/profesor) queda FUERA del build de
-// producción: depende de import.meta.env.DEV (servidor de desarrollo) o de
-// VITE_DEV_AUTH=true explícito. En producción sin esa variable la condición
-// se reduce a false en build y la tarjeta no existe en el bundle.
-const devLoginEnabled =
-  import.meta.env.DEV || import.meta.env.VITE_DEV_AUTH === 'true'
+// Para probar desde el móvil por IP (Google OAuth no acepta ese origen) se usa
+// el servidor de desarrollo. El acceso de desarrollo (estudiante/profesor) queda FUERA del build de
+// producción: depende solo de import.meta.env.DEV (servidor de desarrollo).
+// En producción la condición se reduce a false en build y la tarjeta no existe.
+const devLoginEnabled = import.meta.env.DEV
 
 export default function LoginPage() {
   const { loginGoogle, loginDevelopment } = useAuth()
