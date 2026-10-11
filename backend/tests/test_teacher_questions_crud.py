@@ -200,7 +200,10 @@ def test_estudiante_403_bank(client, student, subtopic_id):
 # ── Visibilidad inmediata para estudiantes ─────────────────────────────────
 
 
-def test_pregunta_creada_visible_en_quiz(client, teacher, student, subtopic_id):
+def test_pregunta_creada_visible_en_quiz(client, teacher, student, subtopic_id, monkeypatch):
+    # Sin tope de muestreo: QUIZ_MAX_QUESTIONS podía excluir la pregunta (intermitente)
+    from app.core.config import settings as _settings
+    monkeypatch.setattr(_settings, "QUIZ_MAX_QUESTIONS", 0)
     unique_prompt = "¿Instrumento para medir la presión intraocular?"
     resp = client.post(
         f"/api/content/subtopics/{subtopic_id}/questions",
@@ -438,6 +441,13 @@ def test_review_action_invalido_422(client, teacher, subtopic_id):
 
 
 def test_bank_devuelve_todos_los_estados(client, teacher, other_teacher, subtopic_id):
+    # Auto-contenido: crea su propia pregunta docente (no depende de otros tests)
+    resp = client.post(
+        f"/api/content/subtopics/{subtopic_id}/questions",
+        json={"prompt": "¿Banco docente propio del estado?", "options": ["a", "b", "c", "d"], "correct_index": 0},
+        headers=teacher,
+    )
+    assert resp.status_code in (201, 409), resp.text
     _create_ai_pending(client, teacher, subtopic_id, "¿Banco pendiente uno?")
     resp = _bank(client, teacher, subtopic_id)
     assert resp.status_code == 200
