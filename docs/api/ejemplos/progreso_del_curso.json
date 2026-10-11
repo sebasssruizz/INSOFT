@@ -1,0 +1,20 @@
+{
+  "nombre": "progreso_del_curso",
+  "descripcion": "Resumen de progreso: subtemas completados entre total. Fuente de la barra.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/progress/course?course_id=1"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "course_id": 1,
+      "total_subtopics": 26,
+      "completed_subtopics": 1,
+      "percentage": 3.8
+    }
+  }
+}

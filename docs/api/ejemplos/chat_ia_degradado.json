@@ -1,0 +1,25 @@
+{
+  "nombre": "chat_ia_degradado",
+  "descripcion": "El proveedor de IA falla: 200 con degraded=true y fragmentos del contenido oficial (modo respaldo). No devuelve 503.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/ai/ask",
+    "cuerpo": {
+      "question": "otra consulta",
+      "subtopic_id": 1,
+      "course_id": 1
+    }
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "respuesta": "[MODO RESPALDO] El asistente con IA no está disponible ahora mismo.\n\nEstos son los fragmentos relacionados del contenido oficial:\n\n1. El glaucoma de ángulo cerrado aumenta la presión intraocular y requiere valoración urgente.…",
+      "degraded": true,
+      "subtopic_id": 1,
+      "chunks_usados": 1
+    }
+  }
+}

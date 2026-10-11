@@ -1,0 +1,17 @@
+{
+  "nombre": "error_sin_token",
+  "descripcion": "Sin cabecera Authorization: 401.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/users/me"
+  },
+  "respuesta": {
+    "status": 401,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "detail": "No autenticado o token inválido."
+    }
+  }
+}

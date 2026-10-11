@@ -1,0 +1,35 @@
+{
+  "nombre": "aprobar_pregunta_ia",
+  "descripcion": "Docente aprueba una pregunta generada por IA (pendiente → aprobada).",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/content/questions/87/review",
+    "cuerpo": {
+      "action": "approve"
+    }
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "id": 87,
+      "subtopic_id": 1,
+      "prompt": "¿Qué protege la córnea del ojo?",
+      "options": [
+        "Esclera",
+        "Córnea",
+        "Iris",
+        "Retina"
+      ],
+      "correct_index": 1,
+      "explanation": "Capa transparente externa.",
+      "order": 900,
+      "source": "ai",
+      "status": "approved",
+      "created_by": 1,
+      "is_owner": true
+    }
+  }
+}

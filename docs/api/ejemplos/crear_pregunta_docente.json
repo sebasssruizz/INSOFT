@@ -1,0 +1,43 @@
+{
+  "nombre": "crear_pregunta_docente",
+  "descripcion": "Docente crea una pregunta: exactamente 4 opciones A-D y una correcta.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/content/subtopics/1/questions",
+    "cuerpo": {
+      "prompt": "¿Cuál es la presión intraocular normal aproximada?",
+      "options": [
+        "10 mmHg",
+        "15 mmHg",
+        "21 mmHg",
+        "40 mmHg"
+      ],
+      "correct_index": 2,
+      "explanation": "…"
+    }
+  },
+  "respuesta": {
+    "status": 201,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "id": 86,
+      "subtopic_id": 1,
+      "prompt": "¿Cuál es la presión intraocular normal aproximada?",
+      "options": [
+        "10 mmHg",
+        "15 mmHg",
+        "21 mmHg",
+        "40 mmHg"
+      ],
+      "correct_index": 2,
+      "explanation": "Valor de referencia habitual; confirma con el protocolo del curso.",
+      "order": 3,
+      "source": "teacher",
+      "status": "approved",
+      "created_by": 1,
+      "is_owner": true
+    }
+  }
+}
