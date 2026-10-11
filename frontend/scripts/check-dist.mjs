@@ -4,12 +4,16 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, extname } from 'node:path'
 
+// Siempre prohibido en un build de producción.
 const FORBIDDEN = [
-  'localhost:8000', // backend local por defecto (solo debe existir en desarrollo)
   '/auth/dev', // endpoint de acceso de desarrollo
   'profesor@demo.com', // cuentas de demostración del login de desarrollo
   'estudiante@demo.com',
 ]
+
+// Solo para el stack local de Docker (docker-compose.yml fija ALLOW_LOCAL_API=1).
+// El build de Vercel no lo define, así que el backend local nunca entra al bundle.
+if (process.env.ALLOW_LOCAL_API !== '1') FORBIDDEN.push('localhost:8000')
 
 const root = process.argv[2] ?? 'dist'
 const SCANNED = new Set(['.js', '.mjs', '.css', '.html', '.json', '.map', '.txt'])
