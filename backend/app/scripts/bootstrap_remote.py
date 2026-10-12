@@ -66,16 +66,18 @@ def expected_host() -> str:
 
 
 def step_schema() -> str:
-    """Extension vector + migraciones aditivas + create_all (todo idempotente).
+    """Extension vector + create_all + migraciones versionadas (todo idempotente).
 
     Va por ddl_engine (conexión directa necesaria en Neon para DDL).
     """
     from app.database.base import Base
     import app.models  # noqa: F401  (registra todas las tablas)
-    from app.database.migrations import ensure_schema_compatibility
+    from app.database.migrations import ensure_pgvector_extension, run_migrations
 
-    ensure_schema_compatibility()
+    # Mismo orden que el arranque: pgvector -> create_all -> migraciones versionadas.
+    ensure_pgvector_extension()
     Base.metadata.create_all(bind=ddl_engine)
+    run_migrations(ddl_engine)
     with ddl_engine.connect() as conn:
         n_tables = conn.execute(
             text("SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
@@ -90,7 +92,11 @@ def step_content() -> str:
     db = SessionLocal()
     try:
         seed_official_content(db)
-        return "contenido oficial OK (8 unidades + Curso General)"
+        from app.models.content import Topic
+        from sqlalchemy import func, select
+
+        unidades = db.scalar(select(func.count(Topic.id)))
+        return f"contenido oficial OK ({unidades} unidades + Curso General)"
     finally:
         db.close()
 
@@ -172,7 +178,7 @@ def main() -> int:
 
     plan = [
         "1. Esquema: extension vector + migraciones + create_all (por la URL directa para DDL)",
-        "2. Contenido oficial + Curso General (seed ya versionado en el repo, no se inventa contenido)",
+        "2. Contenido oficial + Curso General (seed versionado en el repo; no se inventa contenido)",
         "3. Indexado RAG de chunks (idempotente)" if not args.skip_index else "3. Indexado RAG: SALTADO (--skip-index)",
         f"4. docente: {args.teacher_email or '(no pedido; el usuario debe existir por login)'}",
     ]
