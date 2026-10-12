@@ -25,6 +25,7 @@ from app.repositories import ai_query_repository as ai_query_repo
 from app.repositories import content_repository as content_repo
 from app.schemas.ai import AskRequest, AskResponse, GenerateQuestionsRequest, GenerateQuestionsResponse
 from app.services import ai_service, question_service
+from app.services.ai_budget import AiBudgetExceededError, AiDisabledError, segundos_hasta_manana_utc
 from app.services.ai_service import (
     ConcurrencyExceeded,
     DailyLimitError,
@@ -109,6 +110,18 @@ async def ask_ai_endpoint(
         raise HTTPException(
             status_code=429, detail=str(exc), headers={"Retry-After": "3600"}
         )
+    except AiDisabledError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"[asistente-desactivado] {exc}",
+            headers={"Retry-After": "600"},
+        )
+    except AiBudgetExceededError as exc:
+        raise HTTPException(
+            status_code=429,
+            detail=f"[asistente-tope-global] {exc}",
+            headers={"Retry-After": str(segundos_hasta_manana_utc())},
+        )
     except (OpenRouterQuotaError, OpenRouterCallError, GeminiCallError) as exc:
         raise HTTPException(
             status_code=503,
@@ -186,6 +199,14 @@ async def generate_questions_endpoint(
         raise HTTPException(status_code=404, detail=exc.detail)
     except ForbiddenError as exc:
         raise HTTPException(status_code=403, detail=exc.detail)
+    except AiDisabledError as exc:
+        raise HTTPException(status_code=503, detail=f"[asistente-desactivado] {exc}")
+    except AiBudgetExceededError as exc:
+        raise HTTPException(
+            status_code=429,
+            detail=f"[asistente-tope-global] {exc}",
+            headers={"Retry-After": str(segundos_hasta_manana_utc())},
+        )
     except ai_service.NoChunksError as exc:
         raise HTTPException(status_code=422, detail=exc.detail)
     except OpenRouterSaturatedError as exc:

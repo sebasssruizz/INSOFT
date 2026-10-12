@@ -15,6 +15,12 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.core.config import settings
+from app.services.ai_budget import (
+    AiBudgetExceededError,
+    AiDisabledError,
+    ia_habilitada,
+    reservar_llamada,
+)
 from app.core.openrouter_client import (
     OpenRouterCallError,
     OpenRouterQuotaError,
@@ -287,14 +293,22 @@ async def ask_ai(
 
     # 3. Normalizar la pregunta. Si la IA cae aquí, seguimos con el texto
     #    original: la normalización es una mejora, no un requisito.
-    try:
-        normalized = await call_openrouter(
-            model=settings.OPENROUTER_NORMALIZE_MODEL,
-            system_prompt=NORMALIZE_SYSTEM,
-            user_content=question,
-        )
-    except (OpenRouterCallError, OpenRouterQuotaError, OpenRouterSaturatedError):
-        normalized = question.strip()
+    # Interruptores: IA apagada o tope global agotado -> sin llamadas al proveedor.
+    motivo_sin_proveedor = None  # None | "desactivado" | "tope"
+    if not ia_habilitada():
+        motivo_sin_proveedor = "desactivado"
+    normalized = question.strip()
+    if motivo_sin_proveedor is None and reservar_llamada():
+        try:
+            normalized = await call_openrouter(
+                model=settings.OPENROUTER_NORMALIZE_MODEL,
+                system_prompt=NORMALIZE_SYSTEM,
+                user_content=question,
+            )
+        except (OpenRouterCallError, OpenRouterQuotaError, OpenRouterSaturatedError):
+            normalized = question.strip()
+    elif motivo_sin_proveedor is None:
+        motivo_sin_proveedor = "tope"
 
     # 4. Buscar chunks similares (contextuales al curso/subtema si se pasan)
     chunks = await _retrieve_chunks(db, normalized, subtopic_id, course_id)
@@ -312,6 +326,10 @@ async def ask_ai(
         else settings.OPENROUTER_ANSWER_MODEL
     )
     try:
+        if motivo_sin_proveedor is None and not reservar_llamada():
+            motivo_sin_proveedor = "tope"
+        if motivo_sin_proveedor is not None:
+            raise _SinProveedor(motivo_sin_proveedor)
         if settings.AI_PROVIDER == "gemini":
             answer = await call_gemini(
                 model=settings.GEMINI_MODEL,
@@ -324,11 +342,15 @@ async def ask_ai(
                 system_prompt=ANSWER_SYSTEM,
                 user_content=f"CONTEXTO:\n{context}\n\nPREGUNTA DEL ESTUDIANTE:\n{normalized}",
             )
-    except (GeminiCallError, OpenRouterCallError, OpenRouterQuotaError, OpenRouterSaturatedError):
+    except (GeminiCallError, OpenRouterCallError, OpenRouterQuotaError, OpenRouterSaturatedError, _SinProveedor):
         # Modo degradado: si hay chunks disponibles, respuesta de respaldo con
         # fragmentos oficiales (marcada). Sin chunks, propagamos el error
         # tipado (la ruta responde 503 estable y no se registra la consulta).
         if not chunks:
+            if motivo_sin_proveedor == "desactivado":
+                raise AiDisabledError("El asistente está desactivado temporalmente.")
+            if motivo_sin_proveedor == "tope":
+                raise AiBudgetExceededError("Se alcanzó el tope diario de consultas del asistente.")
             raise
         answer, status_model = _degraded_answer(chunks, question)
         status = "degraded"
@@ -396,8 +418,16 @@ def _build_question_context(chunks: list) -> str:
     return "\n\n".join(parts)
 
 
+class _SinProveedor(Exception):
+    """Interno: no se llama al proveedor (IA apagada o tope agotado)."""
+
+
 def _call_llm_for_questions(system_prompt: str, user_content: str, attempt: int) -> str:
     """Llama al proveedor configurado con temperatura baja para JSON estricto."""
+    if not ia_habilitada():
+        raise AiDisabledError("La IA está desactivada por configuración.")
+    if not reservar_llamada():
+        raise AiBudgetExceededError("Se alcanzó el tope diario de llamadas a la IA.")
     temperature = 0.3 if attempt == 1 else 0.1
     if settings.AI_PROVIDER == "gemini":
         return call_gemini(
