@@ -34,11 +34,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
     LOG_FORMAT: str = "plain"            # "json" | "plain"
 
-    # Documentación OpenAPI. Con backend EXPUESTO al público debe ser false:
-    # /docs, /redoc y /openapi.json enriquecen a un atacante sin valor
-    # operativo. En desarrollo local (docker compose: DOCS_ENABLED=true) se
-    # mantienen para iterar.
-    DOCS_ENABLED: bool = True
+    # Documentación OpenAPI. Por defecto APAGADA: con el backend expuesto,
+    # /docs, /redoc y /openapi.json solo dan información a un atacante. Para
+    # iterar en local, define DOCS_ENABLED=true explícitamente.
+    DOCS_ENABLED: bool = False
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
