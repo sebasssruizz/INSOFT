@@ -91,6 +91,19 @@ async def lifespan(app: FastAPI):
     yield
 
 
+def _es_docente(request: Request) -> bool:
+    """Lee el claim `role` del JWT sin ir a la base (solo para el modo mantenimiento)."""
+    from app.auth.jwt import decode_access_token
+
+    encabezado = request.headers.get("authorization", "")
+    if not encabezado.lower().startswith("bearer "):
+        return False
+    try:
+        return decode_access_token(encabezado[7:].strip()).get("role") == "TEACHER"
+    except Exception:  # noqa: BLE001 - token inválido = no es docente
+        return False
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.PROJECT_NAME,
@@ -113,6 +126,26 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def modo_mantenimiento(request: Request, call_next):
+        """MAINTENANCE_MODE: 503 amable para todos salvo docentes y rutas de salud/acceso.
+
+        El rol se toma del token (claim `role`). Es una compuerta operativa, no un
+        control de permisos: las rutas siguen validando al usuario por su cuenta.
+        """
+        if not settings.MAINTENANCE_MODE or request.method == "OPTIONS":
+            return await call_next(request)
+        ruta = request.url.path
+        if ruta in ("/health", "/ready") or ruta.startswith(f"{settings.API_PREFIX}/auth/"):
+            return await call_next(request)
+        if _es_docente(request):
+            return await call_next(request)
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "[mantenimiento] La plataforma está en mantenimiento. Intenta más tarde."},
+            headers={"Retry-After": "600"},
+        )
 
     @app.exception_handler(ServiceError)
     async def service_error_handler(request: Request, exc: ServiceError):

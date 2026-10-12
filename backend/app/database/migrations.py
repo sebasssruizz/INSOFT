@@ -157,12 +157,27 @@ def _indice_ai_queries_usuario_fecha(conn: Connection) -> None:
     ))
 
 
+# ── Migración 3: contador diario GLOBAL de llamadas al proveedor de IA ─────────
+
+
+def _tabla_ai_calls_daily(conn: Connection) -> None:
+    if "ai_calls_daily" in set(inspect(conn).get_table_names()):
+        return
+    conn.execute(text("""
+        CREATE TABLE ai_calls_daily (
+            day DATE PRIMARY KEY,
+            calls INTEGER NOT NULL DEFAULT 0
+        )
+    """))
+
+
 # Lista ORDENADA. Para añadir una migración: agregar una entrada al final con
 # el siguiente número y una función idempotente. NUNCA renumerar ni editar una
 # migración ya publicada: crea una nueva.
 MIGRATIONS: list[Migration] = [
     Migration(1, "linea_base", _linea_base),
     Migration(2, "indice_ai_queries_usuario_fecha", _indice_ai_queries_usuario_fecha),
+    Migration(3, "tabla_ai_calls_daily", _tabla_ai_calls_daily),
 ]
 
 _SCHEMA_MIGRATIONS_DDL = """

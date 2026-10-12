@@ -63,6 +63,16 @@ class Settings(BaseSettings):
     # Login de desarrollo (sin Google). SOLO para pruebas locales. Desactivado por defecto.
     DEV_AUTH_ENABLED: bool = False
 
+    # Interruptores operativos (ver docs/operacion/INTERRUPTORES.md).
+    # AI_ENABLED=false apaga las llamadas al proveedor: el asistente responde con
+    # el modo respaldo (fragmentos oficiales) o 503 "[asistente-desactivado]".
+    AI_ENABLED: bool = True
+    # Tope GLOBAL de llamadas al proveedor por día UTC (todas las IA: consultas,
+    # normalización y generación). 0 = sin tope. Persiste en la base de datos.
+    AI_GLOBAL_DAILY_CALLS: int = 0
+    # Modo mantenimiento: 503 para todos salvo docentes, /health, /ready y /api/auth/*.
+    MAINTENANCE_MODE: bool = False
+
     # Modelo local de embeddings para el RAG (sentence-transformers, corre en CPU).
     # Multilingüe (español incluido), 384 dimensiones y liviano para CPU.
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
