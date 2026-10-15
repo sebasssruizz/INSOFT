@@ -7,7 +7,7 @@ from app.auth.dependencies import get_current_user
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.user import ProfileUpdate, RoleUpdate, UserRead
-from app.services import auth_service, user_service
+from app.services import auth_service, datos_piloto, user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -55,3 +55,33 @@ def update_my_profile(
         country=payload.country,
         age=payload.age,
     )
+
+
+@router.get("/me/export")
+def export_my_data(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Exporte de datos en poder del usuario, anonimizado (3.5).
+
+    Un pseudónimo HMAC identifica la cuenta; NUNCA exporta email ni
+    google_id. Ver docs/piloto/VISION_PILOTO_DATOS.md si acaso exista la
+    decisión detallada en docs/reporte-agente-*.md.
+    """
+    return datos_piloto.export_user(db, current_user)
+
+
+@router.delete("/me", status_code=204)
+def delete_my_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Baja voluntaria (3.5): anonimiza la cuenta, no borra el historial.
+
+    La integridad referencial se conserva: el progreso y la auditoría
+    quedan agrupados bajo el pseudónimo HMAC. Después de esta operación la
+    cuenta ya no sirve; el siguiente inicio de sesión con Google crea una
+    cuenta nueva.
+    """
+    datos_piloto.anonimizar_user(db, current_user)
+    return None

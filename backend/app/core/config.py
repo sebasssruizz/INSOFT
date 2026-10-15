@@ -104,6 +104,9 @@ class Settings(BaseSettings):
     # Límites adicionales del asistente:
     AI_DAILY_LIMIT_PER_USER: int = 50   # 0 = sin límite diario
     AI_MAX_CONCURRENCY: int = 4         # semáforo global del proceso; 0 = sin tope
+    # Retención de consultas de IA (3.5): se purgan en el arranque las filas
+    # más viejas que N días. 0 desactiva (útil para pruebas).
+    AI_QUERY_RETENTION_DAYS: int = 90
 
     # Google Gemini (IA) - proveedor alternativo gratuito
     GEMINI_API_KEY: str = ""
