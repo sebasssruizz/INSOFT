@@ -57,17 +57,11 @@ class Settings(BaseSettings):
     # CORS (orígenes del frontend, separados por comas)
     BACKEND_CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://0.0.0.0:3000"
 
-    # CORS para pruebas desde el móvil por IP (localhost, 127.0.0.1, rangos privados
-    # 10.x, 192.168.x, 172.16-31.x y CGNAT/Tailscale 100.64-127.x, cualquier puerto).
-    # Añadido: previews/producción de Vercel (https://*.vercel.app).
-    BACKEND_CORS_ORIGIN_REGEX: str = (
-        r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0|"
-        r"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
-        r"192\.168\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
-        r"172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|"
-        r"100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3})(:\d+)?$"
-        r"|^https://.*\.vercel\.app$"
-    )
+    # Regex CORS por defecto VACÍA: se atienden SOLO los orígenes exactos de
+    # ALLOWED_ORIGINS. Toda ampliación (acciones por IP en LAN, o previews de
+    # Vercel) es explícita y opcional en .env; los patrones exactos listos
+    # para pegar están en docs/despliegue/CORS.md.
+    BACKEND_CORS_ORIGIN_REGEX: str = ""
 
     # Correos que obtienen automáticamente el rol de profesor al registrarse (separados por comas)
     TEACHER_EMAILS: str = ""
