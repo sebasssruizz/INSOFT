@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = 2       # extra temporales bajo picos
     DB_POOL_RECYCLE: int = 1800    # re-abrir antes de que el proxy corte (s)
     DB_CONNECT_TIMEOUT: int = 10   # timeout de conexión TCP (s)
+    # Espera máxima por una conexión libre del pool (s). Al agotarse, la
+    # petición responde 503 db_unavailable (nunca se cuelga indefinidamente).
+    DB_POOL_TIMEOUT: int = 10
+    # statement_timeout por transacción en segundos (se aplica con SET LOCAL
+    # al iniciar cada transacción; ver docs/despliegue/TIMEOUTS_BD.md).
+    # 0 lo desactiva. Las migraciones (DDL) no lo heredan.
+    DB_STATEMENT_TIMEOUT_S: int = 15
 
     # ── Observabilidad ─────────────────────────────────────────────────
     LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
@@ -56,7 +63,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGIN_REGEX: str = (
         r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0|"
         r"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
-        r"192\.168\.\d{1,3}\.\d{1,3}|"
+        r"192\.168\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
         r"172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|"
         r"100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3})(:\d+)?$"
         r"|^https://.*\.vercel\.app$"

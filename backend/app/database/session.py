@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
@@ -14,7 +14,13 @@ from app.core.config import settings
 #   - pool_pre_ping: detecta y recicla conexiones muertas antes de usarlas,
 #   - pool_recycle: renueva conexiones antes de que el proxy las corte,
 #   - connect_timeout: el arranque falla rápido y con un mensaje claro
-#     (el lifespan re-intenta 30 veces antes de rendir).
+#     (el lifespan re-intenta 30 veces antes de rendir),
+#   - pool_timeout: agotar conexiones libres responde 503 db_unavailable
+#     (no se cuelga la petición; ver docs/despliegue/TIMEOUTS_BD.md).
+# statement_timeout (DB_STATEMENT_TIMEOUT_S) se aplica por transacción con
+# SET LOCAL: el pooler de Neon (pgbouncer en modo transacción) NO conserva el
+# estado de sesión (SET/pooler) ni el parámetro "options" de la cadena, así
+# que la única forma fiable es dentro de la transacción misma. Decisión §13.
 
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args: dict = {"check_same_thread": False}
@@ -26,6 +32,7 @@ else:
     engine_kwargs = {
         "pool_size": settings.DB_POOL_SIZE,
         "max_overflow": settings.DB_MAX_OVERFLOW,
+        "pool_timeout": settings.DB_POOL_TIMEOUT,
         "pool_recycle": settings.DB_POOL_RECYCLE,
         "pool_pre_ping": True,
     }
@@ -45,6 +52,19 @@ else:
     )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+if not settings.DATABASE_URL.startswith("sqlite") and settings.DB_STATEMENT_TIMEOUT_S > 0:
+    @event.listens_for(SessionLocal, "after_begin")
+    def _statement_timeout_por_transaccion(session, transaction, connection):
+        """Fija statement_timeout SOLO dentro de la transacción en curso.
+
+        SET LOCAL expira al commit/rollback: no queda estado persistente en
+        el backend de Postgres, por lo que es seguro con pgbouncer en modo
+        transacción (Neon pooler). El engine DDL (migraciones) no usa esta
+        sesión, y las transacciones largas de DDL no quedan cortadas.
+        """
+        ms = settings.DB_STATEMENT_TIMEOUT_S * 1000
+        connection.exec_driver_sql(f"SET LOCAL statement_timeout = {int(ms)}")
 
 
 def get_db():
