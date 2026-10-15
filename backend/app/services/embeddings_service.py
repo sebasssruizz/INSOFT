@@ -33,7 +33,8 @@ def _cached_embedding_model():
                 "EMBEDDINGS_BACKEND=onnx requiere el paquete 'fastembed' "
                 "(instálelo o instale requirements-onnx.txt)."
             ) from exc
-        model = TextEmbedding(model_name=settings.EMBEDDING_MODEL)
+        kwargs = {"local_files_only": True} if settings.EMBEDDINGS_LOCAL_ONLY else {}
+        model = TextEmbedding(model_name=settings.EMBEDDING_MODEL, **kwargs)
         _validate_onnx_dimensions(model)
         return model
     from sentence_transformers import SentenceTransformer

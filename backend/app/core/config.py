@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     # ~100x más rápido por consulta). Con "onnx" NO se reindexa: dimensión y
     # modelo son los mismos. Ver docs/perf/INFORME_MEMORIA.md.
     EMBEDDINGS_BACKEND: str = "torch"
+    # Con el modelo ya horneado en la imagen, "true" carga SOLO desde la caché local
+    # (fastembed no consulta HuggingFace). Evita que una caída de HuggingFace rompa
+    # el arranque o la primera consulta. Por defecto false (comportamiento anterior).
+    EMBEDDINGS_LOCAL_ONLY: bool = False
 
     # OpenRouter (IA)
     OPENROUTER_API_KEY: str = ""
