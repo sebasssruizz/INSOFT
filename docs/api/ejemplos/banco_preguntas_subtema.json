@@ -1,0 +1,106 @@
+{
+  "nombre": "banco_preguntas_subtema",
+  "descripcion": "Banco de preguntas del subtema con origen y estado (vista docente).",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/content/subtopics/1/questions/bank"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": [
+      {
+        "id": 1,
+        "subtopic_id": 1,
+        "prompt": "¿Cuántos músculos extraoculares mueven cada globo ocular?",
+        "options": [
+          "Cuatro",
+          "Seis",
+          "Ocho",
+          "Doce"
+        ],
+        "correct_index": 1,
+        "explanation": "Son seis: cuatro rectos (superior, inferior, medial y lateral) y dos oblicuos (superior e inferior). Conocer su inserción es clave en la cirugía de estrabismo.",
+        "order": 0,
+        "source": "official",
+        "status": "approved",
+        "created_by": null,
+        "is_owner": false
+      },
+      {
+        "id": 2,
+        "subtopic_id": 1,
+        "prompt": "El aparato lagrimal drena la lágrima hacia la cavidad nasal a través de:",
+        "options": [
+          "El conducto nasolagrimal",
+          "El nervio óptico",
+          "La cámara anterior",
+          "El cuerpo ciliar"
+        ],
+        "correct_index": 0,
+        "explanation": "La lágrima pasa por los puntos y canalículos lagrimales, el saco lagrimal y finalmente el conducto nasolagrimal hasta el meato inferior de la nariz.",
+        "order": 1,
+        "source": "official",
+        "status": "approved",
+        "created_by": null,
+        "is_owner": false
+      },
+      {
+        "id": 3,
+        "subtopic_id": 1,
+        "prompt": "¿Por qué importa la anatomía orbitaria al preparar un abordaje quirúrgico seguro?",
+        "options": [
+          "Solo determina el color del campo estéril",
+          "Define relaciones con nervios y vasos que condicionan el acceso",
+          "Únicamente influye en la elección del anestésico tópico",
+          "No tiene relación con la técnica quirúrgica"
+        ],
+        "correct_index": 1,
+        "explanation": "La órbita aloja estructuras vasculonerviosas cuya posición condiciona el abordaje, la profundidad segura de trabajo y la prevención de lesiones.",
+        "order": 2,
+        "source": "official",
+        "status": "approved",
+        "created_by": null,
+        "is_owner": false
+      },
+      {
+        "id": 86,
+        "subtopic_id": 1,
+        "prompt": "¿Cuál es la presión intraocular normal aproximada?",
+        "options": [
+          "10 mmHg",
+          "15 mmHg",
+          "21 mmHg",
+          "40 mmHg"
+        ],
+        "correct_index": 2,
+        "explanation": "Valor de referencia habitual; confirma con el protocolo del curso.",
+        "order": 3,
+        "source": "teacher",
+        "status": "approved",
+        "created_by": 1,
+        "is_owner": true
+      },
+      {
+        "id": 87,
+        "subtopic_id": 1,
+        "prompt": "¿Qué protege la córnea del ojo?",
+        "options": [
+          "Esclera",
+          "Córnea",
+          "Iris",
+          "Retina"
+        ],
+        "correct_index": 1,
+        "explanation": "Capa transparente externa.",
+        "order": 900,
+        "source": "ai",
+        "status": "approved",
+        "created_by": 1,
+        "is_owner": true
+      }
+    ]
+  }
+}

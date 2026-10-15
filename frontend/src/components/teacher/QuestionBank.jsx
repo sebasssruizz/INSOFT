@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faChevronLeft,
+  faChevronDown,
   faCircleCheck,
   faRobot,
-  faSpinner,
 } from '@fortawesome/free-solid-svg-icons'
 
 import { Button } from '../ui/Button'
+import { IrisSpinner } from '../ui/EyeLoader'
 import { ApiError } from '../../services/api'
 import {
   createTeacherQuestion,
@@ -21,6 +21,7 @@ import {
 import QuestionCard from './QuestionCard'
 import QuestionForm from './QuestionForm'
 import { cn } from '../../lib/utils'
+import { splitUnitName } from '../../lib/curriculum'
 
 const STATUS_FILTERS = [
   { value: '', label: 'Todas' },
@@ -316,7 +317,7 @@ export default function QuestionBank({
           </h3>
           {reviewLoading ? (
             <p className="mt-4 flex items-center gap-2 text-sm text-ink-500" aria-live="polite">
-              <FontAwesomeIcon icon={faSpinner} spin aria-hidden="true" /> Cargando pendientes…
+              <IrisSpinner className="text-blue-900" /> Cargando pendientes…
             </p>
           ) : reviewItems.length === 0 ? (
             <p className="mt-3 text-sm text-ink-500">No hay preguntas IA pendientes. ¡Todo al día!</p>
@@ -354,16 +355,25 @@ export default function QuestionBank({
                 aria-expanded={expanded}
                 className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors duration-150 hover:bg-ink-50"
               >
-                <span className="font-semibold text-ink-900">{topic.name}</span>
-                <span className="flex items-center gap-2">
+                {/* Mismo formato que el índice del curso: número de unidad en
+                    versalita y el título debajo, sin el "UNIDAD N." en bruto. */}
+                <span className="min-w-0">
+                  <span className="eyebrow block text-blue-900">
+                    Unidad {splitUnitName(topic.name).number ?? topic.order + 1}
+                  </span>
+                  <span className="mt-1 block font-semibold leading-snug text-ink-900">
+                    {splitUnitName(topic.name).title}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
                   {pendingInTopic > 0 && (
                     <span className="tabular rounded-full bg-soft-butter px-2.5 py-0.5 text-[0.6875rem] font-bold text-deep-butter">
                       {pendingInTopic} pendientes
                     </span>
                   )}
                   <FontAwesomeIcon
-                    icon={faChevronLeft}
-                    className={cn('text-[0.7rem] text-ink-400 transition-transform duration-150', expanded && '-rotate-90')}
+                    icon={faChevronDown}
+                    className={cn('text-[0.7rem] text-ink-400 transition-transform duration-200 ease-out', expanded && 'rotate-180')}
                     aria-hidden="true"
                   />
                 </span>
@@ -429,9 +439,9 @@ export default function QuestionBank({
               <Button
                 variant="secondary"
                 size="sm"
-                icon={generating ? faSpinner : faRobot}
+                icon={faRobot}
+                loading={generating}
                 onClick={() => handleGenerate(countChoice)}
-                disabled={generating}
               >
                 {generating ? 'Generando…' : 'Generar con IA'}
               </Button>

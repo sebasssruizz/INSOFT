@@ -25,10 +25,23 @@ class Settings(BaseSettings):
     # Fuerza SSL en la conexión (se activa sola para neon.tech). Para Neon:
     # DATABASE_SSL=true en los proveedores que no entregan host *.neon.tech.
     DATABASE_SSL: bool = False
+    # URL opcional de conexión DIRECTA para DDL (migraciones/create_all).
+    # Vacío: se deriva de DATABASE_URL quitando "-pooler" del host (Neon).
+    DATABASE_URL_DDL: str = ""
+    # Pool de la app (ajustado para Neon: tope 100 conexiones/free).
+    DB_POOL_SIZE: int = 5          # conexiones permanentes
+    DB_MAX_OVERFLOW: int = 2       # extra temporales bajo picos
+    DB_POOL_RECYCLE: int = 1800    # re-abrir antes de que el proxy corte (s)
+    DB_CONNECT_TIMEOUT: int = 10   # timeout de conexión TCP (s)
 
     # ── Observabilidad ─────────────────────────────────────────────────
     LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
     LOG_FORMAT: str = "plain"            # "json" | "plain"
+
+    # Documentación OpenAPI. Por defecto APAGADA: con el backend expuesto,
+    # /docs, /redoc y /openapi.json solo dan información a un atacante. Para
+    # iterar en local, define DOCS_ENABLED=true explícitamente.
+    DOCS_ENABLED: bool = False
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
@@ -59,9 +72,22 @@ class Settings(BaseSettings):
     # Login de desarrollo (sin Google). SOLO para pruebas locales. Desactivado por defecto.
     DEV_AUTH_ENABLED: bool = False
 
+    # Cómo sincroniza el arranque el contenido oficial (seed):
+    #   always   → reescribe y BORRA subtemas que no estén en la semilla (solo dev).
+    #   if_empty → añade unidades oficiales que falten; no toca ninguna existente
+    #              ni borra nada. Es el valor por defecto fuera de desarrollo.
+    #   off      → no toca el contenido en el arranque.
+    # Vacío = automático: always si DEV_AUTH_ENABLED, si no if_empty.
+    SEED_MODE: str = ""
+
     # Modelo local de embeddings para el RAG (sentence-transformers, corre en CPU).
     # Multilingüe (español incluido), 384 dimensiones y liviano para CPU.
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    # Motor de embeddings local: "torch" (sentence-transformers, como siempre)
+    # u "onnx" (fastembed: mismo modelo, vectores idénticos, ~40% menos RAM y
+    # ~100x más rápido por consulta). Con "onnx" NO se reindexa: dimensión y
+    # modelo son los mismos. Ver docs/perf/INFORME_MEMORIA.md.
+    EMBEDDINGS_BACKEND: str = "torch"
 
     # OpenRouter (IA)
     OPENROUTER_API_KEY: str = ""
@@ -98,6 +124,11 @@ class Settings(BaseSettings):
     # Respuestas de quiz calificadas en servidor (por usuario; default alto)
     QUIZ_ANSWER_RATE_LIMIT: str = "120/hour"
 
+    # Endpoints de login (públicos): tope por IP contra credential stuffing.
+    # El default EN CÓDIGO es permissivo (local/tests); al exponer el compose
+    # impone el valor estricto AUTH_RATE_LIMIT=60/hour (docker-compose.yml).
+    AUTH_RATE_LIMIT: str = "99999/hour"
+
     # Modo práctica (banco + IA reutilizable)
     PRACTICE_RATE_LIMIT: str = "30/hour"
     PRACTICE_DEFAULT_COUNT: int = 5
@@ -115,6 +146,16 @@ class Settings(BaseSettings):
             return value.replace("postgresql://", "postgresql+psycopg2://", 1)
         return value
 
+    @property
+    def seed_mode_efectivo(self) -> str:
+        """Modo de semilla que se aplica (valida el valor configurado)."""
+        valor = (self.SEED_MODE or "").strip().lower()
+        if not valor:
+            return "always" if self.DEV_AUTH_ENABLED else "if_empty"
+        if valor not in ("always", "if_empty", "off"):
+            raise ValueError("SEED_MODE debe ser always, if_empty u off.")
+        return valor
+
     @model_validator(mode="after")
     def _require_secret_key_outside_dev(self) -> "Settings":
         """Producción no arranca con SECRET_KEY placeholder.
@@ -123,6 +164,10 @@ class Settings(BaseSettings):
         SECRET_KEY está vacía o en su valor placeholder: los JWT firmados
         con una clave pública conocida no son seguros.
         """
+        if not 5 <= self.ACCESS_TOKEN_EXPIRE_MINUTES <= 60 * 24 * 30:
+            raise RuntimeError(
+                "ACCESS_TOKEN_EXPIRE_MINUTES fuera de rango: entre 5 minutos y 30 días."
+            )
         if not self.DEV_AUTH_ENABLED and self.SECRET_KEY.strip() in (
             "",
             "change-me-in-production",
@@ -148,6 +193,20 @@ class Settings(BaseSettings):
         if "sqlite" in url or not needs_ssl:
             return {}
         return {"sslmode": "require"}
+
+    @property
+    def database_ddl_url(self) -> str:
+        """URL de conexión DIRECTA para DDL (migraciones + create_all).
+
+        Neon expone dos endpoints por branch: el agrupado (ep-xxx-pooler…) es
+        para la app con PgBouncer, y NO soporta DDL fiable; el DDL va por el
+        endpoint directo (sin -pooler). Si DATABASE_URL_DDL está definido se
+        usa tal cual; si no, se deriva de DATABASE_URL quitando "-pooler" del
+        host. En SQLite/Docker local la URL es la misma.
+        """
+        if self.DATABASE_URL_DDL or self.DATABASE_URL.startswith("sqlite"):
+            return self.DATABASE_URL_DDL or self.DATABASE_URL
+        return self.DATABASE_URL.replace("-pooler.", ".")
 
     @staticmethod
     def _split_csv(value: str) -> list[str]:

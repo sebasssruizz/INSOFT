@@ -85,8 +85,7 @@ export function splitUnitName(name = '') {
  * hay sesión para consultarlas por API. Reflejan app/seed/seed_content.py.
  */
 export const CURRICULUM_FACTS = {
-  units: 8,
-  subtopics: 22,
-  questions: 66,
-  verified: 100,
+  units: 9,
+  subtopics: 26,
+  questions: 85,
 }

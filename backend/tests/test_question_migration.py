@@ -211,9 +211,50 @@ def test_importador_no_toca_preguntas_teacher_ni_ai(client):
 
 
 def test_reimportar_reordena_tras_oficiales(client):
-    """Tras reimportar, las preguntas teacher/ai quedan con order después de las oficiales."""
+    """Tras reimportar, las preguntas teacher/ai quedan con order después de las oficiales.
+
+    Auto-contenido (orden-independiente): importa su propio documento, agrega
+    teacher/ai a mano, reimporta y verifica el reordenamiento. Antes dependía
+    del reimport realizado por test_importador_no_toca_preguntas_teacher_ni_ai.
+    """
+    doc = (
+        "# UNIDAD TEST MIGRACION. Unidad de prueba\n"
+        "Descripción.\n\n"
+        "## Subtema de prueba reordena\n"
+        "Contenido de prueba.\n\n"
+        "### Preguntas\n"
+        "1. **¿Pregunta oficial del reorden?**\n"
+        "   - [ ] Incorrecta\n"
+        "   - [x] Correcta\n"
+        "   Explicación.\n"
+    )
+    teacher = auth_headers(client, "qm-profe2@example.com", "QM Profe 2", "TEACHER")
+    resp = client.post("/api/content/import", json={"document": doc}, headers=teacher)
+    assert resp.status_code == 200, resp.text
+
     with SessionLocal() as s:
-        subtopic = s.scalar(select(Subtopic).where(Subtopic.name == "Subtema de prueba migración"))
+        subtopic = s.scalar(select(Subtopic).where(Subtopic.name == "Subtema de prueba reordena"))
+        assert subtopic is not None
+        s.add(
+            Question(
+                subtopic=subtopic,
+                prompt="¿Pregunta extra del reorden?",
+                options=["a", "b", "c", "d"],
+                correct_index=0,
+                explanation="",
+                order=200,
+                source=QuestionSource.TEACHER,
+                status=QuestionStatus.APPROVED,
+            )
+        )
+        s.commit()
+
+    # Reimporta: el importador debe empujar las no-oficiales después de las oficiales
+    resp = client.post("/api/content/import", json={"document": doc}, headers=teacher)
+    assert resp.status_code == 200, resp.text
+
+    with SessionLocal() as s:
+        subtopic = s.scalar(select(Subtopic).where(Subtopic.name == "Subtema de prueba reordena"))
         assert subtopic is not None
         questions = sorted(subtopic.questions, key=lambda q: q.order)
         officials = [q for q in questions if q.source == QuestionSource.OFFICIAL]

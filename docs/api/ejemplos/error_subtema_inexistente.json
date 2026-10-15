@@ -1,0 +1,17 @@
+{
+  "nombre": "error_subtema_inexistente",
+  "descripcion": "Subtema que no existe (con course_id válido): 404.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/subtopics/999999?course_id=1"
+  },
+  "respuesta": {
+    "status": 404,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "detail": "Subtema no encontrado en este curso."
+    }
+  }
+}

@@ -13,6 +13,7 @@ import {
 
 import { Badge } from '../components/ui/Meta'
 import { Button } from '../components/ui/Button'
+import { Counter } from '../components/ui/Counter'
 import { CURRICULUM_FACTS } from '../lib/curriculum'
 import { createCourse } from '../services/courseService'
 import { useAuth } from '../hooks/useAuth'
@@ -184,156 +185,161 @@ function TeacherCourseCard({ course, index }) {
   )
 }
 
+/** Herramientas del profesor: dos accesos en una sola tarjeta, en lista. */
+const TOOLS = [
+  {
+    to: '/teacher/import',
+    icon: faFileArrowUp,
+    tint: 'bg-soft-butter text-deep-butter',
+    title: 'Importar un documento',
+    body: 'Contenido con preguntas que se indexa para el asistente.',
+  },
+  {
+    to: '/teacher/ai-stats',
+    icon: faChartBar,
+    tint: 'bg-soft-lavender text-deep-lavender',
+    title: 'Estadísticas de IA',
+    body: 'Uso del asistente y preguntas por subtema.',
+  },
+]
+
+function ToolsCard() {
+  return (
+    <section
+      aria-labelledby="tools-title"
+      className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-e1"
+    >
+      <h2
+        id="tools-title"
+        className="border-b border-ink-200 px-5 py-4 text-base font-semibold tracking-[-0.01em] text-ink-900"
+      >
+        Herramientas
+      </h2>
+      <ul className="divide-y divide-ink-200">
+        {TOOLS.map((tool) => (
+          <li key={tool.to}>
+            <Link
+              to={tool.to}
+              className="group flex items-center gap-3.5 px-5 py-4 transition-colors duration-150 hover:bg-ink-50"
+            >
+              <span
+                aria-hidden="true"
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 ease-out group-hover:-rotate-6 ${tool.tint}`}
+              >
+                <FontAwesomeIcon icon={tool.icon} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-ink-900">{tool.title}</span>
+                <span className="block text-xs leading-relaxed text-ink-500">{tool.body}</span>
+              </span>
+              <FontAwesomeIcon
+                icon={faArrowRight}
+                aria-hidden="true"
+                className="shrink-0 text-xs text-ink-300 transition-[transform,color] duration-200 ease-out group-hover:translate-x-1 group-hover:text-blue-800"
+              />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 export default function TeacherDashboard() {
   const { user } = useAuth()
   const { courses, loading, error, refresh } = useCourses()
 
   const totalStudents = courses.reduce((sum, course) => sum + (course.student_count || 0), 0)
+  const stats = [
+    {
+      value: courses.length,
+      label: courses.length === 1 ? 'Curso' : 'Cursos',
+      tone: 'text-blue-900',
+    },
+    { value: totalStudents, label: 'Estudiantes', tone: 'text-deep-mint' },
+    { value: CURRICULUM_FACTS.subtopics, label: 'Subtemas oficiales', tone: 'text-deep-lavender' },
+  ]
 
   return (
-    <div>
-      <header className="relative overflow-hidden border-b border-ink-200 bg-gradient-to-br from-soft-mint via-ink-50 to-soft-butter">
-        <div className="relative mx-auto max-w-[78rem] px-5 py-10 sm:px-6 lg:px-10 lg:py-16">
-          <p className="eyebrow text-deep-mint">Panel del profesor</p>
-          <h1 className="mt-3.5 text-[1.625rem] font-semibold leading-[1.12] tracking-[-0.02em] text-ink-900 sm:text-[2rem] lg:text-[2.75rem]">
-            Hola, {user?.name?.split(' ').slice(0, 2).join(' ')}
-          </h1>
-          <p className="mt-4 max-w-[52ch] text-[0.9375rem] leading-relaxed text-ink-600">
-            Crea cursos, comparte el código y sigue a tu grupo. El temario es el mismo contenido
-            oficial en todos los cursos, así que no tienes que mantenerlo.
-          </p>
-
-          <dl className="mt-7 grid max-w-md grid-cols-3 gap-x-4 lg:mt-9 lg:max-w-2xl lg:gap-x-12">
-            {[
-              {
-                value: courses.length,
-                label: courses.length === 1 ? 'Curso' : 'Cursos',
-                tone: 'text-blue-900',
-              },
-              { value: totalStudents, label: 'Estudiantes', tone: 'text-deep-mint' },
-              {
-                value: CURRICULUM_FACTS.subtopics,
-                label: 'Subtemas oficiales',
-                tone: 'text-deep-lavender',
-              },
-            ].map((stat) => (
-              <div key={stat.label} className="min-w-0">
-                <dd
-                  className={`tabular text-[1.75rem] font-semibold leading-none sm:text-[2.25rem] lg:text-[2.75rem] ${stat.tone}`}
-                >
-                  {stat.value}
-                </dd>
-                <dt className="eyebrow mt-2 text-ink-500">{stat.label}</dt>
-              </div>
-            ))}
-          </dl>
-        </div>
+    // pb generoso: el botón flotante del asistente no debe tapar la última fila.
+    <div className="mx-auto max-w-[72rem] px-5 pb-28 pt-8 sm:px-6 lg:px-10 lg:pb-16 lg:pt-12">
+      <header>
+        <p className="eyebrow animate-fade-in text-ink-400">Panel del profesor</p>
+        <h1 className="mt-2.5 animate-rise-in text-[1.625rem] font-semibold leading-[1.15] tracking-[-0.02em] text-ink-900 sm:text-[2rem]">
+          Hola, {user?.name?.split(' ').slice(0, 2).join(' ')}
+        </h1>
+        <p className="mt-2 max-w-[60ch] text-[0.9375rem] leading-relaxed text-ink-600">
+          Crea cursos, comparte el código y sigue a tu grupo. El temario es el mismo contenido
+          oficial en todos los cursos, así que no tienes que mantenerlo.
+        </p>
       </header>
 
-      <main className="mx-auto max-w-[78rem] px-5 py-10 pb-28 sm:px-6 lg:px-10 lg:py-16 lg:pb-20">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
-          <section>
-            <div>
-              <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-900">Mis cursos</h2>
+      <dl className="mt-7 grid animate-rise-in grid-cols-3 divide-x divide-ink-200 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-e1">
+        {stats.map((stat) => (
+          <div key={stat.label} className="min-w-0 px-4 py-4 sm:px-6 sm:py-5">
+            <dd className={`text-[1.5rem] font-bold leading-none sm:text-[2rem] ${stat.tone}`}>
+              <Counter to={stat.value} />
+            </dd>
+            <dt className="mt-2 text-xs text-ink-500">{stat.label}</dt>
+          </div>
+        ))}
+      </dl>
 
-              {error && (
-                <p className="mt-4 rounded-xl border border-wrong-200 bg-wrong-50 px-4 py-3 text-sm text-wrong-700">
-                  {error}
-                </p>
-              )}
+      <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
+        <section aria-labelledby="teacher-courses-title" className="min-w-0">
+          <h2
+            id="teacher-courses-title"
+            className="text-lg font-semibold tracking-[-0.01em] text-ink-900"
+          >
+            Mis cursos
+          </h2>
 
-              <Link to="/teacher/ai-stats" className="mt-4 block text-[0.9rem] text-ink-500">
-                Ver estadísticas de IA
-              </Link>
+          {error && (
+            <p className="mt-4 rounded-xl border border-wrong-200 bg-wrong-50 px-4 py-3 text-sm text-wrong-700">
+              {error}
+            </p>
+          )}
 
-              {loading && (
-                <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                  {[0, 1].map((i) => (
-                    <div key={i} className="rounded-2xl border border-ink-200 bg-white p-6">
-                      <div className="skeleton h-12 w-12 rounded-xl" />
-                      <div className="skeleton mt-5 h-6 w-3/4 rounded" />
-                      <div className="skeleton mt-4 h-8 w-32 rounded-lg" />
-                    </div>
-                  ))}
+          {loading && (
+            <div className="mt-4 grid gap-5 sm:grid-cols-2">
+              {[0, 1].map((i) => (
+                <div
+                  key={i}
+                  aria-hidden="true"
+                  className="rounded-2xl border border-ink-200 bg-white p-6"
+                >
+                  <div className="skeleton h-12 w-12 rounded-xl" />
+                  <div className="skeleton mt-5 h-6 w-3/4 rounded" />
+                  <div className="skeleton mt-4 h-8 w-32 rounded-lg" />
                 </div>
-              )}
-
-              {!loading && courses.length === 0 && !error && (
-                <div className="mt-5 rounded-2xl border border-dashed border-ink-300 bg-white px-6 py-12 text-center">
-                  <h3 className="text-lg font-semibold text-ink-900">Todavía no has creado cursos</h3>
-                  <p className="mx-auto mt-2 max-w-[44ch] text-sm leading-relaxed text-ink-500">
-                    Crea uno con el formulario de la derecha. Recibirás un código tipo OFT-A72K para
-                    que tus estudiantes se unan.
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                {!loading && courses.map((course, index) => (
-                  <TeacherCourseCard key={course.id} course={course} index={index} />
-                ))}
-              </div>
+              ))}
             </div>
-          </section>
+          )}
 
-          <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
-            <Link
-              to="/teacher/import"
-              className="group block rounded-2xl border border-ink-200 bg-white p-6 shadow-e1 transition-[border-color,box-shadow] duration-150 hover:border-blue-300 hover:shadow-e2"
-            >
-              <span
-                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-soft-butter text-deep-butter"
-                aria-hidden="true"
-              >
-                <FontAwesomeIcon icon={faFileArrowUp} />
-              </span>
-              <h3 className="mt-4 text-lg font-semibold tracking-[-0.01em] text-ink-900">
-                Importar un documento
-              </h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink-500">
-                Subí contenido con preguntas y respuestas: se indexa de inmediato para el
-                asistente de IA.
+          {!loading && courses.length === 0 && !error && (
+            <div className="mt-4 rounded-2xl border border-dashed border-ink-300 bg-white px-6 py-12 text-center">
+              <h3 className="text-lg font-semibold text-ink-900">Todavía no has creado cursos</h3>
+              <p className="mx-auto mt-2 max-w-[44ch] text-sm leading-relaxed text-ink-500">
+                Crea uno con el formulario de la derecha. Recibirás un código tipo OFT-A72K para que
+                tus estudiantes se unan.
               </p>
-              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800">
-                Abrir
-                <FontAwesomeIcon
-                  icon={faArrowRight}
-                  className="transition-transform duration-200 ease-out group-hover:translate-x-1"
-                  aria-hidden="true"
-                />
-              </span>
-            </Link>
+            </div>
+          )}
 
-            <Link
-              to="/teacher/ai-stats"
-              className="group block rounded-2xl border border-ink-200 bg-white p-6 shadow-e1 transition-[border-color,box-shadow] duration-150 hover:border-blue-300 hover:shadow-e2"
-            >
-              <span
-                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-soft-lavender text-deep-lavender"
-                aria-hidden="true"
-              >
-                <FontAwesomeIcon icon={faChartBar} />
-              </span>
-              <h3 className="mt-4 text-lg font-semibold tracking-[-0.01em] text-ink-900">
-                Estadísticas de IA
-              </h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink-500">
-                Revisa el uso del asistente, tiempos de respuesta y preguntas por subtema.
-              </p>
-              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800">
-                Abrir
-                <FontAwesomeIcon
-                  icon={faArrowRight}
-                  className="transition-transform duration-200 ease-out group-hover:translate-x-1"
-                  aria-hidden="true"
-                />
-              </span>
-            </Link>
+          {!loading && courses.length > 0 && (
+            <div className="mt-4 grid gap-5 sm:grid-cols-2">
+              {courses.map((course, index) => (
+                <TeacherCourseCard key={course.id} course={course} index={index} />
+              ))}
+            </div>
+          )}
+        </section>
 
-            <CreateCourseForm onCreated={refresh} />
-          </aside>
-        </div>
-      </main>
+        <aside className="min-w-0 space-y-6 lg:sticky lg:top-8 lg:self-start">
+          <ToolsCard />
+          <CreateCourseForm onCreated={refresh} />
+        </aside>
+      </div>
     </div>
   )
 }

@@ -1,0 +1,358 @@
+{
+  "nombre": "unidades_del_curso",
+  "descripcion": "Unidades con sus subtemas y estado de completado de cada uno.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/courses/1/topics"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": [
+      {
+        "id": 1,
+        "name": "UNIDAD 1. Generalidades en Cirugía Oftalmológica",
+        "description": "Bases anatómicas, técnicas, materiales y protocolos del entorno quirúrgico oftalmológico.",
+        "order": 0,
+        "completed_subtopics": 0,
+        "total_subtopics": 7,
+        "estimated_minutes": 96,
+        "question_count": 21,
+        "subtopics": [
+          {
+            "id": 1,
+            "topic_id": 1,
+            "name": "Anatomía del Globo Ocular y estructuras anexas",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 19,
+            "question_count": 3
+          },
+          {
+            "id": 2,
+            "topic_id": 1,
+            "name": "Tipos de Anestesia para Cirugía Oftalmológica",
+            "order": 1,
+            "completed": false,
+            "estimated_minutes": 12,
+            "question_count": 3
+          },
+          {
+            "id": 3,
+            "topic_id": 1,
+            "name": "Instrumental para cirugía Oftalmológica",
+            "order": 2,
+            "completed": false,
+            "estimated_minutes": 13,
+            "question_count": 3
+          },
+          {
+            "id": 4,
+            "topic_id": 1,
+            "name": "Equipos Biomédicos",
+            "order": 3,
+            "completed": false,
+            "estimated_minutes": 12,
+            "question_count": 3
+          },
+          {
+            "id": 5,
+            "topic_id": 1,
+            "name": "Material de Suturas",
+            "order": 4,
+            "completed": false,
+            "estimated_minutes": 13,
+            "question_count": 3
+          },
+          {
+            "id": 6,
+            "topic_id": 1,
+            "name": "Medicación en Cirugía Oftalmológica",
+            "order": 5,
+            "completed": false,
+            "estimated_minutes": 14,
+            "question_count": 3
+          },
+          {
+            "id": 7,
+            "topic_id": 1,
+            "name": "Protocolos del Instrumentador Quirúrgico en cirugía oftalmológica",
+            "order": 6,
+            "completed": false,
+            "estimated_minutes": 13,
+            "question_count": 3
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "UNIDAD 2. Procedimientos Quirúrgicos de oftalmológica generales",
+        "description": "Procedimientos ambulatorios frecuentes y sus cuidados de instrumentación.",
+        "order": 1,
+        "completed_subtopics": 0,
+        "total_subtopics": 4,
+        "estimated_minutes": 65,
+        "question_count": 12,
+        "subtopics": [
+          {
+            "id": 8,
+            "topic_id": 2,
+            "name": "Resección de pterigión",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 18,
+            "question_count": 3
+          },
+          {
+            "id": 9,
+            "topic_id": 2,
+            "name": "Drenaje de chalazión",
+            "order": 1,
+            "completed": false,
+            "estimated_minutes": 16,
+            "question_count": 3
+          },
+          {
+            "id": 10,
+            "topic_id": 2,
+            "name": "Dilatación de vías lagrimales",
+            "order": 2,
+            "completed": false,
+            "estimated_minutes": 14,
+            "question_count": 3
+          },
+          {
+            "id": 11,
+            "topic_id": 2,
+            "name": "Inyecciones intravítreas",
+            "order": 3,
+            "completed": false,
+            "estimated_minutes": 17,
+            "question_count": 3
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "name": "UNIDAD 3. Glaucoma",
+        "description": "Procedimientos para favorecer el drenaje del humor acuoso y controlar la presión intraocular.",
+        "order": 2,
+        "completed_subtopics": 0,
+        "total_subtopics": 3,
+        "estimated_minutes": 46,
+        "question_count": 9,
+        "subtopics": [
+          {
+            "id": 12,
+            "topic_id": 3,
+            "name": "Trabeculotomía más iridectomía periférica",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 16,
+            "question_count": 3
+          },
+          {
+            "id": 13,
+            "topic_id": 3,
+            "name": "Colocación de implantes para Drenaje de Humor acuoso",
+            "order": 1,
+            "completed": false,
+            "estimated_minutes": 16,
+            "question_count": 3
+          },
+          {
+            "id": 14,
+            "topic_id": 3,
+            "name": "Iridectomía con Láser",
+            "order": 2,
+            "completed": false,
+            "estimated_minutes": 14,
+            "question_count": 3
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "name": "UNIDAD 4. Cirugías del segmento anterior",
+        "description": "Técnicas de microcirugía para el cristalino y la córnea.",
+        "order": 3,
+        "completed_subtopics": 0,
+        "total_subtopics": 3,
+        "estimated_minutes": 48,
+        "question_count": 9,
+        "subtopics": [
+          {
+            "id": 15,
+            "topic_id": 4,
+            "name": "Facoemulsificación",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 15,
+            "question_count": 3
+          },
+          {
+            "id": 16,
+            "topic_id": 4,
+            "name": "Extracción extracapsular",
+            "order": 1,
+            "completed": false,
+            "estimated_minutes": 17,
+            "question_count": 3
+          },
+          {
+            "id": 17,
+            "topic_id": 4,
+            "name": "Trasplante de córnea",
+            "order": 2,
+            "completed": false,
+            "estimated_minutes": 16,
+            "question_count": 3
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "name": "UNIDAD 5. Cirugías vitreorretinales",
+        "description": "Procedimientos sobre el vítreo y la retina, con énfasis en equipos y seguridad intraocular.",
+        "order": 4,
+        "completed_subtopics": 0,
+        "total_subtopics": 2,
+        "estimated_minutes": 32,
+        "question_count": 6,
+        "subtopics": [
+          {
+            "id": 18,
+            "topic_id": 5,
+            "name": "Vitrectomías del segmento anterior y posterior",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 16,
+            "question_count": 3
+          },
+          {
+            "id": 19,
+            "topic_id": 5,
+            "name": "Retinopatía simple",
+            "order": 1,
+            "completed": false,
+            "estimated_minutes": 16,
+            "question_count": 3
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "name": "UNIDAD 6. Corrección de estrabismo",
+        "description": "Preparación e instrumentación de las técnicas de cirugía de estrabismo: debilitamiento y refuerzo de los músculos extraoculares, con el instrumental, las suturas y los cuidados que exige cada paso.",
+        "order": 5,
+        "completed_subtopics": 0,
+        "total_subtopics": 1,
+        "estimated_minutes": 23,
+        "question_count": 6,
+        "subtopics": [
+          {
+            "id": 20,
+            "topic_id": 6,
+            "name": "Técnicas para Corrección de estrabismo",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 23,
+            "question_count": 6
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "name": "UNIDAD 7. Cirugía para corrección de patologías refractivas",
+        "description": "Criterios generales de valoración y opciones de corrección refractiva: preparación del equipo láser, seguridad del paciente y cuidados posteriores.",
+        "order": 6,
+        "completed_subtopics": 0,
+        "total_subtopics": 1,
+        "estimated_minutes": 20,
+        "question_count": 6,
+        "subtopics": [
+          {
+            "id": 21,
+            "topic_id": 7,
+            "name": "Miopía, Hipermetropía y Astigmatismo",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 20,
+            "question_count": 6
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "name": "UNIDAD 8. Oculoplastia",
+        "description": "Preparación e instrumentación para la cirugía palpebral: anatomía aplicada de los párpados, instrumental específico y técnica de referencia para los procedimientos de esta región.",
+        "order": 7,
+        "completed_subtopics": 0,
+        "total_subtopics": 1,
+        "estimated_minutes": 19,
+        "question_count": 5,
+        "subtopics": [
+          {
+            "id": 22,
+            "topic_id": 8,
+            "name": "Cirugía en Párpados",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 19,
+            "question_count": 5
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "name": "UNIDAD 9. Cirugía de Pterigión paso a paso",
+        "description": "Definición, indicaciones, técnica quirúrgica e instrumentación y complicaciones de la cirugía de pterigión, organizada paso a paso para el instrumentador.",
+        "order": 8,
+        "completed_subtopics": 0,
+        "total_subtopics": 4,
+        "estimated_minutes": 49,
+        "question_count": 11,
+        "subtopics": [
+          {
+            "id": 23,
+            "topic_id": 9,
+            "name": "Definición y generalidades",
+            "order": 0,
+            "completed": false,
+            "estimated_minutes": 15,
+            "question_count": 2
+          },
+          {
+            "id": 24,
+            "topic_id": 9,
+            "name": "Indicaciones y contraindicaciones",
+            "order": 1,
+            "completed": false,
+            "estimated_minutes": 8,
+            "question_count": 1
+          },
+          {
+            "id": 25,
+            "topic_id": 9,
+            "name": "Técnica quirúrgica e instrumentación",
+            "order": 2,
+            "completed": false,
+            "estimated_minutes": 13,
+            "question_count": 3
+          },
+          {
+            "id": 26,
+            "topic_id": 9,
+            "name": "Complicaciones",
+            "order": 3,
+            "completed": false,
+            "estimated_minutes": 13,
+            "question_count": 5
+          }
+        ]
+      }
+    ]
+  }
+}

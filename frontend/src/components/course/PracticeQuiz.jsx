@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faRotateRight, faSpinner, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
+import { faRotateRight, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 
 import Quiz from './Quiz'
 import { Button } from '../ui/Button'
+import { EyeLoader } from '../ui/EyeLoader'
 import { ApiError } from '../../services/api'
 import { submitQuizAnswer } from '../../services/quizService'
 import { startPracticeSession } from '../../services/practiceService'
@@ -54,8 +55,7 @@ export default function PracticeQuiz({ subtopicId = null, topicId = null, count,
   if (preparing) {
     return (
       <div className="animate-fade-in flex flex-col items-center justify-center gap-3 px-5 py-12 text-center">
-        <FontAwesomeIcon icon={faSpinner} spin className="text-xl text-blue-800" aria-hidden="true" />
-        <p className="text-sm text-ink-600">Preparando tu práctica…</p>
+        <EyeLoader label="Preparando tu práctica" />
         <p className="max-w-[46ch] text-[0.75rem] text-ink-400">
           Puede tardar unos segundos si la IA está generando preguntas nuevas.
         </p>

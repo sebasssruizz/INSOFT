@@ -1,0 +1,136 @@
+{
+  "nombre": "preguntas_repaso_unidad",
+  "descripcion": "Preguntas de repaso de una unidad (sin clave de respuesta).",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/topics/1/questions?course_id=1"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": [
+      {
+        "id": 1,
+        "subtopic_id": 1,
+        "prompt": "¿Cuántos músculos extraoculares mueven cada globo ocular?",
+        "options": [
+          "Cuatro",
+          "Seis",
+          "Ocho",
+          "Doce"
+        ],
+        "order": 0
+      },
+      {
+        "id": 7,
+        "subtopic_id": 3,
+        "prompt": "¿Cuál es la función del blefaróstato?",
+        "options": [
+          "Sujetar la aguja de sutura",
+          "Mantener los párpados separados durante la cirugía",
+          "Cortar tejido corneal",
+          "Irrigar la cámara anterior"
+        ],
+        "order": 0
+      },
+      {
+        "id": 16,
+        "subtopic_id": 6,
+        "prompt": "¿Qué efecto produce un midriático?",
+        "options": [
+          "Contrae la pupila",
+          "Dilata la pupila",
+          "Reduce la presión arterial",
+          "Anestesia la córnea"
+        ],
+        "order": 0
+      },
+      {
+        "id": 8,
+        "subtopic_id": 3,
+        "prompt": "El instrumental de microcirugía oftalmológica se caracteriza por:",
+        "options": [
+          "Ser más pesado que el instrumental general",
+          "Tener puntas finas y delicadas que exigen manipulación cuidadosa",
+          "No requerir esterilización",
+          "Usarse siempre sin microscopio"
+        ],
+        "order": 1
+      },
+      {
+        "id": 17,
+        "subtopic_id": 6,
+        "prompt": "El rotulado de los medicamentos en la mesa quirúrgica sirve para:",
+        "options": [
+          "Cumplir un trámite administrativo",
+          "Prevenir errores de identificación y administración",
+          "Acelerar el conteo de gasas",
+          "Sustituir la verificación verbal con el cirujano"
+        ],
+        "order": 1
+      },
+      {
+        "id": 21,
+        "subtopic_id": 7,
+        "prompt": "La trazabilidad del material implantado busca:",
+        "options": [
+          "Registrar qué se implantó, en quién y con qué lote",
+          "Reducir el coste del implante",
+          "Sustituir el consentimiento informado",
+          "Acortar el tiempo quirúrgico"
+        ],
+        "order": 2
+      },
+      {
+        "id": 9,
+        "subtopic_id": 3,
+        "prompt": "Al recibir el instrumental antes de la cirugía, el instrumentador debe:",
+        "options": [
+          "Verificar integridad, limpieza, montaje y funcionamiento",
+          "Abrirlo solo cuando el cirujano lo solicite",
+          "Contarlo únicamente al finalizar",
+          "Confiar en la revisión de central de esterilización"
+        ],
+        "order": 2
+      },
+      {
+        "id": 6,
+        "subtopic_id": 2,
+        "prompt": "¿Cuál es una indicación habitual de anestesia general en oftalmología?",
+        "options": [
+          "Paciente pediátrico o sin capacidad de colaborar",
+          "Cualquier cirugía ambulatoria",
+          "Retirada de suturas",
+          "Exploración con lámpara de hendidura"
+        ],
+        "order": 2
+      },
+      {
+        "id": 15,
+        "subtopic_id": 5,
+        "prompt": "¿Qué ventaja tiene el monofilamento frente al multifilamento?",
+        "options": [
+          "Mayor capilaridad y retención bacteriana",
+          "Menor riesgo de albergar microorganismos y menor fricción al pasar por el tejido",
+          "Siempre es más fácil de anudar",
+          "Es más económico en todos los casos"
+        ],
+        "order": 2
+      },
+      {
+        "id": 12,
+        "subtopic_id": 4,
+        "prompt": "Ante una falla del microscopio quirúrgico en pleno procedimiento, lo correcto es:",
+        "options": [
+          "Continuar sin visualización adecuada",
+          "Avisar de inmediato y activar el plan de contingencia del servicio",
+          "Reparar el equipo dentro del campo estéril",
+          "Retirar el campo estéril y dar por terminada la cirugía"
+        ],
+        "order": 2
+      }
+    ]
+  }
+}

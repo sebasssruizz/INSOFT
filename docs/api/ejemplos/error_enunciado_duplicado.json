@@ -1,0 +1,20 @@
+{
+  "nombre": "error_enunciado_duplicado",
+  "descripcion": "Enunciado repetido en el subtema: 409.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/content/subtopics/1/questions",
+    "cuerpo": {
+      "prompt": "…"
+    }
+  },
+  "respuesta": {
+    "status": 409,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "detail": "Ya existe una pregunta con ese enunciado en este subtema."
+    }
+  }
+}

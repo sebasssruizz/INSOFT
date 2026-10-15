@@ -6,6 +6,7 @@
 import os
 
 os.environ["SECRET_KEY"] = "test-secret"
+os.environ["AI_PROVIDER"] = "openrouter"
 os.environ["DEV_AUTH_ENABLED"] = "true"
 os.environ["TEACHER_EMAILS"] = ""
 os.environ["OPENROUTER_API_KEY"] = "sk-or-v1-test"

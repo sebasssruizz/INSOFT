@@ -1,6 +1,22 @@
+import { useEffect, useState } from 'react'
+
 import { cn } from '../../lib/utils'
 
 const clamp = (value) => Math.min(100, Math.max(0, Number(value) || 0))
+
+/**
+ * Devuelve 0 en el primer fotograma y el valor real en el siguiente, para que
+ * la transición CSS llene la barra desde cero al aparecer en vez de saltar
+ * directamente a su estado final. Los cambios posteriores se animan igual.
+ */
+function useFillFromZero(value) {
+  const [shown, setShown] = useState(0)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setShown(value))
+    return () => cancelAnimationFrame(frame)
+  }, [value])
+  return shown
+}
 
 const TRACK_HEIGHT = {
   sm: 'h-1',
@@ -14,6 +30,7 @@ const TRACK_HEIGHT = {
  */
 export function ProgressBar({ value, size = 'md', tone = 'blue', className, label }) {
   const percentage = clamp(value)
+  const fill = useFillFromZero(percentage)
 
   return (
     <div className={className}>
@@ -39,7 +56,7 @@ export function ProgressBar({ value, size = 'md', tone = 'blue', className, labe
             'h-full w-full origin-left rounded-full transition-transform duration-700 ease-out',
             tone === 'inverse' ? 'bg-white' : 'bg-blue-900',
           )}
-          style={{ transform: `scaleX(${percentage / 100})` }}
+          style={{ transform: `scaleX(${fill / 100})` }}
         />
       </div>
     </div>
@@ -49,13 +66,29 @@ export function ProgressBar({ value, size = 'md', tone = 'blue', className, labe
 /**
  * Anillo de progreso para cifras compactas (cabecera de curso, tarjetas).
  */
-export function ProgressRing({ value, size = 56, stroke = 5, className, children, tone = 'blue' }) {
+export function ProgressRing({
+  value,
+  size = 56,
+  stroke = 5,
+  className,
+  children,
+  tone = 'blue',
+  label = 'Progreso',
+}) {
   const percentage = clamp(value)
+  const fill = useFillFromZero(percentage)
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
 
   return (
-    <div className={cn('relative inline-flex items-center justify-center', className)}>
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuenow={Math.round(percentage)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      className={cn('relative inline-flex items-center justify-center', className)}
+    >
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
         <circle
           cx={size / 2}
@@ -73,7 +106,7 @@ export function ProgressRing({ value, size = 56, stroke = 5, className, children
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={circumference - (percentage / 100) * circumference}
+          strokeDashoffset={circumference - (fill / 100) * circumference}
           className={cn(
             'transition-[stroke-dashoffset] duration-700 ease-out',
             tone === 'inverse' ? 'stroke-white' : 'stroke-blue-900',

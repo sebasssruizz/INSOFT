@@ -1,0 +1,17 @@
+{
+  "nombre": "error_estudiante_en_panel_docente",
+  "descripcion": "Estudiante consulta una ruta de docente: 403.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/courses/2/students"
+  },
+  "respuesta": {
+    "status": 403,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "detail": "Esta acción requiere el rol de profesor."
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "nombre": "alumnos_del_curso",
+  "descripcion": "Alumnos inscritos en el curso del docente.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/courses/2/students"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": [
+      {
+        "id": 2,
+        "name": "Estudiante Ejemplo",
+        "email": "estudiante@example.com",
+        "profile_image": null,
+        "joined_at": "2026-10-11T23:02:12.245631Z"
+      }
+    ]
+  }
+}

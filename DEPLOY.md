@@ -35,10 +35,19 @@ USAR la conexión SIN el sufijo `-pooler`. En Neon hay dos cadenas:
 Reglas:
 
 - La app de INSOFT lee `DATABASE_URL` desde el entorno (backend/app/core/config.py).
+- Desde el PR de Neon (chore/neon-conexion): puedes apuntar `DATABASE_URL` a la
+  cadena AGRUPADA (`-pooler`) — el backend la usa con un pool pequeño
+  (`DB_POOL_SIZE=5`, `DB_MAX_OVERFLOW=2`, `pool_pre_ping`, `pool_recycle=1800`),
+  y las migraciones/create_all van solas por la conexión directa para DDL:
+  se deriva de `DATABASE_URL` quitando `-pooler`, o se fija explícita con
+  `DATABASE_URL_DDL`. El primer arranque tras suspensión de Neon reintenta
+  30 veces (1 s por intento) antes de fallar.
 - Las migraciones corren automáticamente al arrancar el backend (`lifespan` ->
   `ensure_schema_compatibility`), que además ejecuta:
   `CREATE EXTENSION IF NOT EXISTS vector` (necesario para el RAG).
-  **Toda migración debe usar la URL DIRECTA de Neon**, no la agrupada.
+  En Neon el usuario del proyecto es dueño de la DB y puede crearla; si un
+  rol restringido no puede, el comando exacto es:
+  `psql "<DATABASE_URL_DDL>" -c "CREATE EXTENSION IF NOT EXISTS vector;"`
 - SSL: se activa solo si el host contiene `neon.tech`, o forzándolo con
   la variable `DATABASE_SSL=true`. El driver añade `sslmode=require`.
 - Alembic: este repo NO usa Alembic (migraciones ligeras aditivas idempotentes
@@ -50,8 +59,9 @@ Reglas:
 >   docker-compose ya lo dejan `false` por defecto.
 > - Con `DEV_AUTH_ENABLED=false`, `POST /api/auth/dev` responde **403** sin crear
 >   usuario ni sesión, y el build de producción del frontend **no contiene** la
->   tarjeta "Acceso de desarrollo" (depende de `import.meta.env.DEV` o de
->   `VITE_DEV_AUTH=true`, que en Vercel no se define).
+>   tarjeta "Acceso de desarrollo" ni la ruta `/auth/dev` (solo depende de
+>   `import.meta.env.DEV`; ya no existe `VITE_DEV_AUTH`). `npm run build` ejecuta
+>   `scripts/check-dist.mjs`, que falla si el bundle contiene cadenas prohibidas.
 > - Además, si `DEV_AUTH_ENABLED=false` y `SECRET_KEY` está vacía o es el
 >   placeholder "change-me-in-production", el backend **se niega a arrancar**.
 
@@ -80,6 +90,14 @@ primera petición tarda 30-60 s y el frontend muestra el aviso
 "El servidor se está despertando, un momento…" (componente
 `SlowServerBanner`).
 
+**RAM y plan gratis (medido 7-oct-2026, ver `docs/perf/INFORME_MEMORIA.md`):**
+Render free = 0.1 CPU / **512 MB**. El backend NO cabe continuo ni con
+`EMBEDDINGS_BACKEND=torch` (~1,1 GB) ni con `onnx` (~0,67 GB). Opciones:
+1. **PC local + túnel** (ruta B) — costo 0, sin límites de RAM (recomendado).
+2. **VM ≥ 1 GB RAM** (DigitalOcean $6/$12, Render `1c-2g` $25) con
+   `EMBEDDINGS_BACKEND=onnx` y build-arg del Dockerfile de la misma vara.
+3. Ejecutar el RAG fuera del MVP (no recomendado para el piloto).
+
 ### 4. Google OAuth (para Google Cloud Console)
 
 En *APIs & Services → Credentials → OAuth 2.0 Client ID* agrega los
@@ -107,7 +125,6 @@ Variables (Project Settings → Environment Variables):
 |---|---|
 | `VITE_API_URL` | `https://insoft-backend.onrender.com` |
 | `VITE_GOOGLE_CLIENT_ID` | `<client-id>.apps.googleusercontent.com` |
-| `VITE_DEV_AUTH` | `false` |
 
 La reescritura SPA ya está en `frontend/vercel.json`:
 
@@ -189,8 +206,9 @@ docker compose up --build -d
 `AI_*_RATE_LIMIT`, `QUIZ_MAX_QUESTIONS`, `PRACTICE_*` (ver .env.example
 en la carpeta raíz del proyecto).
 
-**Frontend (Vercel / build args):** `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`,
-`VITE_DEV_AUTH`.
+**Frontend (Vercel / build args):** `VITE_API_URL` (obligatoria en producción; el
+build falla si falta) y `VITE_GOOGLE_CLIENT_ID`. El stack local de compose añade
+`ALLOW_LOCAL_API=1`, que permite `localhost:8000` en el bundle; Vercel no lo define.
 
 **Neon:** no hay ninguna administración manual salvo la URL directa vs pooler.
 

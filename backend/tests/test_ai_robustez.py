@@ -8,6 +8,7 @@ import os
 
 os.environ["DATABASE_URL"] = "sqlite:////tmp/opencode/oftallearn_test.db"
 os.environ["SECRET_KEY"] = "test-secret"
+os.environ["AI_PROVIDER"] = "openrouter"
 os.environ["DEV_AUTH_ENABLED"] = "true"
 os.environ["TEACHER_EMAILS"] = ""
 
