@@ -1,0 +1,27 @@
+{
+  "modo": "lexico-tfidf-coseno (100 % local, sin red)",
+  "n_pares": 80,
+  "recall@1": 0.575,
+  "recall@3": 0.863,
+  "mrr": 0.724,
+  "ms_por_consulta": 0.2,
+  "por_subtema": {
+    "complicaciones": {
+      "aciertos_top1": 5,
+      "total": 20
+    },
+    "definicion": {
+      "aciertos_top1": 11,
+      "total": 15
+    },
+    "indicaciones": {
+      "aciertos_top1": 5,
+      "total": 5
+    },
+    "tecnica": {
+      "aciertos_top1": 25,
+      "total": 40
+    }
+  },
+  "nota": "Corpus subrogado: por subtema se concatenan las respuestas esperadas del banco. Escenario real post-import (con chunks de unidad 9 en la BD) corre de nuevo para medir contra subtopic_chunks reales."
+}
