@@ -108,6 +108,16 @@ class Settings(BaseSettings):
     # más viejas que N días. 0 desactiva (útil para pruebas).
     AI_QUERY_RETENTION_DAYS: int = 90
 
+    # ── Contenido (3.1/3.2) ────────────────────────────────────────────
+    # Medios por subtema: SOLO enlaces a hosts de esta lista (separados por
+    # comas; admite comodín "*.domain.com"). Vacío = se rechaza todo (más
+    # seguro por defecto).
+    MEDIA_ALLOWED_HOSTS: str = ""
+    # 3.2 validación de contenido: mostrar SOLO unidades y subtemas
+    # validados. APAGADO por defecto (histórico seguiría visible igual;
+    # el flag es para el piloto cuando la docente pida el filtro estricto).
+    SHOW_ONLY_VALIDATED: bool = False
+
     # Google Gemini (IA) - proveedor alternativo gratuito
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-1.5-flash"

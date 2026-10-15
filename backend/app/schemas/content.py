@@ -107,6 +107,25 @@ class TopicRead(BaseModel):
     order: int
 
 
+class MediaRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    url: str
+    kind: str
+    order: int
+
+
+class MediaCreate(BaseModel):
+    url: str
+    kind: str = "video"
+    order: int = 0
+
+
+class ValidatedUpdate(BaseModel):
+    validated: bool
+
+
 class SubtopicRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -117,4 +136,6 @@ class SubtopicRead(BaseModel):
     order: int
     completed: bool = False
     estimated_minutes: int = 0
+    validated: bool = True
     questions: list[QuestionRead] = []
+    media: list[MediaRead] = []

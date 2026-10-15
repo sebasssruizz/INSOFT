@@ -16,6 +16,9 @@ class Topic(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # 3.2 validación de contenido: borrador(False)/validado(True). Histórico e
+    # importaciones creadas antes = validadas (no cambia el default visible).
+    validated: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     subtopics = relationship(
         "Subtopic", back_populates="topic", cascade="all, delete-orphan", order_by="Subtopic.order"
@@ -33,6 +36,8 @@ class Subtopic(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # 3.2 validación de contenido por subtema (ver comentario de Topic).
+    validated: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     topic = relationship("Topic", back_populates="subtopics")
     questions = relationship(

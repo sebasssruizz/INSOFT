@@ -160,9 +160,38 @@ def _indice_ai_queries_usuario_fecha(conn: Connection) -> None:
 # Lista ORDENADA. Para añadir una migración: agregar una entrada al final con
 # el siguiente número y una función idempotente. NUNCA renumerar ni editar una
 # migración ya publicada: crea una nueva.
+# ── Migración 3: validación de contenido por unidad/subtema (3.2) ─────────────
+
+
+def _validated_unidades_subtemas(conn: Connection) -> None:
+    """Columnas topics.validated / subtopics.validated (defecto 1: histórico).
+
+    Idempotente, aditiva y sin NOT NULL agresivo: SQLite no admite NOT NULL
+    sin DEFAULT constante al hacer ADD COLUMN, así que se añade con DEFAULT 1
+    (constante: válido) o nullable y relleno según dialecto.
+    """
+    dialect = conn.dialect.name
+    existing_tables = set(inspect(conn).get_table_names())
+    inspector = inspect(conn)
+    for table in ("topics", "subtopics"):
+        if table not in existing_tables:
+            continue
+        columns = {c["name"] for c in inspector.get_columns(table)}
+        if "validated" in columns:
+            continue
+        if dialect == "postgresql":
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN validated BOOLEAN NOT NULL DEFAULT TRUE"))
+        else:
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN validated INTEGER NOT NULL DEFAULT 1"))
+
+
+# Lista ORDENADA. Para añadir una migración: agregar una entrada al final con
+# el siguiente número y una función idempotente. NUNCA renumerar ni editar una
+# migración ya publicada: crea una nueva.
 MIGRATIONS: list[Migration] = [
     Migration(1, "linea_base", _linea_base),
     Migration(2, "indice_ai_queries_usuario_fecha", _indice_ai_queries_usuario_fecha),
+    Migration(3, "validated_unidades_subtemas", _validated_unidades_subtemas),
 ]
 
 _SCHEMA_MIGRATIONS_DDL = """
