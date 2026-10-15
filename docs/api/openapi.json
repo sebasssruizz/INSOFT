@@ -1,0 +1,4159 @@
+{
+  "components": {
+    "schemas": {
+      "AskRequest": {
+        "description": "Petición de pregunta al asistente de IA.",
+        "properties": {
+          "course_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Curso/carpeta actual para acotar el RAG al contenido habilitado en ese curso. Si se omite, se conserva la búsqueda global.",
+            "title": "Course Id"
+          },
+          "question": {
+            "description": "Pregunta del estudiante",
+            "maxLength": 500,
+            "title": "Question",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identificador de sesión (UUID) para agrupar consultas del mismo intento",
+            "title": "Session Id"
+          },
+          "subtopic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Subtema opcional para limitar la búsqueda",
+            "title": "Subtopic Id"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "AskRequest",
+        "type": "object"
+      },
+      "AskResponse": {
+        "description": "Respuesta del asistente de IA.",
+        "properties": {
+          "chunks_usados": {
+            "description": "Número de chunks recuperados y usados como contexto",
+            "title": "Chunks Usados",
+            "type": "integer"
+          },
+          "degraded": {
+            "default": false,
+            "description": "True cuando la IA no respondió y se entregaron fragmentos del contenido como respaldo",
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "respuesta": {
+            "description": "Respuesta generada por el modelo",
+            "title": "Respuesta",
+            "type": "string"
+          },
+          "subtopic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Subtema usado como filtro (si se pasó)",
+            "title": "Subtopic Id"
+          }
+        },
+        "required": [
+          "respuesta",
+          "chunks_usados"
+        ],
+        "title": "AskResponse",
+        "type": "object"
+      },
+      "ChunkResult": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "similarity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Similarity"
+          },
+          "subtopic_id": {
+            "title": "Subtopic Id",
+            "type": "integer"
+          },
+          "subtopic_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtopic Name"
+          }
+        },
+        "required": [
+          "id",
+          "subtopic_id",
+          "content"
+        ],
+        "title": "ChunkResult",
+        "type": "object"
+      },
+      "CourseCreate": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CourseCreate",
+        "type": "object"
+      },
+      "CourseProgressSummary": {
+        "properties": {
+          "completed_subtopics": {
+            "title": "Completed Subtopics",
+            "type": "integer"
+          },
+          "course_id": {
+            "title": "Course Id",
+            "type": "integer"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          },
+          "total_subtopics": {
+            "title": "Total Subtopics",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "course_id",
+          "total_subtopics",
+          "completed_subtopics",
+          "percentage"
+        ],
+        "title": "CourseProgressSummary",
+        "type": "object"
+      },
+      "CourseRead": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CourseType"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "active",
+          "created_at"
+        ],
+        "title": "CourseRead",
+        "type": "object"
+      },
+      "CourseType": {
+        "enum": [
+          "GENERAL",
+          "TEACHER"
+        ],
+        "title": "CourseType",
+        "type": "string"
+      },
+      "DeleteQuestionResponse": {
+        "description": "Resultado del borrado (puede archivarse si tiene respuestas).",
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "deleted": {
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "required": [
+          "deleted",
+          "archived"
+        ],
+        "title": "DeleteQuestionResponse",
+        "type": "object"
+      },
+      "DevLoginRequest": {
+        "description": "Login de desarrollo (solo si DEV_AUTH_ENABLED=true).",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "default": "Usuario de desarrollo",
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "default": "STUDENT",
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "DevLoginRequest",
+        "type": "object"
+      },
+      "GenerateQuestionsRequest": {
+        "description": "Petición de generación de preguntas con IA (solo profesores).\n\nDebe venir exactamente uno de `subtopic_id` o `topic_id`.",
+        "properties": {
+          "count": {
+            "default": 3,
+            "description": "Cantidad a generar (1-5)",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "subtopic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtopic Id"
+          },
+          "topic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Id"
+          }
+        },
+        "title": "GenerateQuestionsRequest",
+        "type": "object"
+      },
+      "GenerateQuestionsResponse": {
+        "description": "Resultado de la generación: preguntas IA creadas (pending).",
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "generated": {
+            "items": {},
+            "title": "Generated",
+            "type": "array"
+          },
+          "requested": {
+            "title": "Requested",
+            "type": "integer"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "required": [
+          "generated",
+          "requested",
+          "created"
+        ],
+        "title": "GenerateQuestionsResponse",
+        "type": "object"
+      },
+      "GoogleLoginRequest": {
+        "description": "Credential (ID token) emitido por Google Identity Services en el frontend.",
+        "properties": {
+          "credential": {
+            "title": "Credential",
+            "type": "string"
+          }
+        },
+        "required": [
+          "credential"
+        ],
+        "title": "GoogleLoginRequest",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ImportDocumentRequest": {
+        "description": "Documento Markdown con unidades, subtemas y preguntas de repaso.",
+        "properties": {
+          "document": {
+            "description": "Texto del documento Markdown a importar",
+            "maxLength": 200000,
+            "minLength": 20,
+            "title": "Document",
+            "type": "string"
+          }
+        },
+        "required": [
+          "document"
+        ],
+        "title": "ImportDocumentRequest",
+        "type": "object"
+      },
+      "ImportDocumentResponse": {
+        "description": "Resumen de la operación de importación (para mostrarlo en la UI).",
+        "properties": {
+          "chunks_indexados": {
+            "title": "Chunks Indexados",
+            "type": "integer"
+          },
+          "preguntas_actualizadas": {
+            "title": "Preguntas Actualizadas",
+            "type": "integer"
+          },
+          "preguntas_creadas": {
+            "title": "Preguntas Creadas",
+            "type": "integer"
+          },
+          "subtemas": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Subtemas",
+            "type": "array"
+          },
+          "subtemas_actualizados": {
+            "title": "Subtemas Actualizados",
+            "type": "integer"
+          },
+          "subtemas_creados": {
+            "title": "Subtemas Creados",
+            "type": "integer"
+          },
+          "unidades": {
+            "title": "Unidades",
+            "type": "integer"
+          },
+          "unidades_creadas": {
+            "title": "Unidades Creadas",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unidades",
+          "unidades_creadas",
+          "subtemas_creados",
+          "subtemas_actualizados",
+          "preguntas_creadas",
+          "preguntas_actualizadas",
+          "chunks_indexados",
+          "subtemas"
+        ],
+        "title": "ImportDocumentResponse",
+        "type": "object"
+      },
+      "JoinCourseRequest": {
+        "properties": {
+          "code": {
+            "maxLength": 20,
+            "minLength": 4,
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "JoinCourseRequest",
+        "type": "object"
+      },
+      "JoinCourseResponse": {
+        "properties": {
+          "course": {
+            "$ref": "#/components/schemas/CourseRead"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "course"
+        ],
+        "title": "JoinCourseResponse",
+        "type": "object"
+      },
+      "PracticeSessionRequest": {
+        "description": "Solicitud de sesión de práctica.\n\nDebe venir exactamente uno de `subtopic_id` o `topic_id`.",
+        "properties": {
+          "count": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cantidad de preguntas (default PRACTICE_DEFAULT_COUNT)",
+            "title": "Count"
+          },
+          "subtopic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtopic Id"
+          },
+          "topic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Id"
+          }
+        },
+        "title": "PracticeSessionRequest",
+        "type": "object"
+      },
+      "ProfileUpdate": {
+        "description": "Datos de perfil complementarios del propio usuario.",
+        "properties": {
+          "age": {
+            "maximum": 110.0,
+            "minimum": 10.0,
+            "title": "Age",
+            "type": "integer"
+          },
+          "country": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Country",
+            "type": "string"
+          }
+        },
+        "required": [
+          "country",
+          "age"
+        ],
+        "title": "ProfileUpdate",
+        "type": "object"
+      },
+      "ProgressRead": {
+        "properties": {
+          "completed": {
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "course_id": {
+            "title": "Course Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "subtopic_id": {
+            "title": "Subtopic Id",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "course_id",
+          "subtopic_id",
+          "completed",
+          "updated_at"
+        ],
+        "title": "ProgressRead",
+        "type": "object"
+      },
+      "ProgressUpdate": {
+        "properties": {
+          "completed": {
+            "default": true,
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "course_id": {
+            "title": "Course Id",
+            "type": "integer"
+          },
+          "subtopic_id": {
+            "title": "Subtopic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "course_id",
+          "subtopic_id"
+        ],
+        "title": "ProgressUpdate",
+        "type": "object"
+      },
+      "QuestionRead": {
+        "description": "Pregunta de repaso para el estudiante (sin la respuesta correcta).\n\nEl enunciado y las opciones viajan al cliente; la calificación ocurre en\nel servidor (POST /api/quiz/answers), que devuelve is_correct, la correcta\ny la explicación tras responder. NO expone source/status/created_by:\nlos estudiantes solo reciben preguntas aprobadas.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "subtopic_id": {
+            "title": "Subtopic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "subtopic_id",
+          "prompt",
+          "options",
+          "order"
+        ],
+        "title": "QuestionRead",
+        "type": "object"
+      },
+      "QuestionReviewAction": {
+        "description": "Aprobar o rechazar una pregunta IA pendiente.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "QuestionReviewAction",
+        "type": "object"
+      },
+      "QuestionTeacherRead": {
+        "description": "Pregunta vista desde el panel del profesor (banco de preguntas).\n\nIncluye procedencia, estado y autoría para los flujos de revisión.",
+        "properties": {
+          "correct_index": {
+            "title": "Correct Index",
+            "type": "integer"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_owner": {
+            "default": false,
+            "title": "Is Owner",
+            "type": "boolean"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "subtopic_id": {
+            "title": "Subtopic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "subtopic_id",
+          "prompt",
+          "options",
+          "correct_index",
+          "explanation",
+          "order",
+          "source",
+          "status",
+          "created_by"
+        ],
+        "title": "QuestionTeacherRead",
+        "type": "object"
+      },
+      "QuizAnswerRequest": {
+        "description": "Respuesta del estudiante a una pregunta dentro de un intento.",
+        "properties": {
+          "attempt_id": {
+            "description": "UUID del intento (compartido por todo el quiz)",
+            "title": "Attempt Id",
+            "type": "string"
+          },
+          "question_id": {
+            "description": "Pregunta respondida",
+            "title": "Question Id",
+            "type": "integer"
+          },
+          "selected_index": {
+            "description": "Opción elegida (0-3)",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Selected Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "question_id",
+          "selected_index",
+          "attempt_id"
+        ],
+        "title": "QuizAnswerRequest",
+        "type": "object"
+      },
+      "QuizAnswerResponse": {
+        "description": "Resultado calificado en el servidor (solo se revela tras responder).",
+        "properties": {
+          "correct_index": {
+            "title": "Correct Index",
+            "type": "integer"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "is_correct": {
+            "title": "Is Correct",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_correct",
+          "correct_index",
+          "explanation"
+        ],
+        "title": "QuizAnswerResponse",
+        "type": "object"
+      },
+      "RoleUpdate": {
+        "description": "Cambio de rol del propio usuario (autogestión).",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "RoleUpdate",
+        "type": "object"
+      },
+      "SearchRequest": {
+        "properties": {
+          "course_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Curso/carpeta para acotar la búsqueda al contenido habilitado.",
+            "title": "Course Id"
+          },
+          "limit": {
+            "default": 5,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "subtopic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtopic Id"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "SearchRequest",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ChunkResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query",
+          "results"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      },
+      "StudentCourseRead": {
+        "description": "Curso visto por un estudiante, con su progreso calculado.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "completed_subtopics": {
+            "default": 0,
+            "title": "Completed Subtopics",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "estimated_minutes": {
+            "default": 0,
+            "title": "Estimated Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "progress_percentage": {
+            "default": 0.0,
+            "title": "Progress Percentage",
+            "type": "number"
+          },
+          "question_count": {
+            "default": 0,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          },
+          "total_subtopics": {
+            "default": 0,
+            "title": "Total Subtopics",
+            "type": "integer"
+          },
+          "total_units": {
+            "default": 0,
+            "title": "Total Units",
+            "type": "integer"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CourseType"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "active",
+          "created_at"
+        ],
+        "title": "StudentCourseRead",
+        "type": "object"
+      },
+      "StudentRead": {
+        "description": "Información básica de un estudiante visible para su profesor.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "joined_at": {
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "profile_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Image"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "joined_at"
+        ],
+        "title": "StudentRead",
+        "type": "object"
+      },
+      "SubtopicListItem": {
+        "properties": {
+          "completed": {
+            "default": false,
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "estimated_minutes": {
+            "default": 0,
+            "title": "Estimated Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "question_count": {
+            "default": 0,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "topic_id": {
+            "title": "Topic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "topic_id",
+          "name",
+          "order"
+        ],
+        "title": "SubtopicListItem",
+        "type": "object"
+      },
+      "SubtopicRead": {
+        "properties": {
+          "completed": {
+            "default": false,
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "estimated_minutes": {
+            "default": 0,
+            "title": "Estimated Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "questions": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/QuestionRead"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "topic_id": {
+            "title": "Topic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "topic_id",
+          "name",
+          "content",
+          "order"
+        ],
+        "title": "SubtopicRead",
+        "type": "object"
+      },
+      "TeacherCourseRead": {
+        "description": "Curso visto por su profesor, con estadísticas básicas.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "student_count": {
+            "default": 0,
+            "title": "Student Count",
+            "type": "integer"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CourseType"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "active",
+          "created_at"
+        ],
+        "title": "TeacherCourseRead",
+        "type": "object"
+      },
+      "TeacherQuestionCreate": {
+        "description": "Creación manual de una pregunta por el profesor.",
+        "properties": {
+          "correct_index": {
+            "title": "Correct Index",
+            "type": "integer"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt",
+          "options",
+          "correct_index"
+        ],
+        "title": "TeacherQuestionCreate",
+        "type": "object"
+      },
+      "TeacherQuestionUpdate": {
+        "description": "Edición parcial de una pregunta propia.",
+        "properties": {
+          "correct_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correct Index"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt"
+          }
+        },
+        "title": "TeacherQuestionUpdate",
+        "type": "object"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserRead"
+          }
+        },
+        "required": [
+          "access_token",
+          "user"
+        ],
+        "title": "TokenResponse",
+        "type": "object"
+      },
+      "TopicWithSubtopics": {
+        "properties": {
+          "completed_subtopics": {
+            "default": 0,
+            "title": "Completed Subtopics",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "estimated_minutes": {
+            "default": 0,
+            "title": "Estimated Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "question_count": {
+            "default": 0,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "subtopics": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SubtopicListItem"
+            },
+            "title": "Subtopics",
+            "type": "array"
+          },
+          "total_subtopics": {
+            "default": 0,
+            "title": "Total Subtopics",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "order"
+        ],
+        "title": "TopicWithSubtopics",
+        "type": "object"
+      },
+      "UserRead": {
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "profile_completed": {
+            "default": false,
+            "title": "Profile Completed",
+            "type": "boolean"
+          },
+          "profile_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Image"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "created_at"
+        ],
+        "title": "UserRead",
+        "type": "object"
+      },
+      "UserRole": {
+        "enum": [
+          "STUDENT",
+          "TEACHER"
+        ],
+        "title": "UserRole",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Sistema web de apoyo al aprendizaje de Oftalmología e Instrumentación Quirúrgica.",
+    "title": "INSOFT",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/ai/ask": {
+      "post": {
+        "description": "Pregunta al asistente de IA con RAG sobre el contenido oficial.\n\n- `question`: pregunta del estudiante (máx. 500 caracteres).\n- `subtopic_id`: opcional. Si se pasa, valida que el usuario tenga acceso\n  a ese subtema (inscripción o profesor dueño del curso); si no tiene acceso\n  → 403; si no existe → 404. Si no se pasa, busca en todo el contenido.\n- `course_id`: opcional. Acota la búsqueda RAG a los topics habilitados en\n  ese curso y valida la membresía del usuario; si el usuario no pertenece\n  al curso → 403. Sin `course_id` se conserva la búsqueda global (fallback).",
+        "operationId": "ask_ai_endpoint_api_ai_ask_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ask Ai Endpoint",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/api/ai/history": {
+      "get": {
+        "description": "Historial de consultas del estudiante autenticado (solo lo suyo).",
+        "operationId": "history_endpoint_api_ai_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "subtopic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subtopic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "session_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response History Endpoint Api Ai History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "History Endpoint",
+        "tags": [
+          "ai",
+          "ai"
+        ]
+      }
+    },
+    "/api/ai/history/all": {
+      "get": {
+        "description": "Historial de consultas (solo profesor; estudiantes de sus cursos).\n\n- `from_date`/`to_date`: rango ISO (YYYY-MM-DD); si no hay `from_date`, se\n  acota a los últimos 30 días.",
+        "operationId": "history_all_endpoint_api_ai_history_all_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "subtopic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subtopic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "session_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response History All Endpoint Api Ai History All Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "History All Endpoint",
+        "tags": [
+          "ai",
+          "ai"
+        ]
+      }
+    },
+    "/api/ai/questions/generate": {
+      "post": {
+        "description": "Genera preguntas IA (source=ai, status=pending) sobre el contenido oficial.\n\nLas preguntas nacen pendientes: no se muestran a estudiantes hasta que el\nprofesor las apruebe desde el banco de preguntas.",
+        "operationId": "generate_questions_endpoint_api_ai_questions_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateQuestionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateQuestionsResponse"
+                }
+              }
+            },
+            "description": "Preguntas generadas (quedan pending)"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "No es profesor o sin acceso al subtema/unidad"
+          },
+          "404": {
+            "description": "Subtema/unidad no encontrada"
+          },
+          "422": {
+            "description": "Payload inválido o subtema sin contenido indexado"
+          },
+          "429": {
+            "description": "Límite de generación alcanzado o cuota del proveedor"
+          },
+          "502": {
+            "description": "La IA no devolvió preguntas válidas"
+          },
+          "503": {
+            "description": "Proveedor de IA no disponible"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Generación de preguntas con IA a partir del contenido oficial (profesor)",
+        "tags": [
+          "ai",
+          "ai"
+        ]
+      }
+    },
+    "/api/ai/stats/export.csv": {
+      "get": {
+        "description": "CSV descargable con las consultas de IA de estudiantes de sus cursos.",
+        "operationId": "ai_stats_export_endpoint_api_ai_stats_export_csv_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "subtopic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subtopic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ai Stats Export Endpoint",
+        "tags": [
+          "ai",
+          "ai"
+        ]
+      }
+    },
+    "/api/ai/stats/overview": {
+      "get": {
+        "description": "Estadísticas generales de IA: total, tiempo promedio, conteo por subtema.",
+        "operationId": "stats_overview_endpoint_api_ai_stats_overview_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Stats Overview Endpoint Api Ai Stats Overview Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Stats Overview Endpoint",
+        "tags": [
+          "ai",
+          "ai"
+        ]
+      }
+    },
+    "/api/ai/stats/students": {
+      "get": {
+        "description": "Preguntas por estudiante y último uso (solo estudiantes de sus cursos).",
+        "operationId": "stats_students_endpoint_api_ai_stats_students_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Stats Students Endpoint Api Ai Stats Students Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Stats Students Endpoint",
+        "tags": [
+          "ai",
+          "ai"
+        ]
+      }
+    },
+    "/api/ai/stats/subtopics": {
+      "get": {
+        "description": "Conteo por subtema y preguntas más frecuentes (solo estudiantes de sus cursos).",
+        "operationId": "stats_subtopics_endpoint_api_ai_stats_subtopics_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Stats Subtopics Endpoint Api Ai Stats Subtopics Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Stats Subtopics Endpoint",
+        "tags": [
+          "ai",
+          "ai"
+        ]
+      }
+    },
+    "/api/auth/dev": {
+      "post": {
+        "description": "Login de desarrollo (sin Google). Solo si DEV_AUTH_ENABLED=true.",
+        "operationId": "login_dev_api_auth_dev_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login Dev",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "description": "Recibe el ID token de Google, crea/busca el usuario y devuelve un JWT propio.",
+        "operationId": "login_with_google_api_auth_google_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login With Google",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/content/import": {
+      "post": {
+        "description": "Solo profesores. Importa un documento Markdown como contenido centralizado.\n\nActualiza por nombre de unidad/subtema y crea lo que falte. Al terminar,\nindexa el contenido en el RAG y lo enlaza a todos los cursos. Nunca borra\ncontenido que el documento no mencione.",
+        "operationId": "import_content_api_content_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportDocumentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Import Content",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/content/questions/{question_id}": {
+      "delete": {
+        "description": "Borra una pregunta propia; si tiene respuestas asociadas, la archiva.",
+        "operationId": "delete_teacher_question_api_content_questions__question_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteQuestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "No es el autor / oficial"
+          },
+          "404": {
+            "description": "Pregunta no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Borrado de una pregunta propia (o archivado si tiene respuestas)",
+        "tags": [
+          "content",
+          "content"
+        ]
+      },
+      "patch": {
+        "description": "Edita una pregunta propia. Editar una IA pendiente no la aprueba.",
+        "operationId": "update_teacher_question_api_content_questions__question_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeacherQuestionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionTeacherRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "No es el autor / oficial"
+          },
+          "404": {
+            "description": "Pregunta no encontrada"
+          },
+          "409": {
+            "description": "Enunciado duplicado"
+          },
+          "422": {
+            "description": "Validación de campos"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Edición parcial de una pregunta propia",
+        "tags": [
+          "content",
+          "content"
+        ]
+      }
+    },
+    "/api/content/questions/{question_id}/review": {
+      "post": {
+        "description": "Aprobar (approved) o rechazar (rejected) una pregunta IA pendiente.",
+        "operationId": "review_teacher_question_api_content_questions__question_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionReviewAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionTeacherRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "No es el autor"
+          },
+          "404": {
+            "description": "Pregunta no encontrada"
+          },
+          "409": {
+            "description": "No es IA pendiente"
+          },
+          "422": {
+            "description": "action inválido"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Aprobación o rechazo de una pregunta IA pendiente",
+        "tags": [
+          "content",
+          "content"
+        ]
+      }
+    },
+    "/api/content/subtopics/{subtopic_id}/questions": {
+      "post": {
+        "description": "Crea una pregunta docente (approved: visible de inmediato para estudiantes).",
+        "operationId": "create_teacher_question_api_content_subtopics__subtopic_id__questions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subtopic_id",
+            "required": true,
+            "schema": {
+              "title": "Subtopic Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeacherQuestionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionTeacherRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "Sin acceso al subtema"
+          },
+          "404": {
+            "description": "Subtema no encontrado"
+          },
+          "409": {
+            "description": "Enunciado duplicado"
+          },
+          "422": {
+            "description": "Validación de campos"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Creación manual de una pregunta por el profesor",
+        "tags": [
+          "content",
+          "content"
+        ]
+      }
+    },
+    "/api/content/subtopics/{subtopic_id}/questions/bank": {
+      "get": {
+        "description": "Todas las preguntas del subtema (oficiales, docentes e IA) con su estado.",
+        "operationId": "get_subtopic_question_bank_api_content_subtopics__subtopic_id__questions_bank_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subtopic_id",
+            "required": true,
+            "schema": {
+              "title": "Subtopic Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Filtro por estado (approved|pending|rejected)",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por estado (approved|pending|rejected)",
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Filtro por origen (official|ai|teacher)",
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por origen (official|ai|teacher)",
+              "title": "Source"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionTeacherRead"
+                  },
+                  "title": "Response Get Subtopic Question Bank Api Content Subtopics  Subtopic Id  Questions Bank Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "Sin acceso al subtema"
+          },
+          "404": {
+            "description": "Subtema no encontrado"
+          },
+          "422": {
+            "description": "Filtro inválido"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Banco de preguntas de un subtema (profesor)",
+        "tags": [
+          "content",
+          "content"
+        ]
+      }
+    },
+    "/api/content/topics/{topic_id}/questions/summary": {
+      "get": {
+        "description": "Conteos por subtema (total, approved, pending, rejected, official, teacher, ai).",
+        "operationId": "get_topic_question_summary_api_content_topics__topic_id__questions_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "topic_id",
+            "required": true,
+            "schema": {
+              "title": "Topic Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Get Topic Question Summary Api Content Topics  Topic Id  Questions Summary Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "Sin acceso a la unidad"
+          },
+          "404": {
+            "description": "Unidad no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Resumen de conteos de preguntas por subtema (profesor)",
+        "tags": [
+          "content",
+          "content"
+        ]
+      }
+    },
+    "/api/courses": {
+      "get": {
+        "description": "Cursos del usuario autenticado (según su rol).",
+        "operationId": "list_my_courses_api_courses_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/StudentCourseRead"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/TeacherCourseRead"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response List My Courses Api Courses Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List My Courses",
+        "tags": [
+          "courses"
+        ]
+      },
+      "post": {
+        "description": "Solo profesores. Genera automáticamente un código único (p. ej. OFT-A72K).",
+        "operationId": "create_course_api_courses_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Course",
+        "tags": [
+          "courses"
+        ]
+      }
+    },
+    "/api/courses/join": {
+      "post": {
+        "description": "Solo estudiantes. Une al estudiante a un curso mediante su código.",
+        "operationId": "join_course_api_courses_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinCourseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JoinCourseResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Join Course",
+        "tags": [
+          "courses"
+        ]
+      }
+    },
+    "/api/courses/{course_id}": {
+      "get": {
+        "operationId": "get_course_api_courses__course_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Course",
+        "tags": [
+          "courses"
+        ]
+      }
+    },
+    "/api/courses/{course_id}/students": {
+      "get": {
+        "description": "Solo el profesor dueño del curso puede ver sus estudiantes.",
+        "operationId": "get_course_students_api_courses__course_id__students_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudentRead"
+                  },
+                  "title": "Response Get Course Students Api Courses  Course Id  Students Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Course Students",
+        "tags": [
+          "courses"
+        ]
+      }
+    },
+    "/api/courses/{course_id}/topics": {
+      "get": {
+        "description": "Temas y subtemas del contenido oficial habilitados en el curso.",
+        "operationId": "get_course_topics_api_courses__course_id__topics_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TopicWithSubtopics"
+                  },
+                  "title": "Response Get Course Topics Api Courses  Course Id  Topics Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Course Topics",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/practice/sessions": {
+      "post": {
+        "description": "Sesión de práctica con `attempt_id` del servidor.\n\nEl cliente no recibe `correct_index` ni `explanation`: la calificación\nocurre en el servidor vía `POST /api/quiz/answers`.",
+        "operationId": "create_practice_session_endpoint_api_practice_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Sesión creada (puede venir solo de banco si la IA falla)"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "Sin acceso al subtema/módulo"
+          },
+          "404": {
+            "description": "Sin preguntas disponibles para practicar"
+          },
+          "422": {
+            "description": "Payload inválido"
+          },
+          "429": {
+            "description": "Límite de sesiones por hora alcanzado"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Crear una sesión de práctica (banco + IA reutilizable)",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/progress": {
+      "get": {
+        "operationId": "get_all_progress_api_progress_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseProgressSummary"
+                  },
+                  "title": "Response Get All Progress Api Progress Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get All Progress",
+        "tags": [
+          "progress"
+        ]
+      },
+      "post": {
+        "description": "Marca un subtema como completado (o lo desmarca). Solo el propio estudiante.",
+        "operationId": "update_progress_api_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Progress",
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/progress/course": {
+      "get": {
+        "operationId": "get_course_progress_api_progress_course_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseProgressSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Course Progress",
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/quiz/answers": {
+      "post": {
+        "description": "Califica en el servidor: el cliente no conoce la correcta antes de enviar.",
+        "operationId": "submit_answer_endpoint_api_quiz_answers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizAnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizAnswerResponse"
+                }
+              }
+            },
+            "description": "Respuesta calificada (o ya existente: idempotente)"
+          },
+          "401": {
+            "description": "Sin token"
+          },
+          "403": {
+            "description": "Sin acceso al subtema de la pregunta"
+          },
+          "404": {
+            "description": "Pregunta no encontrada o no aprobada"
+          },
+          "422": {
+            "description": "Payload inválido"
+          },
+          "429": {
+            "description": "Límite de respuestas alcanzado"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar y calificar una respuesta del quiz (estudiante)",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/api/quiz/stats/export.csv": {
+      "get": {
+        "description": "CSV descargable con todas las respuestas de estudiantes de sus cursos.",
+        "operationId": "quiz_stats_export_endpoint_api_quiz_stats_export_csv_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "course_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Course Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subtopic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subtopic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Quiz Stats Export Endpoint",
+        "tags": [
+          "quiz",
+          "quiz"
+        ]
+      }
+    },
+    "/api/quiz/stats/overview": {
+      "get": {
+        "description": "Intentos, respuestas totales, % acierto global y estudiantes activos.",
+        "operationId": "quiz_stats_overview_endpoint_api_quiz_stats_overview_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "course_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Course Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subtopic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subtopic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Quiz Stats Overview Endpoint Api Quiz Stats Overview Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Quiz Stats Overview Endpoint",
+        "tags": [
+          "quiz",
+          "quiz"
+        ]
+      }
+    },
+    "/api/quiz/stats/questions": {
+      "get": {
+        "description": "Por pregunta: respuestas, % acierto y opción incorrecta más elegida.",
+        "operationId": "quiz_stats_questions_endpoint_api_quiz_stats_questions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "course_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Course Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subtopic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subtopic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Quiz Stats Questions Endpoint Api Quiz Stats Questions Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Quiz Stats Questions Endpoint",
+        "tags": [
+          "quiz",
+          "quiz"
+        ]
+      }
+    },
+    "/api/quiz/stats/students": {
+      "get": {
+        "description": "Por estudiante: respuestas, % acierto y última actividad.",
+        "operationId": "quiz_stats_students_endpoint_api_quiz_stats_students_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "course_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Course Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subtopic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subtopic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Quiz Stats Students Endpoint Api Quiz Stats Students Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Quiz Stats Students Endpoint",
+        "tags": [
+          "quiz",
+          "quiz"
+        ]
+      }
+    },
+    "/api/quiz/stats/subtopics": {
+      "get": {
+        "description": "% acierto por subtema (solo estudiantes de sus cursos).",
+        "operationId": "quiz_stats_subtopics_endpoint_api_quiz_stats_subtopics_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "course_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Course Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subtopic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subtopic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Quiz Stats Subtopics Endpoint Api Quiz Stats Subtopics Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Quiz Stats Subtopics Endpoint",
+        "tags": [
+          "quiz",
+          "quiz"
+        ]
+      }
+    },
+    "/api/rag/search": {
+      "post": {
+        "description": "Búsqueda semántica sobre el contenido oficial indexado en `subtopic_chunks`.\n\nContextual al curso (si `course_id` viene): solo chunks de topics habilitados.\nSin `course_id` conserva la búsqueda global (compatibilidad/herramientas).",
+        "operationId": "rag_search_api_rag_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rag Search",
+        "tags": [
+          "rag"
+        ]
+      }
+    },
+    "/api/subtopics/{subtopic_id}": {
+      "get": {
+        "operationId": "get_subtopic_api_subtopics__subtopic_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subtopic_id",
+            "required": true,
+            "schema": {
+              "title": "Subtopic Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Curso desde el que se consulta el contenido",
+            "in": "query",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "description": "Curso desde el que se consulta el contenido",
+              "title": "Course Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubtopicRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Subtopic",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/topics/{topic_id}/questions": {
+      "get": {
+        "description": "Preguntas de repaso de todos los subtemas de una unidad.",
+        "operationId": "get_topic_questions_api_topics__topic_id__questions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "topic_id",
+            "required": true,
+            "schema": {
+              "title": "Topic Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Curso desde el que se consulta el contenido",
+            "in": "query",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "description": "Curso desde el que se consulta el contenido",
+              "title": "Course Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionRead"
+                  },
+                  "title": "Response Get Topic Questions Api Topics  Topic Id  Questions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Topic Questions",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "operationId": "read_me_api_users_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Me",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/me/profile": {
+      "patch": {
+        "description": "Completa/actualiza los datos de perfil del propio usuario.",
+        "operationId": "update_my_profile_api_users_me_profile_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update My Profile",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/me/role": {
+      "patch": {
+        "description": "Cambio de rol propio: SOLO con DEV_AUTH_ENABLED (desarrollo).\n\nEn producción el rol se adjudica al CREAR la cuenta (TEACHER_EMAILS) o con\nel script backend/app/scripts/promote_teacher.py por parte del equipo: un\ncliente NO puede promoverse a sí mismo (evita autogestión a docente y\nacceso al panel docente).",
+        "operationId": "change_my_role_api_users_me_role_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Change My Role",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "description": "Liveness+readiness para el balanceador/proxy: DB y pgvector OK.\n\nSIN detalles (no expone motor/host/estado interno): 200 \"ok\" o 503.",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ready",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  }
+}
