@@ -41,19 +41,20 @@ petición). Sirve para reportar errores al equipo.
 | 429 | Límite de tasa, tope diario de IA o saturación | `detail` o `error` (ver §4) |
 | 500 | Error interno no controlado | `detail` con `[error-interno]` |
 | 502 | Generación de preguntas con IA sin resultado válido | `detail` |
-| 503 | Asistente no disponible / saturado (ver §5) | `detail` con prefijo |
+| 503 | Asistente no disponible / saturado (ver §5) → `detail` con prefijo; **BD no disponible** (§13): `{"error": "db_unavailable"}` + cabecera `Retry-After: 5` |
 
 Los `status` de los 29 ejemplos están en [`ejemplos/INDICE.json`](ejemplos/INDICE.json).
 
 ## 3. Códigos estables entre corchetes (existen hoy)
 
-Solo hay **tres** códigos de error estables en la API. Todos llevan el código al inicio del `detail`:
+Tres códigos van dentro del `detail`; el nuevo `db_unavailable` va en el campo `error` del cuerpo:
 
 | Código | HTTP | Significado | Estado real |
 |---|---|---|---|
 | `[error-interno]` | 500 | Fallo no controlado. El detalle está solo en el log. | Código presente en `app/main.py`; no se provocó en esta verificación. |
 | `[asistente-no-disponible]` | 503 | El proveedor de IA falló al responder. | Medido: con fallo del proveedor `/api/ai/ask` responde 200 en modo respaldo (§5), así que este 503 no aparece. |
 | `[asistente-saturado]` | 503 | Concurrencia del asistente al límite. Cabecera `Retry-After: 10`. | Medido con saturación del proveedor: `/api/ai/ask` responde 200 en modo respaldo; este 503 no aparece en el flujo probado. |
+| `db_unavailable` | 503 | BD suspendida/agotada (§13). En el campo `error` del cuerpo + `Retry-After: 5`. | pruebas en `backend/tests/test_db_timeouts.py`. |
 
 Los prefijos `[batch]`, `[import]`, `[export]`, `[index]` y `[validate]` que aparecen en el código
 son **mensajes de consola de los scripts**, no códigos de la API. No deben usarse en el frontend.

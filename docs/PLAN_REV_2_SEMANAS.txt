@@ -1,0 +1,185 @@
+PLAN INSOFT — VERSIÓN COMPRIMIDA (2 semanas de desarrollo)
+==========================================================
+Equipo:
+    Sebastian David Ruiz Ortega
+    Eddy Josue Lara Cermeño
+    Samuel Muniz
+Docente stakeholder: Claudia Romero
+
+Fechas clave:
+    -  6 oct  : FEATURE FREEZE
+    - 15 oct  : MVP desplegado en produccion
+    - 16-31 oct : piloto con estudiantes de Claudia Romero
+    - 30 oct  : entrega objetiva (4 nov limite)
+
+
+# ============================================================
+# SEMANA 1 — 29 sep al 5 oct : CERRAR FUNCIONALIDAD
+# ============================================================
+def semana_1():
+    objetivo = "cerrar todo lo que falta de producto, demo interna el domingo 5"
+
+    # --- Vistas 3D ---
+    vistas_3d_minimas():  # Eddy
+        importar_modelos_glb_instrumentos_priorizados()  # Eddy
+        sala_quirurgica_basica_camara_luces_controles()  # Eddy
+        paneles_informativos_simples_por_instrumento()  # Eddy
+        animaciones_esenciales_sin_pulido_visual()  # Eddy
+
+    # --- Multimedia ---
+    integracion_videos_por_subtema():  # Samuel
+        player_funcional_en_vista_subtema()  # Samuel
+        enlazar_transcripcion_ya_disponible()  # Samuel
+
+    # --- Generador de preguntas ---
+    generador_preguntas_desde_interaccion():  # Sebastian
+        endpoint_backend_de_generacion()  # Sebastian
+        prompts_basados_en_contenido_validado()  # Sebastian
+        integracion_con_cuestionarios_feedback()  # Sebastian
+
+    # --- robustez asistente RAG ---
+    robustez_asistente_rag():  # Sebastian
+        limites_de_uso_por_usuario()  # Sebastian
+        manejo_de_errores_y_fallback_proveedor()  # Sebastian
+
+    # --- Responsive ---
+    responsive_critico():  # Samuel
+        dashboard_estudiante_movil_tableta()  # Samuel
+        vista_subtema_movil_tableta()  # Samuel
+        vista_quiz_movil_tableta()  # Samuel
+
+    # --- Gestion del proyecto (continuo toda la semana) ---
+    gestion_proyecto():  # Todos
+        tablero_planner_actualizado_con_este_plan()  # Todos
+        commits_diarios_claros_en_github()  # Todos
+
+    demo_interna_domingo_5()  # Todos
+
+
+# ============================================================
+# SEMANA 2 — 6 al 15 oct : FREEZE + DESPLIEGUE
+# ============================================================
+def semana_2():
+    objetivo = "MVP estable en produccion el miercoles 15"
+
+    # LUN 6
+    feature_freeze():
+        regla = "todo bug NO bloqueante va al backlog del piloto"
+        pruebas_funcionales_backend()  # Sebastian
+        pruebas_de_autorizacion_roles_profesor_estudiante()  # Sebastian
+
+    # MAR 7 - JUE 9
+    pruebas_e2e():
+        recorridos_navegacion_completos_estudiante()  # Eddy
+        recorridos_navegacion_completos_profesor()  # Eddy
+        correccion_bugs_encontrados()  # Eddy
+
+    informe_de_pruebas():  # Samuel
+        registro_lista_de_errores()  # Samuel
+        registro_ajustes_aplicados()  # Samuel
+
+    # SAB 11 - LUN 13
+    despliegue():  # Sebastian
+        construccion_imagenes_docker_finales()  # Sebastian
+        configuracion_dominio_y_https()  # Sebastian
+        variables_de_entorno_produccion()  # Sebastian
+        configuracion_backups()  # Sebastian
+        monitoreo_y_revision_de_logs()  # Sebastian
+
+    # en paralelo
+    ajustes_finales():  # Eddy
+        ajuste_fin_vistas_3d()  # Eddy
+        smoke_testing_en_produccion()  # Eddy
+
+    documentacion_tecnica_despliegue()  # Samuel
+
+    # MAR 14 - MIE 15
+    estabilizacion_y_smoke_testing()  # Todos
+    # >>> MVP DESPLEGADO (15 oct) <<<
+
+
+# ============================================================
+# SEMANA 3 — 16 al 22 oct : PILOTO CON ESTUDIANTES
+# ============================================================
+def semana_3():
+    objetivo = "piloto real corriendo en produccion"
+
+    preparacion_piloto():  # Sebastian
+        carga_de_cuentas_de_estudiantes_de_claudia()  # Sebastian
+        prueba_de_acceso_y_permisos()  # Sebastian
+        validacion_de_alcance_con_claudia_romero()  # Todos
+
+    observacion_piloto():  # Samuel
+        guion_de_observacion_piloto()  # Samuel
+        recoleccion_de_hallazgos_usabilidad_contenido_ia_3d()  # Samuel
+
+    soporte_y_correcciones():  # Eddy
+        canal_de_reporte_de_errores_de_estudiantes()  # Eddy
+        correccion_bugs_bloqueantes_en_caliente()  # Eddy
+
+
+# ============================================================
+# SEMANA 4 — 23 al 29 oct : AJUSTES + DOCUMENTOS
+# ============================================================
+def semana_4():
+    objetivo = "producto estable y documentos de entrega listos"
+
+    correcciones_priorizadas_del_piloto():  # Sebastian + Eddy
+        bugs_bloqueantes_primero()  # Eddy
+        ajustes_de_usabilidad_reportados()  # Sebastian
+
+    # --- DOCUMENTO DEL PROYECTO DE AULA (PDF) ---
+    documento_proyecto_de_aula_pdf():  # Samuel
+        seccion_descripcion_del_problema()  # Samuel
+        seccion_identificacion_de_interesados()  # Samuel
+        seccion_tecnicas_de_elicitacion_con_evidencias()  # Samuel
+        seccion_requerimientos_funcionales_y_no_funcionales()  # Samuel
+        seccion_validacion_y_ajuste_del_modelado_previo()  # Samuel
+        seccion_metodologia_agil_sustentada_y_aplicada()  # Samuel
+
+    diagramas_uml_actualizados():  # Eddy
+        actualizar_si_el_piloto_exige_cambios()  # Eddy
+
+    # --- Gestion / evidencias ---
+    github_y_tablero_estado_final():  # Sebastian
+        limpiar_historial_commits_claros()  # Sebastian
+        tablero_con_estado_final_de_tareas()  # Sebastian
+
+    manual_de_usuario():  # Samuel
+        manual_basico_de_usuario()  # Samuel
+        video_o_demo_final()  # Samuel
+
+
+# ============================================================
+# SEMANA 5 — 30 oct al 4 nov : ENTREGA
+# ============================================================
+def semana_5():
+    objetivo = "entregar el 30 de oct (objetivo) o 4 de nov (limite)"
+
+    revision_final():
+        revision_ortografia_formato_organizacion_del_pdf()  # Todos
+
+    empaque_de_entregables():  # Samuel
+        documento_pdf_del_proyecto_de_aula()  # Samuel
+        anexos_y_evidencias_de_elicitacion()  # Samuel
+        informe_de_pruebas()  # Samuel
+        manual_de_usuario_y_demo()  # Samuel
+
+    enlaces_finales():  # Sebastian
+        enlace_repositorio_github_con_acceso_para_el_docente()  # Sebastian
+        enlace_tablero_de_gestion_con_estado_final()  # Sebastian
+
+    sustentacion():  # Todos
+        preparacion_de_la_presentacion()  # Todos
+        ensayo_de_demo_en_vivo_sobre_produccion()  # Todos
+
+
+# ============================================================
+# REGLAS ANTI-RIESGO (aplican a todo el plan)
+# ============================================================
+REGLAS = {
+    "freeze": "despues del 6 oct nada nuevo entra, solo bugs bloqueantes",
+    "backlog": "lo no bloqueante del freeze y del piloto = backlog del piloto",
+    "3d": "alcance minimo, sin pulido visual",
+    "docs": "los documentos se escriben en paralelo desde la semana 4, no se improvisan",
+}
