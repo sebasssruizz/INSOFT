@@ -12,6 +12,7 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 os.environ["SECRET_KEY"] = "test-secret"
+os.environ["AI_PROVIDER"] = "openrouter"
 os.environ["DEV_AUTH_ENABLED"] = "true"
 os.environ["TEACHER_EMAILS"] = ""
 os.environ["OPENROUTER_API_KEY"] = "sk-or-v1-test"
@@ -76,21 +77,43 @@ VALID_LLM_JSON_TWO = (
 )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def scenario(client):
-    """Profesor con curso, estudiante inscrito, banco y pool practice sembrado."""
-    teacher = auth_headers(client, "pract-profe@example.com", "Pract Profe", "TEACHER")
+    """Profesor + curso + estudiantes + banco/pool practice POR CADA TEST.
+
+    Es function-scoped (orden-independiente con pytest-randomly): varios
+    tests escriben respuestas/sesiones y consumen el pool del subtema;
+    con estado por-test ningún test depende del orden de ejecución.
+    """
+    suffix = uuid.uuid4().hex[:8]
+    SC = f"-{suffix}"
+    teacher = auth_headers(client, f"pract-profe{SC}@example.com", "Pract Profe", "TEACHER")
     course = client.post(
-        "/api/courses", json={"name": "Curso Practica", "description": ""}, headers=teacher
+        "/api/courses",
+        json={"name": f"Curso Practica {suffix}", "description": ""},
+        headers=teacher,
     ).json()
-    student = auth_headers(client, "pract-est@example.com", "Pract Est", "STUDENT")
-    peer = auth_headers(client, "pract-peer@example.com", "Pract Peer", "STUDENT")
+    student = auth_headers(client, f"pract-est{SC}@example.com", "Pract Est", "STUDENT")
+    peer = auth_headers(client, f"pract-peer{SC}@example.com", "Pract Peer", "STUDENT")
     assert client.post("/api/courses/join", json={"code": course["code"]}, headers=student).status_code == 200
     assert client.post("/api/courses/join", json={"code": course["code"]}, headers=peer).status_code == 200
-    outsider = auth_headers(client, "pract-out@example.com", "Pract Out", "STUDENT")
+    outsider = auth_headers(client, f"pract-out{SC}@example.com", "Pract Out", "STUDENT")
 
     with SessionLocal() as s:
-        subtopic_id = s.scalar(select(Subtopic).order_by(Subtopic.id).limit(1)).id
+        student_id = s.scalar(select(User.id).where(User.email == f"pract-est{SC}@example.com"))
+        peer_id = s.scalar(select(User.id).where(User.email == f"pract-peer{SC}@example.com"))
+        # Subtema PROPIO por escenario: el pool practice es global por subtema;
+        # usar el subtema 1 compartido haría que un test vea practice seedeada
+        # por otras instancias (dependencia del orden y de los datos ajenos).
+        subtopic = Subtopic(
+            topic_id=1,
+            name=f"Subtema práctica {suffix}",
+            content="contenido",
+            order=3000 + int(suffix, 16) % 500,
+        )
+        s.add(subtopic)
+        s.commit()
+        subtopic_id = subtopic.id
         # Indexa un chunk (el generador IA del pipeline lo requiere)
         from app.repositories import subtopic_chunk_repository as chunk_repo
         from app.services.embeddings_service import embed_text
@@ -117,10 +140,9 @@ def scenario(client):
             for i in range(1, 4)
         ]
         # Consulta del PEER al asistente (texto privado, solo agregados)
-        peer_user = s.scalar(select(User).where(User.email == "pract-peer@example.com"))
         s.add(
             AiQuery(
-                user_id=peer_user.id,
+                user_id=peer_id,
                 subtopic_id=subtopic_id,
                 question_original="TEXTO-SECRETO-DEL-PEER-42",
                 respuesta="respuesta privada",
@@ -134,6 +156,7 @@ def scenario(client):
     return {
         "teacher": teacher,
         "student": student,
+        "student_id": student_id,
         "outsider": outsider,
         "course": course,
         "subtopic_id": subtopic_id,
@@ -182,12 +205,8 @@ def test_composition_reuses_pool_without_llm(client, scenario):
 
 
 def test_excludes_recently_correct_and_prioritizes_failed(client, scenario):
-    student_id = None
+    student_id = scenario["student_id"]
     with SessionLocal() as s:
-        from app.models.user import User
-
-        user = s.scalar(select(User).where(User.email == "pract-est@example.com"))
-        student_id = user.id
         correct_q, failed_q = scenario["bank"][0]["id"], scenario["bank"][1]["id"]
         s.add_all(
             [
@@ -233,13 +252,10 @@ def test_llm_generation_when_pool_insufficient(client, scenario):
     """Sin practice disponibles: genera con el LLM (mockeado) el faltante."""
     with SessionLocal() as s:
         # Marca las practice como respondidas por el estudiante → pool vacío.
-        from app.models.user import User
-
-        user = s.scalar(select(User).where(User.email == "pract-est@example.com"))
         s.add_all(
             [
                 QuestionAnswer(
-                    user_id=user.id,
+                    user_id=scenario["student_id"],
                     question_id=q["id"],
                     subtopic_id=scenario["subtopic_id"],
                     attempt_id=str(uuid.uuid4()),
@@ -330,9 +346,7 @@ def test_practice_404_when_nothing_available(client, scenario):
 def test_daily_generation_cap_per_subtopic(client, scenario):
     """Tope diario: alcanzado el cap, no genera aunque el pool no alcance."""
     with SessionLocal() as s:
-        from app.models.user import User
-
-        user = s.scalar(select(User).where(User.email == "pract-est@example.com"))
+        user_id = scenario["student_id"]
         subtopic = Subtopic(topic_id=1, name="Subtema tope diario", content="contenido", order=998)
         s.add(subtopic)
         s.commit()
@@ -353,7 +367,7 @@ def test_daily_generation_cap_per_subtopic(client, scenario):
         s.add_all(
             [
                 QuestionAnswer(
-                    user_id=user.id,
+                    user_id=user_id,
                     question_id=q.id,
                     subtopic_id=subtopic.id,
                     attempt_id=str(uuid.uuid4()),
@@ -487,17 +501,19 @@ def test_quiz_answers_accepts_practice(client, scenario):
 
 def test_quiz_stats_distinguish_origin(client, scenario):
     """Las stats de quiz marcan el origen (banco | practica)."""
-    # Respuesta a una pregunta practice
-    resp = client.post(
-        "/api/quiz/answers",
-        json={
-            "question_id": scenario["practice"][0]["id"],
-            "selected_index": 0,
-            "attempt_id": str(uuid.uuid4()),
-        },
-        headers=scenario["student"],
-    )
-    assert resp.status_code == 200
+    # Respuestas propias: una a practice (→ practica) y una a banco (→ banco),
+    # para no depender de que otro test haya respondido antes (orden).
+    for qid in (scenario["practice"][0]["id"], scenario["bank"][0]["id"]):
+        resp = client.post(
+            "/api/quiz/answers",
+            json={
+                "question_id": qid,
+                "selected_index": 0,
+                "attempt_id": str(uuid.uuid4()),
+            },
+            headers=scenario["student"],
+        )
+        assert resp.status_code == 200
 
     resp = client.get("/api/quiz/stats/overview", headers=scenario["teacher"])
     stats = resp.json()

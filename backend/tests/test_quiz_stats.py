@@ -179,27 +179,49 @@ def test_export_csv_only_own_students(client, data):
     assert "stats-e2@example.com" not in content
 
 
-def test_export_csv_escapes_formulas(client, data):
-    """Un estudiante cuyo nombre empieza por '=' no debe inyectar fórmulas."""
+def test_export_csv_escapes_formulas(client):
+    """Un estudiante cuyo nombre empieza por '=' no debe inyectar fórmulas.
+
+    Auto-contenido (orden-independiente): usa su propio docente/curso y NO
+    toca el dataset compartido de `data` (agregar alumnos o respuestas a los
+    cursos de T1/T2 cambiaría los conteos de los tests de stats).
+    """
+    t3 = auth_headers(client, "stats-t3@example.com", "Stats T3", "TEACHER")
+    c3 = client.post(
+        "/api/courses", json={"name": "Curso Stats 3", "description": ""}, headers=t3
+    ).json()
     with SessionLocal() as s:
         from app.models.user import User, UserRole
         from app.models.course import CourseMembership
 
+        subtopic_id = s.scalar(select(Subtopic).order_by(Subtopic.id).limit(1)).id
         tricky = User(
             google_id="dev-tricky",
-            email="=cmd@evil.com",
+            email="stats-tricky@example.com",
             name="=HYPERLINK(\"https://evil.com\")",
             role=UserRole.STUDENT,
         )
         s.add(tricky)
         s.commit()
-        s.add(CourseMembership(course_id=data["c1"]["id"], user_id=tricky.id))
+        s.add(CourseMembership(course_id=c3["id"], user_id=tricky.id))
         s.commit()
+        tricky_id = s.scalar(select(User.id).where(User.email == "stats-tricky@example.com"))
+    q3 = client.post(
+        f"/api/content/subtopics/{subtopic_id}/questions",
+        json={
+            "prompt": "¿Stat pregunta tres?",
+            "options": ["a3", "b3", "c3", "d3"],
+            "correct_index": 1,
+            "explanation": "exp3",
+        },
+        headers=t3,
+    ).json()
+    with SessionLocal() as s:
         s.add(
             QuestionAnswer(
-                user_id=tricky.id,
-                question_id=data["q1"]["id"],
-                subtopic_id=data["subtopic_id"],
+                user_id=tricky_id,
+                question_id=q3["id"],
+                subtopic_id=subtopic_id,
                 attempt_id=str(uuid.uuid4()),
                 selected_index=0,
                 is_correct=True,
@@ -207,25 +229,59 @@ def test_export_csv_escapes_formulas(client, data):
         )
         s.commit()
 
-    resp = client.get("/api/quiz/stats/export.csv", headers=data["t1"])
+    resp = client.get("/api/quiz/stats/export.csv", headers=t3)
     assert resp.status_code == 200
     content = resp.text
     # El nombre peligrosivo va escapado con prefijo '
     assert "'=HYPERLINK" in content
 
 
-def test_delete_question_with_answers_archives(client, data):
-    """Borrar una pregunta con respuestas la archiva (status=rejected)."""
-    t1 = data["t1"]
-    q2_id = data["q2"]["id"]
+def test_delete_question_with_answers_archives(client):
+    """Borrar una pregunta con respuestas la archiva (status=rejected).
 
-    resp = client.delete(f"/api/content/questions/{q2_id}", headers=t1)
+    Auto-contenido: crea su propio docente, pregunta y respuesta; no elimina
+    preguntas del dataset compartido (q2 con respuestas es insumo de los
+    stats de los demás tests).
+    """
+    t4 = auth_headers(client, "stats-t4@example.com", "Stats T4", "TEACHER")
+    e4 = auth_headers(client, "stats-e4@example.com", "Stats E4", "STUDENT")
+    c4 = client.post(
+        "/api/courses", json={"name": "Curso Stats 4", "description": ""}, headers=t4
+    ).json()
+    with SessionLocal() as s:
+        subtopic_id = s.scalar(select(Subtopic).order_by(Subtopic.id).limit(1)).id
+    q4 = client.post(
+        f"/api/content/subtopics/{subtopic_id}/questions",
+        json={
+            "prompt": "¿Stat pregunta cuatro?",
+            "options": ["a4", "b4", "c4", "d4"],
+            "correct_index": 0,
+            "explanation": "exp4",
+        },
+        headers=t4,
+    ).json()
+    with SessionLocal() as s:
+        e4_user = s.scalar(select(User).where(User.email == "stats-e4@example.com"))
+        e4_id = e4_user.id
+        s.add(
+            QuestionAnswer(
+                user_id=e4_id,
+                question_id=q4["id"],
+                subtopic_id=subtopic_id,
+                attempt_id=str(uuid.uuid4()),
+                selected_index=1,
+                is_correct=False,
+            )
+        )
+        s.commit()
+
+    resp = client.delete(f"/api/content/questions/{q4['id']}", headers=t4)
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["deleted"] is False
     assert body["archived"] is True
 
     with SessionLocal() as s:
-        question = s.get(Question, q2_id)
+        question = s.get(Question, q4["id"])
         assert question is not None
         assert question.status == QuestionStatus.REJECTED
