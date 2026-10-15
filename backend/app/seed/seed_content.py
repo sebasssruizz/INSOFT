@@ -3,11 +3,14 @@
 Fuente única y centralizada: todos los cursos referencian estas mismas
 unidades y subtemas mediante CourseTopic, sin duplicar contenido.
 """
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.content import Topic
 from app.seed.seed_questions import OFFICIAL_QUESTIONS
 from app.services import course_service
 from app.services.content_import import sync_topic
+
 OFFICIAL_CONTENT = [
     {
         "name": 'UNIDAD 1. Generalidades en Cirugía Oftalmológica',
@@ -1828,18 +1831,51 @@ Reposo absoluto inicial, antibioterapia, analgésicos y antieméticos, cambio de
                                'ESTUDIANTES.docx (reacciones adversas, recidiva y posoperatorio).'}]},
 ]
 
-def seed_official_content(db: Session) -> None:
-    """Sincroniza las 8 unidades oficiales y asegura el Curso General."""
-    for topic_order, topic_data in enumerate(OFFICIAL_CONTENT):
-        with_questions = {
-            **topic_data,
-            "subtopics": [
-                {**subtopic, "questions": OFFICIAL_QUESTIONS.get(subtopic["name"], [])}
-                for subtopic in topic_data["subtopics"]
-            ],
-        }
-        sync_topic(db, with_questions, topic_order)
+def seed_official_content(db: Session, mode: str | None = None) -> str:
+    """Aplica el contenido oficial según SEED_MODE y asegura el Curso General.
+
+    - always: reescribe las unidades oficiales y BORRA subtemas que no estén en
+      la semilla (con su progreso). Solo para desarrollo.
+    - if_empty (por defecto fuera de desarrollo): crea únicamente las unidades
+      oficiales cuyo nombre no exista. No actualiza ni borra nada existente, así
+      que un reinicio no pisa contenido editado o importado.
+    - off: no toca el contenido.
+
+    Devuelve el modo aplicado.
+    """
+    from app.core.config import settings
+
+    modo = mode or settings.seed_mode_efectivo
+    if modo == "off":
+        return modo
+
+    if modo == "always":
+        for topic_order, topic_data in enumerate(OFFICIAL_CONTENT):
+            sync_topic(db, _with_questions(topic_data), topic_order)
+    else:  # if_empty: solo añade lo que falte, sin emparejar por orden ni borrar
+        existentes = set(db.scalars(select(Topic.name)).all())
+        for topic_order, topic_data in enumerate(OFFICIAL_CONTENT):
+            if topic_data["name"] in existentes:
+                continue
+            sync_topic(
+                db,
+                _with_questions(topic_data),
+                topic_order,
+                prune=False,
+                match_by_order=False,
+            )
     db.commit()
 
     # Asegurar que el Curso General y los cursos de profesores tengan todo el contenido.
     course_service.ensure_general_course(db)
+    return modo
+
+
+def _with_questions(topic_data: dict) -> dict:
+    return {
+        **topic_data,
+        "subtopics": [
+            {**subtopic, "questions": OFFICIAL_QUESTIONS.get(subtopic["name"], [])}
+            for subtopic in topic_data["subtopics"]
+        ],
+    }

@@ -63,6 +63,14 @@ class Settings(BaseSettings):
     # Login de desarrollo (sin Google). SOLO para pruebas locales. Desactivado por defecto.
     DEV_AUTH_ENABLED: bool = False
 
+    # Cómo sincroniza el arranque el contenido oficial (seed):
+    #   always   → reescribe y BORRA subtemas que no estén en la semilla (solo dev).
+    #   if_empty → añade unidades oficiales que falten; no toca ninguna existente
+    #              ni borra nada. Es el valor por defecto fuera de desarrollo.
+    #   off      → no toca el contenido en el arranque.
+    # Vacío = automático: always si DEV_AUTH_ENABLED, si no if_empty.
+    SEED_MODE: str = ""
+
     # Modelo local de embeddings para el RAG (sentence-transformers, corre en CPU).
     # Multilingüe (español incluido), 384 dimensiones y liviano para CPU.
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
@@ -123,6 +131,16 @@ class Settings(BaseSettings):
         if isinstance(value, str) and value.startswith("postgresql://"):
             return value.replace("postgresql://", "postgresql+psycopg2://", 1)
         return value
+
+    @property
+    def seed_mode_efectivo(self) -> str:
+        """Modo de semilla que se aplica (valida el valor configurado)."""
+        valor = (self.SEED_MODE or "").strip().lower()
+        if not valor:
+            return "always" if self.DEV_AUTH_ENABLED else "if_empty"
+        if valor not in ("always", "if_empty", "off"):
+            raise ValueError("SEED_MODE debe ser always, if_empty u off.")
+        return valor
 
     @model_validator(mode="after")
     def _require_secret_key_outside_dev(self) -> "Settings":
