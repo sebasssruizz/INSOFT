@@ -25,3 +25,4 @@ graft/
 
 # Entregables binarios de revision (se envian directo a la docente, no por git)
 docs/revision/*.docx
+backend/.pruebas/

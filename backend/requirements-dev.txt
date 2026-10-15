@@ -4,4 +4,5 @@ python-docx>=1.1.0
 
 # Pruebas: pytest y orden aleatorio (la suite debe pasar con cualquier semilla).
 pytest>=9.0
-pytest-randomly>=5.0
+pytest-randomly==5.0.0
+pytest-cov==7.1.0

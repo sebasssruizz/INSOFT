@@ -64,11 +64,11 @@ def test_migracion_columnas_existentes(client):
 
 
 def test_migracion_idempotente(client):
-    """Correr ensure_schema_compatibility dos veces no falla ni duplica índices."""
-    from app.database.migrations import ensure_schema_compatibility
+    """Correr run_migrations dos veces no falla ni duplica índices (#45 versionadas)."""
+    from app.database.migrations import run_migrations
 
-    ensure_schema_compatibility()
-    ensure_schema_compatibility()
+    run_migrations()  # segunda pasada (idempotente)
+    run_migrations()
 
     from sqlalchemy import inspect
 
