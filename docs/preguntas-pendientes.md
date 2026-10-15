@@ -65,9 +65,14 @@ reversible. Si prefieres otra, dilo y se cambia en un commit pequeño.
 
 - **Por defecto aplicado**: el parche se aplicó en la rama de #41 (commits `84249f2` y `bc17bd0`).
 - **Pendiente**: revisar que los dos cambios de test son correctos (`QUIZ_MAX_QUESTIONS` y la pregunta docente propia).
-## 13. Peticiones colgadas si la base se congela
+## 13. Peticiones colgadas si la base se congela — **CERRADA (2026-10-14)**
 
-- **Por defecto aplicado**: queda documentado (hallazgo del ensayo). Sin un límite de espera,
-  una base suspendida deja las peticiones colgadas hasta el timeout del cliente. No cambié código.
-- **Propuesta**: `query_wait_timeout=15` en pgbouncer y/o `statement_timeout` en la app.
-- **Pendiente**: decidir si se aplica (requiere cambios en el pooler desplegado y en la app).
+- **Decisión aplicada** (rama `fix/timeouts-bd`): `connect_timeout=10` (ya existía),
+  `pool_timeout=10` y `statement_timeout=15` por transacción con `SET LOCAL`
+  (el pooler de Neon no soporta `options` ni estado de sesión; ver
+  `docs/despliegue/TIMEOUTS_BD.md`). Sin conexión o pool agotado →
+  503 `db_unavailable` + `Retry-After: 5`; nunca un cuelgue.
+- **Configurable**: `DB_POOL_TIMEOUT`, `DB_STATEMENT_TIMEOUT_S` en `.env`
+  (0 desactiva el statement_timeout). DDL/migraciones sin ese límite.
+- Comportamiento pendiente de ajuste fino si el piloto muestra falsos 503:
+  solo habría que subir las variables, no cambia el código.

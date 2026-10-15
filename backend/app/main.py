@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 
 from app.api.router import api_router
 from app.api.routes.ai import limiter as ai_limiter
@@ -123,6 +124,22 @@ def create_app() -> FastAPI:
     @app.exception_handler(ServiceError)
     async def service_error_handler(request: Request, exc: ServiceError):
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    @app.exception_handler(OperationalError)
+    @app.exception_handler(PoolTimeoutError)
+    async def db_unavailable_handler(request: Request, exc: Exception):
+        # §13: una base suspendida/agotada no puede colgar la petición.
+        # Conexiones TCP agotadas (OperationalError) o pool agotado
+        # (TimeoutError) → 503 con código estable y Retry-After corto.
+        logger.error("bd no disponible en %s: %s", request.url.path, type(exc).__name__)
+        return JSONResponse(
+            status_code=503,
+            headers={"Retry-After": "5"},
+            content={
+                "error": "db_unavailable",
+                "detail": "La base de datos no responde. Reintenta en unos segundos.",
+            },
+        )
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
