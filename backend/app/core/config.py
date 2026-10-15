@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     PROJECT_DESCRIPTION: str = "Sistema web de apoyo al aprendizaje de Oftalmología e Instrumentación Quirúrgica."
     API_PREFIX: str = "/api"
 
+    # ── Pruebas de carga (T8) ───────────────────────────────────────────
+    ENVIRONMENT: str = "development"     # "production" en despliegue real
+    AI_MOCK: bool = False                # respuestas canned; se BLOQUEA en prod
+
     # Base de datos PostgreSQL
     DATABASE_URL: str = "postgresql+psycopg2://oftallearn:oftallearn@db:5432/oftallearn"
     # Fuerza SSL en la conexión (se activa sola para neon.tech). Para Neon:

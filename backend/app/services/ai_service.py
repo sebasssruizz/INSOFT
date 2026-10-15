@@ -270,6 +270,17 @@ async def ask_ai(
     if subtopic_id is not None:
         _ensure_subtopic_access(db, current_user, subtopic_id, course_id)
 
+    # Modo MOCK (solo pruebas de carga; bloqueado en producción al arrancar).
+    # Devuelve antes de límites/semáforo: el propósito es no gastar cuota ni
+    # simular saturación durante la carga.
+    if settings.AI_MOCK:
+        return {
+            "respuesta": "[AI_MOCK] Respuesta de prueba para la carga.\nPregunta recibida: " + question[:200],
+            "subtopic_id": subtopic_id,
+            "chunks_usados": 0,
+            "degraded": False,
+        }
+
     # 2a. Tope diario por usuario (AI_DAILY_LIMIT_PER_USER, 0 = sin tope)
     if settings.AI_DAILY_LIMIT_PER_USER > 0:
         today_count = ai_query_repo.count_today_for_user(db, user_id)
