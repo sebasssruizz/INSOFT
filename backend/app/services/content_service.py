@@ -75,9 +75,15 @@ def get_course_content(db: Session, user: User, course_id: int) -> list[dict]:
         }
 
     result = []
+    solo_validados = settings.SHOW_ONLY_VALIDATED
     for course_topic in content_repo.get_course_topics(db, course_id):
         topic = course_topic.topic
-        topic_subtopics = sorted(topic.subtopics, key=lambda s: s.order)
+        topic_subtopics = sorted(
+            (s for s in topic.subtopics if not solo_validados or s.validated),
+            key=lambda s: s.order,
+        )
+        if solo_validados and not getattr(topic, "validated", True):
+            continue
         # Una sola query agregada para los conteos del curso (evita N+1).
         approved_counts = content_repo.count_approved_questions_by_subtopics(
             db, [sub.id for sub in topic_subtopics]
@@ -128,6 +134,8 @@ def get_subtopic_detail(db: Session, user: User, course_id: int, subtopic_id: in
     # Solo preguntas aprobadas (oficiales + docentes + IA aprobadas), con tope.
     questions = content_repo.get_approved_questions_by_subtopic(db, subtopic.id)
     questions = _sample_questions(questions)
+    from app.services import media_service
+
     return {
         "id": subtopic.id,
         "topic_id": subtopic.topic_id,
@@ -136,7 +144,9 @@ def get_subtopic_detail(db: Session, user: User, course_id: int, subtopic_id: in
         "order": subtopic.order,
         "completed": completed,
         "estimated_minutes": estimate_minutes(subtopic),
+        "validated": bool(getattr(subtopic, "validated", True)),
         "questions": [_serialize_question(question) for question in questions],
+        "media": [media_service.media_read(m) for m in media_service.list_media(db, subtopic.id)],
     }
 
 

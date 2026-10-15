@@ -88,6 +88,17 @@ async def lifespan(app: FastAPI):
         seed_official_content(db)
     finally:
         db.close()
+    # Retención de consultas IA (3.5): purga filas más viejas que
+    # AI_QUERY_RETENTION_DAYS. Silenciosa y tolerante a fallos: no debe
+    # bloquear el arranque.
+    try:
+        from app.services import datos_piloto
+
+        purgadas = datos_piloto.purgar_ai_anteriores(SessionLocal())
+        if purgadas:
+            logger.info("retención IA: %d consultas purgadas", purgadas)
+    except Exception:  # noqa: BLE001 - nombre del fallo queda en el log
+        logger.warning("retención IA no aplicada (bd no disponible ahora mismo)")
     yield
 
 

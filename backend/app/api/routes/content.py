@@ -6,6 +6,9 @@ from app.database.session import get_db
 from app.models.user import User
 from app.schemas.content import (
     DeleteQuestionResponse,
+    MediaCreate,
+    MediaRead,
+    ValidatedUpdate,
     QuestionRead,
     QuestionReviewAction,
     QuestionTeacherRead,
@@ -15,7 +18,7 @@ from app.schemas.content import (
     TopicWithSubtopics,
 )
 from app.schemas.content_import import ImportDocumentRequest, ImportDocumentResponse
-from app.services import content_service, question_service
+from app.services import content_service, media_service, question_service
 from app.services.content_import import import_document
 from app.services.content_service import serialize_question_for_teacher
 
@@ -204,3 +207,74 @@ def review_teacher_question(
     """Aprobar (approved) o rechazar (rejected) una pregunta IA pendiente."""
     question = question_service.review_ai_question(db, current_user, question_id, payload.action)
     return serialize_question_for_teacher(question, current_user.id)
+
+
+# ── 3.1 Medios por subtema (solo enlaces, hosts en lista blanca) ─────────────
+
+
+@router.post(
+    "/content/subtopics/{subtopic_id}/media",
+    response_model=MediaRead,
+    responses={400: {"description": "URL o kind inválido (host fuera de MEDIA_ALLOWED_HOSTS)"},
+               403: {"description": "Requiere rol docente"}, 404: {"description": "Subtema no encontrado"}},
+)
+def add_subtopic_media(
+    subtopic_id: int,
+    payload: MediaCreate,
+    current_user: User = Depends(require_teacher),
+    db: Session = Depends(get_db),
+):
+    """Añade un enlace de medios a un subtema (SOLO docentes).
+
+    Rechaza cualquier URL cuyo host no esté en MEDIA_ALLOWED_HOSTS (defecto
+    vacío = rechazar todo). Nunca se suben archivos: solo enlaces.
+    """
+    return media_service.media_read(media_service.add_media(db, subtopic_id, payload))
+
+
+@router.delete(
+    "/content/subtopics/{subtopic_id}/media/{media_id}",
+    responses={403: {"description": "Requiere rol docente"}, 404: {"description": "Medio no encontrado"}},
+)
+def delete_subtopic_media(
+    subtopic_id: int,
+    media_id: int,
+    current_user: User = Depends(require_teacher),
+    db: Session = Depends(get_db),
+):
+    """Elimina un enlace de medios del subtema."""
+    media_service.delete_media(db, subtopic_id, media_id)
+    return {"detail": "Medio eliminado."}
+
+
+# ── 3.2 Validación de contenido (docente marca unidad/subtema) ───────────────
+
+
+@router.patch("/content/subtopics/{subtopic_id}/validated", response_model=SubtopicRead)
+def set_subtopic_validated(
+    subtopic_id: int,
+    payload: ValidatedUpdate,
+    current_user: User = Depends(require_teacher),
+    db: Session = Depends(get_db),
+):
+    """Marca un subtema como validado (o lo devuelve a borrador)."""
+    sub = media_service.set_validated_subtopic(db, subtopic_id, payload.validated)
+    # Respuesta mínima (sin progreso por usuario): campos del subtema.
+    return {
+        "id": sub.id, "topic_id": sub.topic_id, "name": sub.name, "content": sub.content,
+        "order": sub.order, "completed": False, "estimated_minutes": 0,
+        "validated": bool(sub.validated), "questions": [],
+        "media": [media_service.media_read(m) for m in media_service.list_media(db, sub.id)],
+    }
+
+
+@router.patch("/content/topics/{topic_id}/validated", responses={404: {"description": "Unidad no encontrada"}})
+def set_topic_validated(
+    topic_id: int,
+    payload: ValidatedUpdate,
+    current_user: User = Depends(require_teacher),
+    db: Session = Depends(get_db),
+):
+    """Marca una unidad (topic) como validada (o devuelta a borrador)."""
+    t = media_service.set_validated_topic(db, topic_id, payload.validated)
+    return {"id": t.id, "name": t.name, "order": t.order, "validated": bool(t.validated), "description": t.description}
