@@ -35,7 +35,7 @@ Regla de integración: ningún PR se ha mergeado por el agente. Todas las ramas 
 | 2.5 F5b Compose endurecido | PR abierto (reemplaza a #38) | `chore/endurecer-compose` | #48 | `docker compose config --quiet` válido; `DOCS_ENABLED` por defecto `false`. |
 | 2.6 Interruptores operativos | PR abierto (apilado sobre #45 y con #46 integrado) | `feat/interruptores-operativos` | #50 | 26/26 (interruptores, semilla, migraciones); IA vecina 66/66. |
 | 2.7 Respaldos | PR abierto (apilado sobre #48) | `chore/respaldos` | #51 | Respaldo directo PASA verificación; recuento alterado FALLA; contraseña incorrecta no deja archivo; retención conserva 3. |
-| 2.8 Ensayo local tipo Neon (SSL, pgbouncer, arranque en frío, CORS desde otro origen) | **no iniciado** | — | — | Requiere Postgres con SSL, pgbouncer y build de producción servido desde otro origen. Siguiente paso: `chore/ensayo-despliegue-local`. |
+| 2.8 Ensayo local tipo Neon (SSL, pgbouncer, arranque en frío, CORS desde otro origen) | PR abierto | `chore/ensayo-despliegue-local-pr` | #54 | Recorridos 22/22 el 12-oct; migraciones sin pérdida de datos; CORS estricto; SSL obligatorio en ambos lados; arranque en frío 7,3 s; hallazgos: pgbouncer cuelga peticiones sin `query_wait_timeout` y fastembed consultaba HuggingFace con el modelo local (corregido con `EMBEDDINGS_LOCAL_ONLY`). |
 | 2.9 F5 Guía de pruebas en internet | PR abierto (reemplaza a #39) | `docs/paso-a-paso-staging-v2` | #52 | Cifras de túneles contrastadas con documentación pública (fechas en el texto). |
 
 ## Ronda 3 · Contenido, IA y piloto
@@ -73,6 +73,13 @@ Regla de integración: ningún PR se ha mergeado por el agente. Todas las ramas 
 | Barra de progreso accesible | Hecha en #43 (`ProgressRing`). |
 | Manejo de 401/403 | Único lugar: `api.js`. Ver `docs/api/ERRORES_PARA_FRONTEND.md`. |
 | Trabajo local de Samuel no subido | No verificable desde aquí. |
+
+## Apéndice 12-oct · 2.8
+
+- 2.8 quedó hecho el 12-oct como PR #54 con los hallazgos del ensayo en `docs/despliegue/ENSAYO_LOCAL.md`
+  (recorridos 22/22, migraciones sin pérdida de datos, CORS estricto, SSL obligatorio, arranque en frío).
+- Añadido junto al ensayo: `EMBEDDINGS_LOCAL_ONLY` (el modelo cargado desde la imagen no debe
+  consultar HuggingFace). Consulta también `docs/preguntas-pendientes.md` (§13, nuevo).
 
 ## Pruebas de control
 

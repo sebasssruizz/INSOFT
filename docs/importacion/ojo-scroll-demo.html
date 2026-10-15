@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anatomía del Ojo — Vista Exploded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --bg: #060b13;
+    --panel: #0d1b2a;
+    --ink: #eef4f8;
+    --muted: #7f97ab;
+    --cyan: #4fd8d0;
+    --coral: #ff8f6b;
+    --line: rgba(255,255,255,0.08);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--bg); color:var(--ink); font-family:'Space Grotesk', system-ui, sans-serif; }
+  /* NOTA: overflow-x en html/body rompe position:sticky en varios navegadores.
+     Si necesitas evitar scroll horizontal, hazlo en contenedores puntuales, no aquí. */
+  ::selection{ background:var(--cyan); color:#04110f; }
+
+  .intro{
+    height:70vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 24px; position:relative; z-index:2;
+  }
+  .intro .eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:0.18em;
+    text-transform:uppercase; color:var(--cyan); margin-bottom:18px;
+  }
+  .intro h1{ font-size:clamp(28px, 5vw, 52px); font-weight:700; max-width:820px; line-height:1.15; }
+  .intro p{ margin-top:18px; color:var(--muted); font-size:16px; max-width:520px; }
+  .scroll-hint{
+    margin-top:44px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--muted);
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .scroll-hint .dash{ width:1px; height:36px; background:linear-gradient(var(--cyan), transparent); animation:pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:.25 } 50%{ opacity:1 } }
+
+  .scroll-wrap{ height:520vh; position:relative; z-index:2; }
+  .stage{
+    position:sticky; top:0; height:100vh; overflow:hidden;
+  }
+  canvas{ position:absolute; inset:0; display:block; width:100%; height:100%; }
+
+  .hud{
+    position:absolute; inset:0; pointer-events:none;
+  }
+  .progress-track{
+    position:absolute; left:32px; top:50%; transform:translateY(-50%);
+    width:2px; height:220px; background:var(--line);
+  }
+  .progress-fill{
+    position:absolute; left:0; top:0; width:100%; height:0%;
+    background:var(--cyan); transition:height .05s linear;
+  }
+  .layer-label{
+    position:absolute; font-family:'JetBrains Mono', monospace; font-size:13px;
+    color:var(--ink); opacity:0; transform:translateY(6px);
+    transition:opacity .35s ease, transform .35s ease;
+    display:flex; align-items:center; gap:10px;
+  }
+  .layer-label.visible{ opacity:1; transform:translateY(0); }
+  .layer-label .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .layer-label .txt{ display:flex; flex-direction:column; }
+  .layer-label .name{ font-weight:500; letter-spacing:.02em; }
+  .layer-label .desc{ color:var(--muted); font-size:11px; margin-top:2px; }
+
+  #lbl-sclera{ top:14%; right:8%; }
+  #lbl-choroid{ top:30%; right:6%; }
+  #lbl-retina{ top:48%; right:8%; }
+  #lbl-macula{ top:66%; right:10%; }
+  #lbl-vessels{ top:82%; right:8%; }
+
+  .stage-caption{
+    position:absolute; bottom:40px; left:32px; right:32px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--muted);
+    display:flex; justify-content:space-between;
+  }
+  .stage-caption span.step{ color:var(--coral); }
+
+  .outro{
+    height:60vh; display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:0 24px; position:relative; z-index:2;
+  }
+  .outro p{ max-width:560px; color:var(--muted); font-size:15px; line-height:1.6; }
+</style>
+</head>
+<body>
+
+  <section class="intro">
+    <div class="eyebrow">Módulo · Anatomía quirúrgica</div>
+    <h1>Cada capa del ojo, desde la perspectiva de quien opera.</h1>
+    <p>Desplázate hacia abajo: el ojo rota y luego se abre capa por capa, igual que en el diagrama de referencia.</p>
+    <div class="scroll-hint"><div class="dash"></div>SCROLL</div>
+  </section>
+
+  <div class="scroll-wrap" id="scrollWrap">
+    <div class="stage">
+      <canvas id="c"></canvas>
+      <div class="hud">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+        <div class="layer-label" id="lbl-sclera">
+          <div class="dot" style="background:#ece6da"></div>
+          <div class="txt"><span class="name">Esclera</span><span class="desc">Capa externa, protección estructural</span></div>
+        </div>
+        <div class="layer-label" id="lbl-choroid">
+          <div class="dot" style="background:#8a3b2e"></div>
+          <div class="txt"><span class="name">Coroides</span><span class="desc">Vascularización, nutre la retina</span></div>
+        </div>
+        <div class="layer-label" id="lbl-retina">
+          <div class="dot" style="background:#a12f3f"></div>
+          <div class="txt"><span class="name">Retina</span><span class="desc">Fotorrecepción de la imagen</span></div>
+        </div>
+        <div class="layer-label" id="lbl-macula">
+          <div class="dot" style="background:#d98b6e"></div>
+          <div class="txt"><span class="name">Mácula / Fóvea</span><span class="desc">Visión central de alta agudeza</span></div>
+        </div>
+        <div class="layer-label" id="lbl-vessels">
+          <div class="dot" style="background:#3b6fa0"></div>
+          <div class="txt"><span class="name">Arteria / Vena</span><span class="desc">Irrigación retiniana</span></div>
+        </div>
+
+        <div class="stage-caption">
+          <span>Vista exploded — ilustrativa</span>
+          <span class="step" id="stepLabel">Rotando</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="outro">
+    <p>Este es un prototipo con geometría simple para validar la mecánica de scroll. El modelo final (con mayor detalle anatómico) se puede montar en la misma estructura de código.</p>
+  </section>
+
+<script>
+(function(){
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(0, 0, 9);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const key = new THREE.DirectionalLight(0xffffff, 1.1);
+  key.position.set(4, 5, 6);
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0x4fd8d0, 0.5);
+  rim.position.set(-5, -2, -4);
+  scene.add(rim);
+
+  const eyeGroup = new THREE.Group();
+  scene.add(eyeGroup);
+
+  // Cada capa es un "cuenco" (esfera parcial) para simular el corte exploded.
+  function makeShell(radius, color, opacity, thetaLength){
+    const geo = new THREE.SphereGeometry(radius, 28, 20, 0, Math.PI*2, 0, thetaLength);
+    const mat = new THREE.MeshStandardMaterial({
+      color, flatShading:true, roughness:0.65, metalness:0.05,
+      transparent: opacity < 1, opacity, side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI/2.1; // abre el cuenco hacia la cámara
+    return mesh;
+  }
+
+  // "order" controla CUÁNDO se desprende cada capa (0 = primera en moverse).
+  // Vamos de afuera hacia adentro: esclera se abre primero, como al exponer
+  // el globo ocular en cirugía, hasta dejar expuesta la retina/mácula al final.
+  const layers = [
+    { name:'sclera',  order:0, mesh: makeShell(2.25, 0xece6da, 0.9,  Math.PI*0.7),  dir:new THREE.Vector3(1.0, 0.25, 0.35), maxOffset:5.2 },
+    { name:'choroid', order:1, mesh: makeShell(1.9,  0x8a3b2e, 0.94, Math.PI*0.66), dir:new THREE.Vector3(0.85, 0.05, 0.3), maxOffset:3.9 },
+    { name:'retina',  order:2, mesh: makeShell(1.55, 0xa12f3f, 0.97, Math.PI*0.62), dir:new THREE.Vector3(0.65, -0.15, 0.25), maxOffset:2.7 },
+    { name:'macula',  order:3, mesh: makeShell(1.15, 0xd98b6e, 1,    Math.PI*0.55), dir:new THREE.Vector3(0.4, -0.4, 0.2),  maxOffset:1.5 },
+    { name:'vessels', order:4, mesh:null, dir:new THREE.Vector3(0.15, -0.55, 0.1), maxOffset:0.6 },
+  ];
+  layers.forEach(l => { if(l.mesh){ l.mesh.userData.basePos = l.mesh.position.clone(); eyeGroup.add(l.mesh); } });
+
+  // Vasos + mácula como un pequeño clúster en el centro (capa más interna)
+  const vesselGroup = new THREE.Group();
+  function curveTube(points, radius, color){
+    const curve = new THREE.CatmullRomCurve3(points);
+    const geo = new THREE.TubeGeometry(curve, 24, radius, 8, false);
+    const mat = new THREE.MeshStandardMaterial({ color, flatShading:true, roughness:0.5 });
+    return new THREE.Mesh(geo, mat);
+  }
+  vesselGroup.add(curveTube([
+    new THREE.Vector3(-0.3,0.9,0.4), new THREE.Vector3(0.1,0.5,0.5),
+    new THREE.Vector3(0.35,0.15,0.55), new THREE.Vector3(0.5,-0.3,0.5)
+  ], 0.035, 0xc1443f)); // arteria
+  vesselGroup.add(curveTube([
+    new THREE.Vector3(-0.5,0.85,0.35), new THREE.Vector3(-0.15,0.45,0.45),
+    new THREE.Vector3(0.15,0.05,0.5), new THREE.Vector3(0.4,-0.4,0.45)
+  ], 0.035, 0x3b6fa0)); // vena
+  const foveaDot = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 16, 16),
+    new THREE.MeshStandardMaterial({ color:0x3a1f1a, flatShading:true })
+  );
+  foveaDot.position.set(0.05, -0.1, 0.55);
+  vesselGroup.add(foveaDot);
+  vesselGroup.userData.basePos = new THREE.Vector3(0,0,0);
+  eyeGroup.add(vesselGroup);
+  layers.find(l => l.name === 'vessels').mesh = vesselGroup;
+
+  function resize(){
+    const stage = document.querySelector('.stage');
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const easeInOut = t => t*t*(3 - 2*t);
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+
+  const scrollWrap = document.getElementById('scrollWrap');
+  const progressFill = document.getElementById('progressFill');
+  const stepLabel = document.getElementById('stepLabel');
+  const labelEls = {
+    vessels: document.getElementById('lbl-vessels'),
+    macula: document.getElementById('lbl-macula'),
+    retina: document.getElementById('lbl-retina'),
+    choroid: document.getElementById('lbl-choroid'),
+    sclera: document.getElementById('lbl-sclera'),
+  };
+
+  function getProgress(){
+    const rect = scrollWrap.getBoundingClientRect();
+    const total = scrollWrap.offsetHeight - window.innerHeight;
+    const scrolled = -rect.top;
+    return clamp01(scrolled / total);
+  }
+
+  const ROTATE_END = 0.32; // 0 -> 32% del scroll: solo rotación
+  function update(){
+    const p = getProgress();
+    progressFill.style.height = (p*100) + '%';
+
+    // Fase 1: rotación
+    const rotP = easeInOut(clamp01(p / ROTATE_END));
+    eyeGroup.rotation.y = rotP * (Math.PI * 0.62);
+    eyeGroup.rotation.x = rotP * 0.08;
+
+    // Fase 2: separación por capas (stagger), de afuera hacia adentro
+    const explodeP = clamp01((p - ROTATE_END) / (1 - ROTATE_END));
+    const n = layers.length;
+    let maxLocal = 0;
+    layers.forEach((l) => {
+      const start = l.order / n;
+      const end = start + (1/n) + 0.4; // solape para que la transición sea fluida, no a saltos
+      const local = easeInOut(clamp01((explodeP - start) / (end - start)));
+      maxLocal = Math.max(maxLocal, local);
+
+      const offset = l.dir.clone().normalize().multiplyScalar(local * l.maxOffset);
+      l.mesh.position.copy(l.mesh.userData.basePos.clone().add(offset));
+      l.mesh.rotation.z = local * 0.35 * (l.order % 2 === 0 ? 1 : -1); // leve giro propio al desprenderse
+
+      const el = labelEls[l.name];
+      if(el){ el.classList.toggle('visible', local > 0.4); }
+    });
+
+    // La cámara se aleja a medida que las capas se separan, para que nunca
+    // se salgan de cuadro (evita el problema de "se pierde el modelo").
+    camera.position.z = 9 + explodeP * 5.5;
+    camera.position.y = explodeP * 0.6;
+    camera.lookAt(0.6 * explodeP, 0, 0);
+
+    stepLabel.textContent = p < ROTATE_END ? 'Rotando' : (p > 0.92 ? 'Vista completa' : 'Separando capas');
+
+    renderer.render(scene, camera);
+  }
+
+  function loop(){ update(); requestAnimationFrame(loop); }
+  loop();
+})();
+</script>
+</body>
+</html>

@@ -65,3 +65,9 @@ reversible. Si prefieres otra, dilo y se cambia en un commit pequeño.
 
 - **Por defecto aplicado**: el parche se aplicó en la rama de #41 (commits `84249f2` y `bc17bd0`).
 - **Pendiente**: revisar que los dos cambios de test son correctos (`QUIZ_MAX_QUESTIONS` y la pregunta docente propia).
+## 13. Peticiones colgadas si la base se congela
+
+- **Por defecto aplicado**: queda documentado (hallazgo del ensayo). Sin un límite de espera,
+  una base suspendida deja las peticiones colgadas hasta el timeout del cliente. No cambié código.
+- **Propuesta**: `query_wait_timeout=15` en pgbouncer y/o `statement_timeout` en la app.
+- **Pendiente**: decidir si se aplica (requiere cambios en el pooler desplegado y en la app).

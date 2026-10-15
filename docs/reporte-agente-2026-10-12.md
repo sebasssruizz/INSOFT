@@ -24,7 +24,7 @@ Estado detallado por tarea: [`docs/estado-agente.md`](estado-agente.md). Decisio
 | 2.5 F5b Compose | PR abierto | `chore/endurecer-compose` | #48 | Compose válido; endpoints públicos medidos. |
 | 2.6 Interruptores | PR abierto (sobre #45, con #46) | `feat/interruptores-operativos` | #50 | 26/26; IA vecina 66/66. |
 | 2.7 Respaldos | PR abierto (sobre #48) | `chore/respaldos` | #51 | PASA / FALLA comprobados; retención. |
-| 2.8 Ensayo local | **no iniciado** | — | — | Ver §6. |
+| 2.8 Ensayo local | PR abierto | `chore/ensayo-despliegue-local-pr` | #54 | Recorridos 22/22; hallazgos en §3 y `docs/despliegue/ENSAYO_LOCAL.md`. |
 | 2.9 Guía de pruebas | PR abierto | `docs/paso-a-paso-staging-v2` | #52 | Cifras contrastadas con documentación. |
 | 3.x Contenido, IA, piloto | **no iniciados** (3.4 parcial: diseño #30) | — | — | — |
 | 4.x Calidad y docs | parciales (4.4, 4.7); resto no iniciado | — | — | — |
@@ -84,7 +84,7 @@ Las decisiones con alternativa están en `docs/preguntas-pendientes.md`. Princip
 
 ## 6. No hecho y por qué
 
-- **2.8 Ensayo local tipo Neon**: requiere Postgres con SSL, un pgbouncer y el build de producción servido desde otro origen. No se empezó para no bloquear el resto; es el siguiente paso natural.
+- **2.8 Ensayo local tipo Neon**: hecho el 12-oct (PR #54); la prueba se ejecutó sobre una rama local con la integración de #43–#52. Falta el ensayo con **Neon real** (requiere la base y las credenciales) cuando tú lo decidas.
 - **Rondas 3 y 4**: son funcionalidades completas (medios, validación de contenido, piloto anonimizado, práctica colectiva, recorridos de contrato, auditoría de seguridad, carga ligera, datos demo, migración de `google-genai`). Cada una necesita su propia rama, pruebas y revisión. Ninguna se hizo a medias.
 - **Ejecuciones con `--apply`** contra Neon o el PC: no se ejecutaron. Solo se probaron en Postgres desechable.
 - **Llamadas reales** a la IA, Google, Vercel o Neon: no se hicieron.
