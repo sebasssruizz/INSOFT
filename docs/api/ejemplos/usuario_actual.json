@@ -1,0 +1,25 @@
+{
+  "nombre": "usuario_actual",
+  "descripcion": "Perfil del usuario autenticado (panel y cabecera).",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/users/me"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "id": 2,
+      "name": "Estudiante Ejemplo",
+      "email": "estudiante@example.com",
+      "profile_image": null,
+      "role": "STUDENT",
+      "country": "Desarrollo",
+      "age": 25,
+      "profile_completed": true,
+      "created_at": "2026-10-11T23:02:12.025962Z"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "nombre": "subtema_detalle",
+  "descripcion": "Subtema con contenido y preguntas visibles para el estudiante.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/subtopics/1?course_id=1"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "id": 1,
+      "topic_id": 1,
+      "name": "Anatomía del Globo Ocular y estructuras anexas",
+      "content": "### Introducción\nEl globo ocular es el órgano receptor de la visión y contiene más de la mitad de los receptores sensoriales del cuerpo humano. El instrumentador quirúrgico debe conocer su anatomía con precisión milimétrica, porque cada cirugía oftalmológica se juega en estructuras de décimas de milímetro: un error de 1 mm al medir la pars plana o al colocar una sutura corneal puede significar la diferencia entre el éxito y una complicación grave.\n\n### Datos clave\n- **Forma y tamaño:** esfera de aproximadamente 24 a 25 mm de diámetro y unos 7.5 g de peso, con un abombamiento anterior que forma la córnea.\n- **Tres capas:** externa (córnea y esclerótica), media o vascular (iris, cuerpo ciliar y coroides) e interna (retina).\n- **Tres cámaras:** anterior (entre córnea e iris), posterior (entre iris y cristalino) y vítrea (detrás del cristalino, la de mayor volumen).\n- **Humores:** el humor acuoso llena las cámaras anterior y posterior; el humor vítreo, un gel transparente, ocupa la cavidad vítrea y mantiene la forma del globo.\n- **Presión intraocular:** depende del equilibrio entre producción y drenaje del humor acuoso; su control es el objetivo de la cirugía de glaucoma.\n\n### Las tres capas del globo ocular\nLa capa externa está formada por la esclerótica y la córnea. La esclerótica es un tejido fibroso, blanco y resistente que rodea tres cuartas partes del globo y le da sostén; se continúa por delante con la córnea y por detrás con la vaina del nervio óptico. La córnea es una membrana delgada, transparente y avascular que cubre la porción anterior del ojo y es responsable de la mayor parte de la refracción de la luz. La córnea posee cinco capas: epitelio, capa de Bowman, estroma, membrana de Descemet y endotelio, y su transparencia depende de que se mantenga deshidratada y protegida durante toda la cirugía.\n\nLa capa media o vascular comprende el iris, el cuerpo ciliar y la coroides. El iris es la parte coloreada del ojo, un diafragma muscular con una abertura central llamada pupila que regula la entrada de luz. El cuerpo ciliar contiene los procesos ciliares que producen el humor acuoso y los ligamentos suspensorios que sostienen al cristalino y permiten la acomodación. La coroides es un tejido ricamente vascularizado y pigmentado que nutre la capa externa de la retina y evita los reflejos internos de luz.\n\nLa capa interna es la retina, la membrana fotorreceptora donde la luz se transforma en impulsos nerviosos que viajan por el nervio óptico hasta el cerebro. La retina posee diez capas sucesivas, desde el epitelio pigmentario hasta la membrana limitante interna, y en su centro se encuentra la mácula, responsable de la visión de detalle. La retina descansa sobre la coroides por fuera y está en contacto con el humor vítreo por dentro.\n\n### Cámaras, humores y drenaje del humor acuoso\nLa cámara anterior está limitada por la cara interna de la córnea y el iris; en ella se produce el drenaje del humor acuoso a través de la malla trabecular, que desemboca en el canal de Schlemm y de allí al sistema venoso. La cámara posterior se encuentra entre el iris, el cristalino y el cuerpo vítreo; allí están los procesos ciliares que producen el humor acuoso, el cual pasa por la pupila hacia la cámara anterior para ser drenado por el ángulo iridocorneal. La cámara vítrea ocupa el mayor volumen del globo y contiene el cuerpo vítreo, un gel de alto contenido en agua con ácido hialurónico y colágeno que mantiene la forma ocular.\n\nEl cristalino es una estructura biconvexa y transparente ubicada detrás del iris, sostenida por los ligamentos suspensorios; cambia de forma para enfocar y con la edad pierde esa capacidad, lo que se conoce como presbicia. Comprender este circuito de producción y drenaje del humor acuoso es indispensable para el instrumentador, porque es la base anatómica de toda la cirugía de glaucoma de la Unidad 3.\n\n### Anexos: órbita, músculos, párpados, conjuntiva y aparato lagrimal\nLos anexos del globo ocular incluyen la órbita, los músculos extraoculares, los párpados, la conjuntiva, el aparato lagrimal, las cejas y las pestañas. La órbita es una cavidad ósea en forma de pirámide que aloja al globo, los músculos, el nervio óptico y los vasos. Los seis músculos extrínsecos (rectos superior, inferior, interno y externo, y oblicuos superior e inferior) mueven el globo de forma coordinada; reciben inervación de los pares craneales III (motor ocular común), IV (patético, oblicuo superior) y VI (motor ocular externo), mientras el facial (VII) inerva el orbicular de los párpados y el trigémino (V) da la sensibilidad.\n\nLos párpados son pliegues músculo-mucosos que protegen el ojo y distribuyen la lágrima con cada parpadeo; contienen la placa tarsal y las glándulas de Meibomio, cuya obstrucción crónica origina el chalazión de la Unidad 2. La conjuntiva es una mucosa transparente que tapiza la esclerótica (conjuntiva bulbar) y la cara interna de los párpados (conjuntiva palpebral). El aparato lagrimal produce la lágrima en la glándula lagrimal y la drena por los puntos y canalículos lagrimales hacia el saco lagrimal y el conducto nasolagrimal hasta las fosas nasales.\n\n### Nervio óptico y vascularización\nEl nervio óptico es el segundo par craneal y transmite la información visual desde la retina hasta el cerebro. Mide unos 4 cm y tiene cuatro segmentos: intraocular (en la papila óptica), intraorbitario, intracanalicular (por el foramen óptico, vulnerable en fracturas de base de cráneo) e intracraneal hasta el quiasma. La arteria oftálmica, rama de la carótida interna, irriga la órbita, y las venas oftálmicas superior e inferior drenan el ojo. El instrumentador debe recordar esta vascularización porque explica el riesgo de hemorragia en cirugías como la enucleación y la importancia de la hemostasia con bipolar o quemador en cada procedimiento.\n\n### Puntos críticos para el instrumentador\nEl instrumentador usa la anatomía todos los días: mide 3.5 mm desde el limbo en ojos pseudofáquicos y 4 mm en ojos fáquicos para ubicar la pars plana en la inyección intravítrea; reconoce el limbo esclerocorneal como referencia para incisiones y trepanaciones; sabe que la córnea es avascular y debe mantenerse irrigada con solución salina balanceada durante toda la cirugía para proteger el endotelio; y entiende que la conjuntiva y la cápsula de Tenon son los planos de disección en pterigión, estrabismo y cirugía de glaucoma.\n\n### ⚠️ Alertas y perlas del instrumentador\n- **Nunca dejes secar la córnea:** mantén irrigación con solución salina balanceada y ofrece hisopos húmedos peinados durante todo el acto quirúrgico.\n- **Limbo como punto cero:** casi todas las mediciones (pars plana, colgajos, trepanaciones) se miden desde el limbo; confirma con el cirujano si el ojo es fáquico o pseudofáquico.\n- **Conjuntiva = plano de trabajo:** la mayoría de abordajes disecan conjuntiva y Tenon; ten listas tijeras Westcott y pinza Bishop sin garra.\n- **Músculos rectos como referencia:** en retina y estrabismo los músculos se reparan con seda para traccionar el globo; no los confundas con la conjuntiva.\n\n### Términos clave\n- **Limbo:** zona de transición entre la córnea transparente y la esclerótica blanca; referencia para mediciones quirúrgicas.\n- **Pars plana:** porción posterior del cuerpo ciliar, zona segura de entrada a la cavidad vítrea a 3.5-4 mm del limbo.\n- **Humor acuoso:** líquido producido por los procesos ciliares que mantiene la presión intraocular.\n- **Canal de Schlemm:** vía de drenaje del humor acuoso hacia el sistema venoso.\n- **Cápsula de Tenon:** membrana fibrosa que envuelve la esclerótica desde el nervio óptico hasta la córnea; plano de disección.\n- **Mácula:** zona central de la retina responsable de la visión de detalle.\n- **Papila óptica:** punto donde las fibras de la retina forman el nervio óptico; carece de fotorreceptores.\n- **Presbicia:** pérdida de la capacidad de acomodación del cristalino con la edad.",
+      "order": 0,
+      "completed": false,
+      "estimated_minutes": 19,
+      "questions": [
+        {
+          "id": 1,
+          "subtopic_id": 1,
+          "prompt": "¿Cuántos músculos extraoculares mueven cada globo ocular?",
+          "options": [
+            "Cuatro",
+            "Seis",
+            "Ocho",
+            "Doce"
+          ],
+          "order": 0
+        },
+        {
+          "id": 2,
+          "subtopic_id": 1,
+          "prompt": "El aparato lagrimal drena la lágrima hacia la cavidad nasal a través de:",
+          "options": [
+            "El conducto nasolagrimal",
+            "El nervio óptico",
+            "La cámara anterior",
+            "El cuerpo ciliar"
+          ],
+          "order": 1
+        },
+        {
+          "id": 3,
+          "subtopic_id": 1,
+          "prompt": "¿Por qué importa la anatomía orbitaria al preparar un abordaje quirúrgico seguro?",
+          "options": [
+            "Solo determina el color del campo estéril",
+            "Define relaciones con nervios y vasos que condicionan el acceso",
+            "Únicamente influye en la elección del anestésico tópico",
+            "No tiene relación con la técnica quirúrgica"
+          ],
+          "order": 2
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "nombre": "unirse_con_codigo",
+  "descripcion": "Estudiante se une a un curso con el código.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/courses/join",
+    "cuerpo": {
+      "code": "<CODIGO>"
+    }
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "message": "Te has unido a «Curso de ejemplo».",
+      "course": {
+        "id": 2,
+        "name": "Curso de ejemplo",
+        "description": "Datos ficticios",
+        "code": "OFT-SHGC",
+        "type": "TEACHER",
+        "teacher_id": 1,
+        "active": true,
+        "created_at": "2026-10-11T23:02:12.185332Z"
+      }
+    }
+  }
+}

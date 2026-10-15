@@ -1,0 +1,147 @@
+[
+  {
+    "nombre": "crear_curso_docente",
+    "status": 201,
+    "descripcion": "Docente crea un curso y recibe el código de acceso."
+  },
+  {
+    "nombre": "unirse_con_codigo",
+    "status": 200,
+    "descripcion": "Estudiante se une a un curso con el código."
+  },
+  {
+    "nombre": "usuario_actual",
+    "status": 200,
+    "descripcion": "Perfil del usuario autenticado (panel y cabecera)."
+  },
+  {
+    "nombre": "lista_cursos_estudiante",
+    "status": 200,
+    "descripcion": "Cursos del estudiante con progreso por subtemas. Alimenta la barra de progreso."
+  },
+  {
+    "nombre": "curso_detalle",
+    "status": 200,
+    "descripcion": "Detalle del Curso General con totales de unidades y subtemas."
+  },
+  {
+    "nombre": "unidades_del_curso",
+    "status": 200,
+    "descripcion": "Unidades con sus subtemas y estado de completado de cada uno."
+  },
+  {
+    "nombre": "preguntas_repaso_unidad",
+    "status": 200,
+    "descripcion": "Preguntas de repaso de una unidad (sin clave de respuesta)."
+  },
+  {
+    "nombre": "subtema_detalle",
+    "status": 200,
+    "descripcion": "Subtema con contenido y preguntas visibles para el estudiante."
+  },
+  {
+    "nombre": "responder_pregunta",
+    "status": 200,
+    "descripcion": "Respuesta a una pregunta de quiz. Devuelve si es correcta y la explicación."
+  },
+  {
+    "nombre": "marcar_subtema_completado",
+    "status": 200,
+    "descripcion": "Marca un subtema como completado. Cambia la barra de progreso."
+  },
+  {
+    "nombre": "progreso_del_curso",
+    "status": 200,
+    "descripcion": "Resumen de progreso: subtemas completados entre total. Fuente de la barra."
+  },
+  {
+    "nombre": "sesion_practica",
+    "status": 200,
+    "descripcion": "Sesión de práctica: composición banco/IA. Las preguntas no traen respuesta correcta."
+  },
+  {
+    "nombre": "chat_ia_exito",
+    "status": 200,
+    "descripcion": "Respuesta del asistente con RAG sobre el contenido oficial."
+  },
+  {
+    "nombre": "chat_ia_degradado",
+    "status": 200,
+    "descripcion": "El proveedor de IA falla: 200 con degraded=true y fragmentos del contenido oficial (modo respaldo). No devuelve 503."
+  },
+  {
+    "nombre": "chat_ia_saturado",
+    "status": 200,
+    "descripcion": "Proveedor saturado: igual que el fallo, 200 con degraded=true (modo respaldo). No devuelve 429."
+  },
+  {
+    "nombre": "chat_ia_limite_diario",
+    "status": 429,
+    "descripcion": "Tope diario por usuario: 429 con Retry-After de 3600 s."
+  },
+  {
+    "nombre": "historial_ia_estudiante",
+    "status": 200,
+    "descripcion": "Historial propio de consultas al asistente."
+  },
+  {
+    "nombre": "error_sin_token",
+    "status": 401,
+    "descripcion": "Sin cabecera Authorization: 401."
+  },
+  {
+    "nombre": "error_estudiante_en_panel_docente",
+    "status": 403,
+    "descripcion": "Estudiante consulta una ruta de docente: 403."
+  },
+  {
+    "nombre": "error_subtema_inexistente",
+    "status": 404,
+    "descripcion": "Subtema que no existe (con course_id válido): 404."
+  },
+  {
+    "nombre": "alumnos_del_curso",
+    "status": 200,
+    "descripcion": "Alumnos inscritos en el curso del docente."
+  },
+  {
+    "nombre": "crear_pregunta_docente",
+    "status": 201,
+    "descripcion": "Docente crea una pregunta: exactamente 4 opciones A-D y una correcta."
+  },
+  {
+    "nombre": "error_pregunta_sin_4_opciones",
+    "status": 422,
+    "descripcion": "Pregunta con 3 opciones: 422 (la regla exige A-D)."
+  },
+  {
+    "nombre": "error_enunciado_duplicado",
+    "status": 409,
+    "descripcion": "Enunciado repetido en el subtema: 409."
+  },
+  {
+    "nombre": "aprobar_pregunta_ia",
+    "status": 200,
+    "descripcion": "Docente aprueba una pregunta generada por IA (pendiente → aprobada)."
+  },
+  {
+    "nombre": "banco_preguntas_subtema",
+    "status": 200,
+    "descripcion": "Banco de preguntas del subtema con origen y estado (vista docente)."
+  },
+  {
+    "nombre": "estadisticas_resumen",
+    "status": 200,
+    "descripcion": "Resumen de estadísticas de quiz del docente."
+  },
+  {
+    "nombre": "estadisticas_preguntas",
+    "status": 200,
+    "descripcion": "Acierto por pregunta del docente."
+  },
+  {
+    "nombre": "exportar_csv",
+    "status": 200,
+    "descripcion": "Exportación CSV de respuestas (solo cabecera de ejemplo; el cuerpo es texto)."
+  }
+]

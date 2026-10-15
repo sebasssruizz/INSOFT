@@ -1,0 +1,25 @@
+{
+  "nombre": "chat_ia_exito",
+  "descripcion": "Respuesta del asistente con RAG sobre el contenido oficial.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/ai/ask",
+    "cuerpo": {
+      "question": "¿qué es el glaucoma de ángulo cerrado?",
+      "subtopic_id": 1,
+      "course_id": 1
+    }
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "respuesta": "El glaucoma de ángulo cerrado eleva la presión intraocular y es una urgencia. Consulta el protocolo del curso.",
+      "degraded": false,
+      "subtopic_id": 1,
+      "chunks_usados": 1
+    }
+  }
+}

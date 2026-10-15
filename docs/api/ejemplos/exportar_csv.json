@@ -1,0 +1,16 @@
+{
+  "nombre": "exportar_csv",
+  "descripcion": "Exportación CSV de respuestas (solo cabecera de ejemplo; el cuerpo es texto).",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/quiz/stats/export.csv"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "text/csv; charset=utf-8"
+    },
+    "cuerpo": "fecha,estudiante,email,pregunta_id,pregunta,subtopic_id,opcion_elegida,correcta,intento,origen\r\n2026-10-11 23:02:15.627512+00:00,Estudiante Ejemplo,estudiante@example.com,1,¿Cuántos músculos extraoculares mueven cada globo ocular?,1,0,False,4407a872-31c8-448d-bbcc-1bf68018204d,banco\r\n"
+  },
+  "nota": "El cuerpo es CSV; aquí se guarda como texto."
+}
