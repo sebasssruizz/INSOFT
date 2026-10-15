@@ -1,0 +1,27 @@
+{
+  "nombre": "marcar_subtema_completado",
+  "descripcion": "Marca un subtema como completado. Cambia la barra de progreso.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/progress",
+    "cuerpo": {
+      "course_id": 1,
+      "subtopic_id": 1,
+      "completed": true
+    }
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "id": 1,
+      "user_id": 2,
+      "course_id": 1,
+      "subtopic_id": 1,
+      "completed": true,
+      "updated_at": "2026-10-11T23:02:15.664869Z"
+    }
+  }
+}

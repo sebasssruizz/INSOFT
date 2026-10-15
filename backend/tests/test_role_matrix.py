@@ -20,6 +20,7 @@ import os
 
 os.environ["DATABASE_URL"] = "sqlite:////tmp/opencode/oftallearn_test.db"
 os.environ["SECRET_KEY"] = "test-secret"
+os.environ["AI_PROVIDER"] = "openrouter"
 os.environ["DEV_AUTH_ENABLED"] = "true"
 os.environ["TEACHER_EMAILS"] = ""
 
@@ -43,6 +44,9 @@ def _mock_providers():
 
     from app.services import ai_service
 
+    orig_llm = ai_service._call_llm_for_questions
+    orig_openrouter = ai_service.call_openrouter
+
     async def fake_llm(*args, **kwargs):
         _FAKE_Q_STATE["n"] += 1
         n = _FAKE_Q_STATE["n"]
@@ -64,6 +68,9 @@ def _mock_providers():
     ai_service._call_llm_for_questions = AsyncMock(side_effect=fake_llm)
     ai_service.call_openrouter = AsyncMock(side_effect=RuntimeError("red bloqueada en pruebas"))
     yield
+    # Restaurar: con pytest-randomly los mocks NO pueden filtrarse a otros módulos
+    ai_service._call_llm_for_questions = orig_llm
+    ai_service.call_openrouter = orig_openrouter
 
 
 @pytest.fixture(scope="module")

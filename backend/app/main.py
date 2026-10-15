@@ -16,7 +16,7 @@ from app.api.router import api_router
 from app.api.routes.ai import limiter as ai_limiter
 from app.core.config import settings
 from app.database.base import Base
-from app.database.migrations import ensure_schema_compatibility
+from app.database.migrations import ensure_pgvector_extension, run_migrations
 from app.database.session import SessionLocal, ddl_engine, engine
 from app.seed.seed_content import seed_official_content
 from app.services.exceptions import ServiceError
@@ -70,10 +70,13 @@ async def lifespan(app: FastAPI):
     attempts = 30
     while True:
         try:
-            # Migraciones antes de create_all: habilita pgvector (lo necesitan
-            # las columnas `vector`) y añade columnas faltantes en tablas viejas.
-            ensure_schema_compatibility()
+            # Orden fijo: 1) pgvector (las columnas `vector` lo necesitan),
+            # 2) create_all (crea las tablas que falten), 3) migraciones
+            # versionadas (columnas, índices y registro en schema_migrations;
+            # necesitan que las tablas ya existan).
+            ensure_pgvector_extension()
             Base.metadata.create_all(bind=ddl_engine)
+            run_migrations()
             break
         except OperationalError:
             attempts -= 1
@@ -94,6 +97,12 @@ def create_app() -> FastAPI:
         description=settings.PROJECT_DESCRIPTION,
         version="1.0.0",
         lifespan=lifespan,
+        # Con el backend expuesto al público, la documentación interactiva
+        # (DOCS_ENABLED=false en producción) no se publica: reduce superficie
+        # de reconocimiento sin quitar nada operativo.
+        docs_url="/docs" if settings.DOCS_ENABLED else None,
+        redoc_url="/redoc" if settings.DOCS_ENABLED else None,
+        openapi_url=f"{settings.API_PREFIX}/openapi.json" if settings.DOCS_ENABLED else None,
     )
 
     # slowapi: el estado del app referencia el limiter principal; cada router
@@ -158,6 +167,13 @@ def create_app() -> FastAPI:
         start = time.perf_counter()
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
+        # Cabeceras de seguridad básicas (el HSTS lo añade el túnel/proxy que
+        # termina TLS: aplicar https en la capa de transporte). Sin CSP:
+        # la API no sirve HTML (docs se apagan en producción).
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer-when-downgrade")
+        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
         logging.getLogger("request").info(
             "%s %s -> %s (%.1f ms) request_id=%s",
             request.method,

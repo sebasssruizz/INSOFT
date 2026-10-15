@@ -1,0 +1,24 @@
+{
+  "nombre": "responder_pregunta",
+  "descripcion": "Respuesta a una pregunta de quiz. Devuelve si es correcta y la explicación.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/quiz/answers",
+    "cuerpo": {
+      "question_id": 1,
+      "selected_index": 0,
+      "attempt_id": "<UUID>"
+    }
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "is_correct": false,
+      "correct_index": 1,
+      "explanation": "Son seis: cuatro rectos (superior, inferior, medial y lateral) y dos oblicuos (superior e inferior). Conocer su inserción es clave en la cirugía de estrabismo."
+    }
+  }
+}

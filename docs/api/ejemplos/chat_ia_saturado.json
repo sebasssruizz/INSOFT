@@ -1,0 +1,25 @@
+{
+  "nombre": "chat_ia_saturado",
+  "descripcion": "Proveedor saturado: igual que el fallo, 200 con degraded=true (modo respaldo). No devuelve 429.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/ai/ask",
+    "cuerpo": {
+      "question": "consulta saturada",
+      "subtopic_id": 1,
+      "course_id": 1
+    }
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "respuesta": "[MODO RESPALDO] El asistente con IA no está disponible ahora mismo.\n\nEstos son los fragmentos relacionados del contenido oficial:\n\n1. El glaucoma de ángulo cerrado aumenta la presión intraocular y requiere valoración urgente.…",
+      "degraded": true,
+      "subtopic_id": 1,
+      "chunks_usados": 1
+    }
+  }
+}

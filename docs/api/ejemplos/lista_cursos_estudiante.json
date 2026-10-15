@@ -1,0 +1,48 @@
+{
+  "nombre": "lista_cursos_estudiante",
+  "descripcion": "Cursos del estudiante con progreso por subtemas. Alimenta la barra de progreso.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/courses"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": [
+      {
+        "id": 1,
+        "name": "Curso General de Oftalmología",
+        "description": "Curso oficial de INSOFT con el contenido académico completo de Oftalmología. Disponible automáticamente para todos los estudiantes.",
+        "code": null,
+        "type": "GENERAL",
+        "teacher_id": null,
+        "active": true,
+        "created_at": "2026-10-11T23:02:11.917596Z",
+        "progress_percentage": 0.0,
+        "completed_subtopics": 0,
+        "total_subtopics": 26,
+        "total_units": 9,
+        "estimated_minutes": 398,
+        "question_count": 85
+      },
+      {
+        "id": 2,
+        "name": "Curso de ejemplo",
+        "description": "Datos ficticios",
+        "code": "OFT-SHGC",
+        "type": "TEACHER",
+        "teacher_id": 1,
+        "active": true,
+        "created_at": "2026-10-11T23:02:12.185332Z",
+        "progress_percentage": 0.0,
+        "completed_subtopics": 0,
+        "total_subtopics": 26,
+        "total_units": 9,
+        "estimated_minutes": 398,
+        "question_count": 85
+      }
+    ]
+  }
+}

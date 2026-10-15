@@ -12,8 +12,17 @@ def create_access_token(user_id: int, role: str) -> str:
 
 
 def decode_access_token(token: str) -> dict:
-    """Decodifica y valida un JWT. Lanza JWTError si no es válido."""
+    """Decodifica y valida un JWT. Lanza JWTError si no es válido.
+
+    Exige firma con el algoritmo configurado (nunca `none`), `exp` (sin expiración
+    un token serviría para siempre) y `sub`. Caducado -> JWTError.
+    """
     try:
-        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        return jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"require_exp": True, "require_sub": True, "verify_aud": False},
+        )
     except JWTError as exc:
         raise JWTError("Token inválido o expirado") from exc

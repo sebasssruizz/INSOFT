@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
     LOG_FORMAT: str = "plain"            # "json" | "plain"
 
+    # Documentación OpenAPI. Por defecto APAGADA: con el backend expuesto,
+    # /docs, /redoc y /openapi.json solo dan información a un atacante. Para
+    # iterar en local, define DOCS_ENABLED=true explícitamente.
+    DOCS_ENABLED: bool = False
+
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
 
@@ -62,6 +67,14 @@ class Settings(BaseSettings):
 
     # Login de desarrollo (sin Google). SOLO para pruebas locales. Desactivado por defecto.
     DEV_AUTH_ENABLED: bool = False
+
+    # Cómo sincroniza el arranque el contenido oficial (seed):
+    #   always   → reescribe y BORRA subtemas que no estén en la semilla (solo dev).
+    #   if_empty → añade unidades oficiales que falten; no toca ninguna existente
+    #              ni borra nada. Es el valor por defecto fuera de desarrollo.
+    #   off      → no toca el contenido en el arranque.
+    # Vacío = automático: always si DEV_AUTH_ENABLED, si no if_empty.
+    SEED_MODE: str = ""
 
     # Modelo local de embeddings para el RAG (sentence-transformers, corre en CPU).
     # Multilingüe (español incluido), 384 dimensiones y liviano para CPU.
@@ -107,6 +120,11 @@ class Settings(BaseSettings):
     # Respuestas de quiz calificadas en servidor (por usuario; default alto)
     QUIZ_ANSWER_RATE_LIMIT: str = "120/hour"
 
+    # Endpoints de login (públicos): tope por IP contra credential stuffing.
+    # El default EN CÓDIGO es permissivo (local/tests); al exponer el compose
+    # impone el valor estricto AUTH_RATE_LIMIT=60/hour (docker-compose.yml).
+    AUTH_RATE_LIMIT: str = "99999/hour"
+
     # Modo práctica (banco + IA reutilizable)
     PRACTICE_RATE_LIMIT: str = "30/hour"
     PRACTICE_DEFAULT_COUNT: int = 5
@@ -124,6 +142,16 @@ class Settings(BaseSettings):
             return value.replace("postgresql://", "postgresql+psycopg2://", 1)
         return value
 
+    @property
+    def seed_mode_efectivo(self) -> str:
+        """Modo de semilla que se aplica (valida el valor configurado)."""
+        valor = (self.SEED_MODE or "").strip().lower()
+        if not valor:
+            return "always" if self.DEV_AUTH_ENABLED else "if_empty"
+        if valor not in ("always", "if_empty", "off"):
+            raise ValueError("SEED_MODE debe ser always, if_empty u off.")
+        return valor
+
     @model_validator(mode="after")
     def _require_secret_key_outside_dev(self) -> "Settings":
         """Producción no arranca con SECRET_KEY placeholder.
@@ -132,6 +160,10 @@ class Settings(BaseSettings):
         SECRET_KEY está vacía o en su valor placeholder: los JWT firmados
         con una clave pública conocida no son seguros.
         """
+        if not 5 <= self.ACCESS_TOKEN_EXPIRE_MINUTES <= 60 * 24 * 30:
+            raise RuntimeError(
+                "ACCESS_TOKEN_EXPIRE_MINUTES fuera de rango: entre 5 minutos y 30 días."
+            )
         if not self.DEV_AUTH_ENABLED and self.SECRET_KEY.strip() in (
             "",
             "change-me-in-production",

@@ -1,0 +1,23 @@
+{
+  "nombre": "chat_ia_limite_diario",
+  "descripcion": "Tope diario por usuario: 429 con Retry-After de 3600 s.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/ai/ask",
+    "cuerpo": {
+      "question": "segunda del día",
+      "subtopic_id": 1,
+      "course_id": 1
+    }
+  },
+  "respuesta": {
+    "status": 429,
+    "cabeceras": {
+      "retry-after": "3600",
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "detail": "Alcanzaste el límite de consultas del día para el asistente."
+    }
+  }
+}

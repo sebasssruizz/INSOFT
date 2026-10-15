@@ -1,0 +1,28 @@
+{
+  "nombre": "crear_curso_docente",
+  "descripcion": "Docente crea un curso y recibe el código de acceso.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/courses",
+    "cuerpo": {
+      "name": "Curso de ejemplo",
+      "description": "Datos ficticios"
+    }
+  },
+  "respuesta": {
+    "status": 201,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "id": 2,
+      "name": "Curso de ejemplo",
+      "description": "Datos ficticios",
+      "code": "OFT-SHGC",
+      "type": "TEACHER",
+      "teacher_id": 1,
+      "active": true,
+      "created_at": "2026-10-11T23:02:12.185332Z"
+    }
+  }
+}

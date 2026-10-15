@@ -1,18 +1,13 @@
-const DEFAULT_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-function getApiUrl() {
-  // Si VITE_API_URL está configurado, usarlo
-  if (DEFAULT_API_URL && DEFAULT_API_URL !== 'http://localhost:8000') {
-    return DEFAULT_API_URL
-  }
-  // Si estamos en producción (distinto host), inferir el backend desde el mismo host
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return `${window.location.protocol}//${window.location.hostname}:8000`
-  }
-  return DEFAULT_API_URL
-}
-
-const API_URL = getApiUrl()
+// URL base del backend. En producción VITE_API_URL es obligatoria (vite.config.js
+// falla el build si falta). NO hay fallback a otro host: adivinarlo dejaba
+// desplegados apuntando a un puerto 8000 inexistente. El literal de desarrollo
+// queda dentro de `import.meta.env.DEV`, así que Vite lo elimina del bundle.
+const API_URL = (() => {
+  const configured = import.meta.env.VITE_API_URL
+  if (configured) return configured.replace(/\/+$/, '')
+  if (import.meta.env.DEV) return 'http://localhost:8000'
+  throw new Error('Falta VITE_API_URL en el build de producción.')
+})()
 
 const TOKEN_KEY = 'insoft_token'
 const USER_KEY = 'insoft_user'
