@@ -59,8 +59,9 @@ Reglas:
 >   docker-compose ya lo dejan `false` por defecto.
 > - Con `DEV_AUTH_ENABLED=false`, `POST /api/auth/dev` responde **403** sin crear
 >   usuario ni sesión, y el build de producción del frontend **no contiene** la
->   tarjeta "Acceso de desarrollo" (depende de `import.meta.env.DEV` o de
->   `VITE_DEV_AUTH=true`, que en Vercel no se define).
+>   tarjeta "Acceso de desarrollo" ni la ruta `/auth/dev` (solo depende de
+>   `import.meta.env.DEV`; ya no existe `VITE_DEV_AUTH`). `npm run build` ejecuta
+>   `scripts/check-dist.mjs`, que falla si el bundle contiene cadenas prohibidas.
 > - Además, si `DEV_AUTH_ENABLED=false` y `SECRET_KEY` está vacía o es el
 >   placeholder "change-me-in-production", el backend **se niega a arrancar**.
 
@@ -124,7 +125,6 @@ Variables (Project Settings → Environment Variables):
 |---|---|
 | `VITE_API_URL` | `https://insoft-backend.onrender.com` |
 | `VITE_GOOGLE_CLIENT_ID` | `<client-id>.apps.googleusercontent.com` |
-| `VITE_DEV_AUTH` | `false` |
 
 La reescritura SPA ya está en `frontend/vercel.json`:
 
@@ -206,8 +206,9 @@ docker compose up --build -d
 `AI_*_RATE_LIMIT`, `QUIZ_MAX_QUESTIONS`, `PRACTICE_*` (ver .env.example
 en la carpeta raíz del proyecto).
 
-**Frontend (Vercel / build args):** `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`,
-`VITE_DEV_AUTH`.
+**Frontend (Vercel / build args):** `VITE_API_URL` (obligatoria en producción; el
+build falla si falta) y `VITE_GOOGLE_CLIENT_ID`. El stack local de compose añade
+`ALLOW_LOCAL_API=1`, que permite `localhost:8000` en el bundle; Vercel no lo define.
 
 **Neon:** no hay ninguna administración manual salvo la URL directa vs pooler.
 

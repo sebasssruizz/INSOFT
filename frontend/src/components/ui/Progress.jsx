@@ -66,14 +66,29 @@ export function ProgressBar({ value, size = 'md', tone = 'blue', className, labe
 /**
  * Anillo de progreso para cifras compactas (cabecera de curso, tarjetas).
  */
-export function ProgressRing({ value, size = 56, stroke = 5, className, children, tone = 'blue' }) {
+export function ProgressRing({
+  value,
+  size = 56,
+  stroke = 5,
+  className,
+  children,
+  tone = 'blue',
+  label = 'Progreso',
+}) {
   const percentage = clamp(value)
   const fill = useFillFromZero(percentage)
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
 
   return (
-    <div className={cn('relative inline-flex items-center justify-center', className)}>
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuenow={Math.round(percentage)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      className={cn('relative inline-flex items-center justify-center', className)}
+    >
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
         <circle
           cx={size / 2}
