@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faComputerMouse,
@@ -14,27 +14,9 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 import { EyeLoader } from '../components/ui/EyeLoader'
+import { INSTRUMENTOS, instrumentForMesh, resolveMesa } from '../lib/mesas'
 
-const MODEL_URL = '/models/Prueba_12.glb'
-const INITIAL_CAMERA = { x: -0.5, y: 5.18, z: -2.63 }
-const TOOL_INFO = {
-  blepharostat: {
-    title: 'Blefaróstato Colibrí',
-    eyebrow: 'Instrumental palpebral',
-    description:
-      'Separador autoestático utilizado para mantener los párpados abiertos y despejar el campo quirúrgico durante procedimientos oftalmológicos.',
-    details: ['Facilita la exposición del globo ocular', 'Debe colocarse sin ejercer presión excesiva', 'Se revisa su limpieza y articulación antes del montaje'],
-    modelUrl: encodeURI('/models/blefaróstato__B0001.glb'),
-  },
-  conjunctiveForceps: {
-    title: 'Pinza conjuntiva',
-    eyebrow: 'Instrumental de disección',
-    description:
-      'Pinza delicada para sujetar y manipular la conjuntiva y tejidos superficiales con precisión durante la cirugía oftalmológica.',
-    details: ['Permite una sujeción atraumática', 'Sus puntas deben estar alineadas', 'Se utiliza con movimientos firmes y controlados'],
-    modelUrl: encodeURI('/models/Pinza conjuntiva__B0002.glb'),
-  },
-}
+const INITIAL_CAMERA = { x: 1.08, y: 5.18, z: 2.9 }
 
 function KeyCap({ children, className = '' }) {
   return (
@@ -48,6 +30,9 @@ function KeyCap({ children, className = '' }) {
 
 export default function InteractiveViewPage() {
   const { courseId, subtopicId } = useParams()
+  const [searchParams] = useSearchParams()
+  const mesaKey = searchParams.get('mesa')
+  const mesa = resolveMesa(mesaKey)
   const canvasRef = useRef(null)
   const cameraReadoutRef = useRef(null)
   const startGameRef = useRef(() => {})
@@ -75,6 +60,12 @@ export default function InteractiveViewPage() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return undefined
+
+    // Sin mesa válida en la URL no hay nada que cargar: se muestra el estado de error.
+    if (!mesa) {
+      setStatus('error')
+      return undefined
+    }
 
     const scene = new THREE.Scene()
     scene.background = new THREE.Color('#b8c5ca')
@@ -236,7 +227,7 @@ export default function InteractiveViewPage() {
     closeInspectionRef.current = closeInspection
 
     const openInspection = (id, sourceObject) => {
-      if (!TOOL_INFO[id]) return
+      if (!INSTRUMENTOS[id]) return
       inspectionRef.current.id = id
       inspectionRef.current.savedPosition = camera.position.clone()
       inspectionRef.current.savedQuaternion = camera.quaternion.clone()
@@ -259,8 +250,9 @@ export default function InteractiveViewPage() {
       const inspectionTarget = new THREE.Vector3(0, isTouchDevice ? -0.3 : 0.95, 0)
       transitionCamera(inspectionPosition, getInspectionQuaternion(inspectionPosition, inspectionTarget))
 
-      // If the individual GLB is added later, use it automatically; otherwise keep the embedded mesh.
-      modelLoader.load(TOOL_INFO[id].modelUrl, (gltf) => {
+      // Si el GLB individual del instrumento está disponible se carga automáticamente;
+      // si falla se conserva la malla incrustada de la mesa.
+      modelLoader.load(INSTRUMENTOS[id].modelUrl, (gltf) => {
         if (!disposed && inspectionRef.current.id === id) mountInspectionObject(gltf.scene)
       }, undefined, () => {})
     }
@@ -407,6 +399,13 @@ export default function InteractiveViewPage() {
     surgicalLight.castShadow = true
     const shadowMapSize = isTouchDevice ? 1024 : 2048
     surgicalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
+    // La mesa y el instrumental son láminas finas: sin bias/normalBias la sombra
+    // "sangra" a través de ellas y se ve desde abajo. Estos valores la asientan.
+    surgicalLight.shadow.bias = -0.0003
+    surgicalLight.shadow.normalBias = 0.04
+    surgicalLight.shadow.camera.near = 1
+    surgicalLight.shadow.camera.far = 20
+    surgicalLight.shadow.camera.updateProjectionMatrix()
     const surgicalTarget = new THREE.Object3D()
     surgicalTarget.position.set(0, 0, 0)
     scene.add(surgicalLight, surgicalTarget)
@@ -449,76 +448,28 @@ export default function InteractiveViewPage() {
     floor.receiveShadow = true
     roomGroup.add(floor)
 
-    const addRoomBox = (geometry, material, position, options = {}) => {
-      const mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(...position)
-      mesh.castShadow = options.castShadow ?? false
-      mesh.receiveShadow = options.receiveShadow ?? true
-      roomGroup.add(mesh)
-      return mesh
-    }
-
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xd5dfe1, roughness: 0.9 })
-    const ceilingMaterial = new THREE.MeshStandardMaterial({ color: 0xe8eef0, roughness: 0.84 })
-    const trimMaterial = new THREE.MeshStandardMaterial({ color: 0x7b9da9, roughness: 0.72, metalness: 0.08 })
-    const cabinetMaterial = new THREE.MeshStandardMaterial({ color: 0x607b86, roughness: 0.45, metalness: 0.28 })
-    const darkMetalMaterial = new THREE.MeshStandardMaterial({ color: 0x263940, roughness: 0.35, metalness: 0.65 })
-    const lightPanelMaterial = new THREE.MeshStandardMaterial({
-      color: 0xf8fcff,
-      emissive: 0xd8efff,
-      emissiveIntensity: 2.2,
-      roughness: 0.28,
-    })
-
-    // Room shell: the physical walls keep the lower half of the surgical room readable.
-    addRoomBox(new THREE.BoxGeometry(70, 0.25, 70), ceilingMaterial, [0, 12, 8])
-    addRoomBox(new THREE.BoxGeometry(70, 20, 0.25), wallMaterial, [0, 6, 18])
-    addRoomBox(new THREE.BoxGeometry(0.25, 20, 70), wallMaterial, [-18, 6, 0])
-    addRoomBox(new THREE.BoxGeometry(0.25, 20, 70), wallMaterial, [18, 6, 0])
-
-    // Blue-gray wall trim and a recessed door make the space read as a clinical room.
-    addRoomBox(new THREE.BoxGeometry(70, 0.16, 0.12), trimMaterial, [0, 4.1, 17.8])
-    addRoomBox(new THREE.BoxGeometry(0.12, 0.16, 36), trimMaterial, [-17.8, 4.1, 0])
-    addRoomBox(new THREE.BoxGeometry(5.2, 8.5, 0.12), darkMetalMaterial, [10.5, 4.25, 17.78])
-    addRoomBox(new THREE.BoxGeometry(4.5, 7.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x9db2bb, roughness: 0.3, metalness: 0.15 }), [10.5, 4.25, 17.68])
-
-    // Wall cabinets and a compact equipment column suggest the operating-room setup.
-    addRoomBox(new THREE.BoxGeometry(5.4, 5.5, 0.7), cabinetMaterial, [-10.5, 5.4, 17.35], { castShadow: true })
-    for (let shelf = 0; shelf < 3; shelf += 1) {
-      addRoomBox(new THREE.BoxGeometry(4.8, 0.08, 0.9), darkMetalMaterial, [-10.5, 3.8 + shelf * 1.5, 16.92])
-    }
-    addRoomBox(new THREE.BoxGeometry(1.1, 5.8, 1.1), darkMetalMaterial, [6.2, 3.2, 16.9], { castShadow: true })
-    addRoomBox(new THREE.BoxGeometry(1.5, 0.8, 0.14), lightPanelMaterial, [6.2, 4.4, 16.3])
-
-    // Recessed ceiling panels and a brighter surgical lamp above the working area.
-    for (const z of [2, 8, 14]) {
-      addRoomBox(new THREE.BoxGeometry(4.2, 0.08, 2.2), lightPanelMaterial, [-5, 11.82, z])
-      addRoomBox(new THREE.BoxGeometry(4.2, 0.08, 2.2), lightPanelMaterial, [5, 11.82, z])
-    }
-    addRoomBox(new THREE.BoxGeometry(3.8, 0.16, 3.2), lightPanelMaterial, [0, 9.25, 0], { castShadow: true })
-    addRoomBox(new THREE.BoxGeometry(0.18, 2, 0.18), darkMetalMaterial, [0, 10.55, 0], { castShadow: true })
+    // Escenario limpio: la mesa ya incluye su mobiliario e instrumental, así que
+    // basta el piso y la iluminación para leerla sin distracciones.
 
     modelLoader.load(
-      MODEL_URL,
+      mesa.modelUrl,
       (gltf) => {
         if (disposed) return
 
         const model = gltf.scene
         mainModelRef.current = model
-        let meshIndex = 0
         model.traverse((object) => {
           if (!object.isMesh) return
           object.castShadow = true
           object.receiveShadow = true
           if (object.material) object.material.needsUpdate = true
-          if (meshIndex === 1) {
-            object.userData.inspectId = 'blepharostat'
-            interactiveMeshes.push(object)
-          } else if (meshIndex === 2) {
-            object.userData.inspectId = 'conjunctiveForceps'
+          // Cada instrumento se identifica por el nombre de su malla (estable y
+          // compartido con el catálogo); las copias `.001` también cuentan.
+          const instrument = instrumentForMesh(mesaKey, object.name)
+          if (instrument) {
+            object.userData.inspectId = instrument.id
             interactiveMeshes.push(object)
           }
-          meshIndex += 1
         })
 
         const bounds = new THREE.Box3().setFromObject(model)
@@ -643,7 +594,7 @@ export default function InteractiveViewPage() {
         else object.material.dispose()
       })
     }
-  }, [])
+  }, [mesaKey])
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-blue-950 text-white">
@@ -657,8 +608,8 @@ export default function InteractiveViewPage() {
 
       <header className="pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between gap-3 bg-gradient-to-b from-blue-950/90 to-transparent px-4 pb-6 pt-[calc(0.9rem+env(safe-area-inset-top))] sm:gap-4 sm:px-8 sm:py-7 sm:pt-7">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-300">Vista interactiva</p>
-          <h1 className="mt-1 font-display text-base font-semibold leading-tight text-white sm:text-2xl">Armado de la mesa quirúrgica</h1>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-300">{mesa?.eyebrow ?? 'Vista interactiva'}</p>
+          <h1 className="mt-1 font-display text-base font-semibold leading-tight text-white sm:text-2xl">{mesa?.title ?? 'Mesa quirúrgica'}</h1>
           <p className="mt-1 hidden text-xs text-blue-200 sm:block sm:text-sm">WASD o flechas para moverte · mouse para mirar</p>
           <p className="mt-1 text-[11px] text-blue-200 sm:hidden">Joystick para moverte · arrastra para mirar</p>
         </div>
@@ -733,13 +684,13 @@ export default function InteractiveViewPage() {
           <section className="pointer-events-auto absolute inset-x-0 bottom-0 max-h-[48vh] overflow-y-auto rounded-t-3xl border border-blue-300/25 bg-[#102a3b] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 sm:inset-x-auto sm:bottom-8 sm:left-8 sm:max-h-none sm:w-[min(90%,24rem)] sm:rounded-2xl sm:p-7">
             <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/20 sm:hidden" />
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-300">
-              {TOOL_INFO[inspectedId].eyebrow}
+              {INSTRUMENTOS[inspectedId].eyebrow}
             </p>
             <h2 className="mt-2 font-display text-2xl font-semibold text-white sm:text-3xl">
-              {TOOL_INFO[inspectedId].title}
+              {INSTRUMENTOS[inspectedId].title}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:mt-4">
-              {TOOL_INFO[inspectedId].description}
+              {INSTRUMENTOS[inspectedId].description}
             </p>
             <div className="mt-4 rounded-lg border border-blue-200/15 bg-blue-950/60 px-3 py-2 text-[11px] leading-relaxed text-blue-200">
               {isTouchDevice ? (
@@ -753,7 +704,7 @@ export default function InteractiveViewPage() {
               )}
             </div>
             <ul className="mt-5 space-y-2 text-xs text-blue-200">
-              {TOOL_INFO[inspectedId].details.map((detail) => (
+              {INSTRUMENTOS[inspectedId].details.map((detail) => (
                 <li key={detail} className="flex gap-2">
                   <span className="text-blue-300">•</span>
                   {detail}
@@ -890,14 +841,14 @@ export default function InteractiveViewPage() {
       )}
 
       <div className="pointer-events-none absolute bottom-5 left-5 hidden rounded-lg border border-white/10 bg-blue-950/60 px-3 py-2 text-[11px] text-blue-200 backdrop-blur sm:bottom-7 sm:left-8 sm:block">
-        Modelo: Prueba_12.glb · Sala quirúrgica 3D
+        {mesa ? `Modelo: ${mesa.modelUrl.split('/').pop()} · ${mesa.title}` : 'Mesa quirúrgica 3D'}
       </div>
 
       <div
         ref={cameraReadoutRef}
         className="pointer-events-none absolute bottom-5 right-5 hidden rounded-lg border border-blue-300/30 bg-blue-950/70 px-3 py-2 font-mono text-[11px] text-blue-100 backdrop-blur sm:bottom-7 sm:right-8 sm:block"
       >
-        Cámara · X -0.50 · Y 5.18 · Z -2.63
+        Cámara · X 1.08 · Y 5.18 · Z 2.90
       </div>
     </main>
   )

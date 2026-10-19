@@ -1,0 +1,4 @@
+# Modelos 3D de runtime (pesados): Git LFS hacia adelante, sin migrar historia.
+# Los .glb ya trackeados como blobs normales siguen en el historial; los nuevos
+# entran como punteros LFS.
+*.glb filter=lfs diff=lfs merge=lfs -text

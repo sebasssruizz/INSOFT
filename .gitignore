@@ -25,3 +25,7 @@ graft/
 
 # Entregables binarios de revision (se envian directo a la docente, no por git)
 docs/revision/*.docx
+
+# Fuentes de modelado 3D (.blend, variantes, referencias): fuera del build y del repo.
+# Los .glb de runtime viven en frontend/public/models/{mesas,instrumentos}.
+frontend/assets-src/
