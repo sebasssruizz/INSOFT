@@ -86,6 +86,15 @@ Vocabulario único; no crees variantes nuevas sin quitar la vieja.
   campo visual), `PageLoader` (el mismo, centrado en una pantalla) e
   `IrisSpinner` (iris que gira, dentro de los botones). Tono `inverse` para
   fondos azules.
+- `course/CourseProgress` — progreso del curso en su cabecera: un tramo por
+  unidad (ancho proporcional a sus subtemas), ficha al pasar el cursor y enlace
+  a la unidad. **Sin cuentas regresivas de tiempo**: el avance se cuenta en lo
+  hecho, no en lo que falta.
+- `AiChatWidget` — Sofía, la asistente. Saluda una vez por sesión al
+  estudiante y propone preguntas según la unidad en la que está
+  (`lib/chatSuggestions.js`). En móvil ocupa la pantalla visible
+  (`visualViewport`, para quedar encima del teclado) y su campo usa 16px: por
+  debajo iOS hace zoom al enfocar.
 - `ui/Timeline` — recorrido horizontal anclado del temario de la portada.
 - `ui/IrisMark` — iris en línea fina para el fondo de superficies azules. Siempre
   decorativo y muy tenue (`text-white/[0.06]`).
@@ -112,7 +121,9 @@ Cada una confirma algo que acaba de pasar; ninguna es decorativa por sí sola.
 |---|---|
 | Botones | Ceden a `scale(0.97)` al pulsarse; al cargar muestran el `IrisSpinner` |
 | Cambio de pantalla | Barra fina azul en el borde superior (`RouteProgress` en `Layout`) |
-| Barras y anillos de progreso | Se llenan desde cero al aparecer (`useFillFromZero`) |
+| Barras y anillos de progreso | Se llenan desde cero al aparecer (`useFillFromZero`); a medias llevan un brillo que avanza (`animate-sheen`) y la cifra se desliza al cambiar |
+| Progreso del curso | Cada tramo de unidad se engrosa y muestra su ficha al pasar el cursor; al completar un subtema aparece un `+1` junto a la cifra |
+| Sofía | Burbuja de saludo junto al botón al entrar; el panel sube desde abajo en móvil |
 | Opción de repaso | Estado «enviando» con iris mientras califica el servidor; vaivén corto (`animate-shake`) al fallar; *pop* del icono al acertar |
 | Nota del repaso | Cuenta hasta el porcentaje |
 | Menú lateral en móvil | Se desliza desde la izquierda; bloquea el scroll de fondo; cierra con Escape |
@@ -162,7 +173,7 @@ cada pantalla debe caber por sí misma. Lo que sí puede desplazarse a lo ancho
 es un bloque concreto dentro de su propio contenedor con `overflow-x-auto`
 —la tabla de estudiantes, el ejemplo de Markdown—, nunca la página.
 
-Cinco reglas aprendidas:
+Reglas aprendidas:
 
 - **`clip`, nunca `hidden`, en `html` y `body`.** `overflow-x: hidden` en `body`
   lo convierte en contenedor de scroll y desactiva todo `position: sticky`:
@@ -178,6 +189,18 @@ Cinco reglas aprendidas:
   solo aparece a partir de `xl`; por debajo estorba en vez de decorar. Por lo
   mismo, la cabecera del curso solo se ancla desde `lg`: en móvil ocuparía
   media pantalla.
+- **El hover solo existe con cursor.** `future.hoverOnlyWhenSupported` en
+  `tailwind.config.js` evita que en táctil las tarjetas queden «levantadas»
+  tras tocarlas. Lo que en escritorio se descubre al pasar el cursor (la ficha
+  de cada unidad en la barra del curso) en táctil se descubre al tocar.
+- **Zonas táctiles de 44px** aunque lo visible sea fino (tramos de la barra del
+  curso). En táctil los tramos miden lo mismo para que ninguno quede de 11px.
+- **Campos de texto a 16px en táctil.** Por debajo, iOS hace zoom al enfocarlos.
+- **Carruseles con `scroll-px-*`** igual a su padding: con `snap-start` y sin
+  él, la primera tarjeta queda pegada al borde. Sin barra visible
+  (`.no-scrollbar`); la tarjeta siguiente asomando es la pista.
+- **Columnas lado a lado del panel del estudiante desde `xl`.** Con la barra
+  lateral, a 1024px no caben la portada y su tira de unidades.
 - **Botones de rótulo largo a ancho completo en móvil** (`w-full sm:w-auto`):
   dentro de un botón de altura fija, el texto plegado se corta.
 
