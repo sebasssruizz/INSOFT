@@ -5,7 +5,6 @@ import {
   faArrowRight,
   faCheck,
   faChevronRight,
-  faClock,
   faKey,
   faListCheck,
   faPlus,
@@ -15,8 +14,8 @@ import JoinCourseForm from '../components/JoinCourseForm'
 import { Badge } from '../components/ui/Meta'
 import { Button } from '../components/ui/Button'
 import { IrisMark } from '../components/ui/IrisMark'
-import { ProgressBar } from '../components/ui/Progress'
-import { formatDuration, splitUnitName, unitIdentity } from '../lib/curriculum'
+import { ProgressBar, ProgressRing } from '../components/ui/Progress'
+import { splitUnitName, unitIdentity } from '../lib/curriculum'
 import { cn } from '../lib/utils'
 import { getCourseTopics } from '../services/contentService'
 import { useAuth } from '../hooks/useAuth'
@@ -192,9 +191,23 @@ function Hero({ user, course, topics, loading }) {
         {course && (
           <div className="mt-7 xl:mt-auto xl:pt-8">
             {next && !done && (
+<>{/* Conserva el próximo contenido y sus preguntas de repaso. */}
               <p className="mb-3 max-w-[34ch] text-[0.8125rem] leading-snug text-ink-600">
                 Sigue: <span className="font-semibold text-ink-900">{next.name}</span>
               </p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-600">
+                {next.question_count > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <FontAwesomeIcon
+                      icon={faListCheck}
+                      className="text-[0.65rem]"
+                      aria-hidden="true"
+                    />
+                    {next.question_count} preguntas de repaso
+                  </span>
+                )}
+              </div>
+</>
             )}
             <Button
               as={Link}
@@ -352,12 +365,6 @@ function CurrentUnit({ course, topics, loading }) {
                 </span>
 
                 <span className="hidden flex-col gap-0.5 text-[0.8125rem] text-ink-500 sm:flex">
-                  {subtopic.estimated_minutes > 0 && (
-                    <span className="tabular inline-flex items-center gap-1.5">
-                      <FontAwesomeIcon icon={faClock} className="text-[0.65rem] text-ink-400" />
-                      {formatDuration(subtopic.estimated_minutes)} de lectura
-                    </span>
-                  )}
                   {subtopic.question_count > 0 && (
                     <span className="tabular inline-flex items-center gap-1.5">
                       <FontAwesomeIcon icon={faListCheck} className="text-[0.65rem] text-ink-400" />
@@ -431,12 +438,25 @@ function QuizCallout({ course, topics }) {
 
 function CourseItem({ course, index }) {
   const percentage = Math.round(course.progress_percentage || 0)
+  const isDone = percentage >= 100
   return (
     <li className="animate-rise-in" style={{ animationDelay: `${260 + index * 60}ms` }}>
       <Link
         to={`/courses/${course.id}`}
         className="group block rounded-xl bg-ink-100 p-4 transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-white hover:shadow-e2"
       >
+        <span className="mb-3 flex items-center gap-3">
+          {isDone ? (
+            <span aria-label="Curso completado" className="flex h-11 w-11 items-center justify-center rounded-full bg-correct-50 text-correct-700">
+              <FontAwesomeIcon icon={faCheck} aria-hidden="true" />
+            </span>
+          ) : (
+            <ProgressRing value={percentage} size={44} stroke={4} className="shrink-0" />
+          )}
+          <span className="tabular text-xs text-ink-500">
+            {course.total_units} unidades · {course.total_subtopics} subtemas
+          </span>
+        </span>
         <span className="flex items-start justify-between gap-3">
           <span className="text-[0.9375rem] font-semibold leading-snug text-ink-900">
             {course.name}

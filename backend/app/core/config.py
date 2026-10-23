@@ -5,7 +5,7 @@ entorno (ver .env.example). Nunca hardcodear credenciales en el código.
 """
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +18,26 @@ class Settings(BaseSettings):
 
     # Base de datos PostgreSQL
     DATABASE_URL: str = "postgresql+psycopg2://oftallearn:oftallearn@db:5432/oftallearn"
+    # Fuerza SSL en la conexión (se activa sola para neon.tech). Para Neon:
+    # DATABASE_SSL=true en los proveedores que no entregan host *.neon.tech.
+    DATABASE_SSL: bool = False
+    # URL opcional de conexión DIRECTA para DDL (migraciones/create_all).
+    # Vacío: se deriva de DATABASE_URL quitando "-pooler" del host (Neon).
+    DATABASE_URL_DDL: str = ""
+    # Pool de la app (ajustado para Neon: tope 100 conexiones/free).
+    DB_POOL_SIZE: int = 5          # conexiones permanentes
+    DB_MAX_OVERFLOW: int = 2       # extra temporales bajo picos
+    DB_POOL_RECYCLE: int = 1800    # re-abrir antes de que el proxy corte (s)
+    DB_CONNECT_TIMEOUT: int = 10   # timeout de conexión TCP (s)
+
+    # ── Observabilidad ─────────────────────────────────────────────────
+    LOG_LEVEL: str = "INFO"              # DEBUG|INFO|WARNING|ERROR
+    LOG_FORMAT: str = "plain"            # "json" | "plain"
+
+    # Documentación OpenAPI. Por defecto APAGADA: con el backend expuesto,
+    # /docs, /redoc y /openapi.json solo dan información a un atacante. Para
+    # iterar en local, define DOCS_ENABLED=true explícitamente.
+    DOCS_ENABLED: bool = False
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
@@ -32,12 +52,14 @@ class Settings(BaseSettings):
 
     # CORS para pruebas desde el móvil por IP (localhost, 127.0.0.1, rangos privados
     # 10.x, 192.168.x, 172.16-31.x y CGNAT/Tailscale 100.64-127.x, cualquier puerto).
+    # Añadido: previews/producción de Vercel (https://*.vercel.app).
     BACKEND_CORS_ORIGIN_REGEX: str = (
         r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0|"
         r"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
         r"192\.168\.\d{1,3}\.\d{1,3}|"
         r"172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|"
         r"100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3})(:\d+)?$"
+        r"|^https://.*\.vercel\.app$"
     )
 
     # Correos que obtienen automáticamente el rol de profesor al registrarse (separados por comas)
@@ -46,9 +68,25 @@ class Settings(BaseSettings):
     # Login de desarrollo (sin Google). SOLO para pruebas locales. Desactivado por defecto.
     DEV_AUTH_ENABLED: bool = False
 
+    # Cómo sincroniza el arranque el contenido oficial (seed):
+    #   always   → reescribe y BORRA subtemas que no estén en la semilla (solo dev).
+    #   if_empty → añade unidades oficiales que falten; no toca ninguna existente
+    #              ni borra nada. Es el valor por defecto fuera de desarrollo.
+    #   off      → no toca el contenido en el arranque.
+    # Vacío = automático: always si DEV_AUTH_ENABLED, si no if_empty.
+    SEED_MODE: str = ""
+
     # Modelo local de embeddings para el RAG (sentence-transformers, corre en CPU).
     # Multilingüe (español incluido), 384 dimensiones y liviano para CPU.
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    # Motor de embeddings local: "torch" (sentence-transformers, como siempre)
+    # u "onnx" (fastembed: mismo modelo, vectores idénticos, ~40% menos RAM y
+    # ~100x más rápido por consulta). Con "onnx" NO se reindexa: dimensión y
+    # modelo son los mismos. Ver docs/perf/INFORME_MEMORIA.md.
+    EMBEDDINGS_BACKEND: str = "torch"
+    # Imagen Docker: modelo precargado, sin verificación remota en runtime.
+    EMBEDDINGS_LOCAL_FILES_ONLY: bool = False
+    EMBEDDINGS_THREADS: int = 1
 
     # OpenRouter (IA)
     OPENROUTER_API_KEY: str = ""
@@ -56,6 +94,19 @@ class Settings(BaseSettings):
     OPENROUTER_ANSWER_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
     AI_ASK_RATE_LIMIT: str = "60/hour"
     OPENROUTER_GLOBAL_LIMIT_PER_MIN: int = 18
+    # ── Robustez IA (T3) ────────────────────────────────────────────────
+    # Cadena de modelos con respaldo: se prueba en orden; el primero que
+    # responde gana. CSV. Valor por defecto = modelo de respuestas actual.
+    AI_MODEL_CHAIN: str = ""  # vacío = solo OPENROUTER_ANSWER_MODEL
+    AI_TIMEOUT_SECS: float = 20.0
+    AI_MAX_ATTEMPTS: int = 2           # intentos por modelo (backoff+jitter entre)
+    AI_BACKOFF_BASE_SECS: float = 0.5  # backoff exponencial: base * 2^(n-1) + jitter
+    # Circuit breaker: tras N fallos consecutivos se abre M segundos.
+    AI_CB_THRESHOLD: int = 5
+    AI_CB_COOLDOWN_SECS: float = 30.0
+    # Límites adicionales del asistente:
+    AI_DAILY_LIMIT_PER_USER: int = 50   # 0 = sin límite diario
+    AI_MAX_CONCURRENCY: int = 4         # semáforo global del proceso; 0 = sin tope
 
     # Google Gemini (IA) - proveedor alternativo gratuito
     GEMINI_API_KEY: str = ""
@@ -71,6 +122,11 @@ class Settings(BaseSettings):
 
     # Respuestas de quiz calificadas en servidor (por usuario; default alto)
     QUIZ_ANSWER_RATE_LIMIT: str = "120/hour"
+
+    # Endpoints de login (públicos): tope por IP contra credential stuffing.
+    # El default EN CÓDIGO es permissivo (local/tests); al exponer el compose
+    # impone el valor estricto AUTH_RATE_LIMIT=60/hour (docker-compose.yml).
+    AUTH_RATE_LIMIT: str = "99999/hour"
 
     # Modo práctica (banco + IA reutilizable)
     PRACTICE_RATE_LIMIT: str = "30/hour"
@@ -88,6 +144,68 @@ class Settings(BaseSettings):
         if isinstance(value, str) and value.startswith("postgresql://"):
             return value.replace("postgresql://", "postgresql+psycopg2://", 1)
         return value
+
+    @property
+    def seed_mode_efectivo(self) -> str:
+        """Modo de semilla que se aplica (valida el valor configurado)."""
+        valor = (self.SEED_MODE or "").strip().lower()
+        if not valor:
+            return "always" if self.DEV_AUTH_ENABLED else "if_empty"
+        if valor not in ("always", "if_empty", "off"):
+            raise ValueError("SEED_MODE debe ser always, if_empty u off.")
+        return valor
+
+    @model_validator(mode="after")
+    def _require_secret_key_outside_dev(self) -> "Settings":
+        """Producción no arranca con SECRET_KEY placeholder.
+
+        Con DEV_AUTH_ENABLED=false el backend se niega a arrancar si
+        SECRET_KEY está vacía o en su valor placeholder: los JWT firmados
+        con una clave pública conocida no son seguros.
+        """
+        if not 5 <= self.ACCESS_TOKEN_EXPIRE_MINUTES <= 60 * 24 * 30:
+            raise RuntimeError(
+                "ACCESS_TOKEN_EXPIRE_MINUTES fuera de rango: entre 5 minutos y 30 días."
+            )
+        if not self.DEV_AUTH_ENABLED and self.SECRET_KEY.strip() in (
+            "",
+            "change-me-in-production",
+        ):
+            raise RuntimeError(
+                "SECRET_KEY ausente o placeholder y DEV_AUTH_ENABLED=false: "
+                "define SECRET_KEY (por variable de entorno o .env) para iniciar "
+                "el backend en producción, o activa DEV_AUTH_ENABLED=true solo "
+                "en desarrollo local."
+            )
+        return self
+
+    @property
+    def database_ssl_args(self) -> dict:
+        """Argumentos de conexión para proveedores gestionados (Neon/Render).
+
+        Se activa SSL automáticamente si el host es neon.tech o si se define
+        DATABASE_SSL=true. Para Neon se exige `sslmode=require` (el pool de
+        Neon a veces pide verify-full; require es lo mínimo válido).
+        """
+        url = self.DATABASE_URL
+        needs_ssl = "neon.tech" in url or self.DATABASE_SSL
+        if "sqlite" in url or not needs_ssl:
+            return {}
+        return {"sslmode": "require"}
+
+    @property
+    def database_ddl_url(self) -> str:
+        """URL de conexión DIRECTA para DDL (migraciones + create_all).
+
+        Neon expone dos endpoints por branch: el agrupado (ep-xxx-pooler…) es
+        para la app con PgBouncer, y NO soporta DDL fiable; el DDL va por el
+        endpoint directo (sin -pooler). Si DATABASE_URL_DDL está definido se
+        usa tal cual; si no, se deriva de DATABASE_URL quitando "-pooler" del
+        host. En SQLite/Docker local la URL es la misma.
+        """
+        if self.DATABASE_URL_DDL or self.DATABASE_URL.startswith("sqlite"):
+            return self.DATABASE_URL_DDL or self.DATABASE_URL
+        return self.DATABASE_URL.replace("-pooler.", ".")
 
     @staticmethod
     def _split_csv(value: str) -> list[str]:

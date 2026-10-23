@@ -1,15 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck, faChevronDown, faClock, faListCheck } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faChevronDown, faListCheck } from '@fortawesome/free-solid-svg-icons'
 
 import { cn } from '../../lib/utils'
-import {
-  formatDuration,
-  formatDurationShort,
-  splitUnitName,
-  unitIdentity,
-} from '../../lib/curriculum'
+import { splitUnitName, unitIdentity } from '../../lib/curriculum'
 import { useAuth } from '../../hooks/useAuth'
 import { useCourse } from '../../hooks/useCourse'
 
@@ -69,8 +64,7 @@ function UnitSection({ topic, courseId, openId, setOpenId, activeSubtopicId, isS
             {title}
           </span>
           <span className="tabular mt-1 block text-[0.6875rem] text-ink-500">
-            {isStudent ? `${done}/${total}` : total} subtemas ·{' '}
-            {formatDurationShort(topic.estimated_minutes)}
+            {isStudent ? `${done}/${total}` : total} subtemas
           </span>
           {isStudent && (
             <span className="mt-2 block h-0.5 w-full overflow-hidden rounded-full bg-ink-200">
@@ -114,9 +108,6 @@ function UnitSection({ topic, courseId, openId, setOpenId, activeSubtopicId, isS
                 >
                   {subtopic.name}
                 </span>
-                <span className="tabular shrink-0 text-[0.6875rem] text-ink-400">
-                  {formatDurationShort(subtopic.estimated_minutes)}
-                </span>
               </Link>
             )
           })}
@@ -152,7 +143,7 @@ function UnitSection({ topic, courseId, openId, setOpenId, activeSubtopicId, isS
 export default function ContentRail({ className }) {
   const { courseId, topicId, subtopicId } = useParams()
   const { user } = useAuth()
-  const { topics, totalSubtopics, totalMinutes } = useCourse()
+  const { topics, totalSubtopics } = useCourse()
   const isStudent = user?.role === 'STUDENT'
   const [openId, setOpenId] = useState(null)
 
@@ -182,11 +173,6 @@ export default function ContentRail({ className }) {
           <span>{topics.length} unidades</span>
           <span aria-hidden="true">·</span>
           <span>{totalSubtopics} subtemas</span>
-          <span aria-hidden="true">·</span>
-          <span className="inline-flex items-center gap-1">
-            <FontAwesomeIcon icon={faClock} className="text-[0.65rem]" aria-hidden="true" />
-            {formatDuration(totalMinutes)}
-          </span>
         </p>
       </div>
 

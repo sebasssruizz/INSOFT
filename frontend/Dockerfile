@@ -3,12 +3,13 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Build de producción. ALLOW_LOCAL_API=1 solo lo fija el compose local; Vercel no lo usa.
 ARG VITE_API_URL=http://localhost:8000
 ARG VITE_GOOGLE_CLIENT_ID=
-ARG VITE_ENABLE_DEV_LOGIN=false
+ARG ALLOW_LOCAL_API=0
 ENV VITE_API_URL=$VITE_API_URL \
     VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID \
-    VITE_ENABLE_DEV_LOGIN=$VITE_ENABLE_DEV_LOGIN
+    ALLOW_LOCAL_API=$ALLOW_LOCAL_API
 
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund

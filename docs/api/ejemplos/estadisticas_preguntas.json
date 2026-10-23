@@ -1,0 +1,28 @@
+{
+  "nombre": "estadisticas_preguntas",
+  "descripcion": "Acierto por pregunta del docente.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/quiz/stats/questions"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "questions": [
+        {
+          "question_id": 1,
+          "prompt": "¿Cuántos músculos extraoculares mueven cada globo ocular?",
+          "subtopic_id": 1,
+          "respuestas": 1,
+          "porcentaje_acierto": 0,
+          "opcion_incorrecta_mas_elegida": 0,
+          "origen": "banco"
+        }
+      ],
+      "total": 1
+    }
+  }
+}

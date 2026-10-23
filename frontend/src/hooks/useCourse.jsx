@@ -77,17 +77,12 @@ export function CourseProvider({ courseId, children }) {
       topic.subtopics.map((subtopic) => ({ ...subtopic, topic })),
     )
     const completed = flat.filter((subtopic) => subtopic.completed).length
-    const remainingMinutes = flat
-      .filter((subtopic) => !subtopic.completed)
-      .reduce((sum, subtopic) => sum + (subtopic.estimated_minutes || 0), 0)
 
     return {
       flatSubtopics: flat,
       totalSubtopics: flat.length,
       completedSubtopics: completed,
       percentage: flat.length ? Math.round((completed / flat.length) * 100) : 0,
-      totalMinutes: flat.reduce((sum, subtopic) => sum + (subtopic.estimated_minutes || 0), 0),
-      remainingMinutes,
       totalQuestions: topics.reduce((sum, topic) => sum + (topic.question_count || 0), 0),
       /** Primer subtema sin completar: destino del botón "continuar". */
       nextSubtopic: flat.find((subtopic) => !subtopic.completed) || null,

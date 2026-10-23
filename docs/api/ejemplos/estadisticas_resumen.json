@@ -1,0 +1,21 @@
+{
+  "nombre": "estadisticas_resumen",
+  "descripcion": "Resumen de estadísticas de quiz del docente.",
+  "peticion": {
+    "metodo": "GET",
+    "ruta": "/api/quiz/stats/overview"
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "total_intentos": 1,
+      "total_respuestas": 1,
+      "porcentaje_acierto": 0,
+      "estudiantes_activos": 1,
+      "respuestas_practica": 0
+    }
+  }
+}

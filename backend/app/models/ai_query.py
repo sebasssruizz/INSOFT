@@ -25,6 +25,8 @@ class AiQuery(Base):
     )
     session_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     model_used: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Estado de la consulta: ok | degraded | error (aditivo, retrocompatible).
+    status: Mapped[str | None] = mapped_column(String(20), default="ok", nullable=True)
     response_time_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     question_original: Mapped[str] = mapped_column(Text, nullable=False)
     # Campos que se llenan en pasos posteriores del pipeline de IA.

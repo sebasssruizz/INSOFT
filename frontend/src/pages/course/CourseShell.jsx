@@ -1,12 +1,11 @@
 import { Link, Outlet, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faClock, faLayerGroup, faListCheck } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faLayerGroup, faListCheck } from '@fortawesome/free-solid-svg-icons'
 
 import ContentRail from '../../components/course/ContentRail'
 import CourseProgress from '../../components/course/CourseProgress'
 import { Badge, Meta } from '../../components/ui/Meta'
 import { Button } from '../../components/ui/Button'
-import { formatDuration } from '../../lib/curriculum'
 import { useAuth } from '../../hooks/useAuth'
 import { CourseProvider, useCourse } from '../../hooks/useCourse'
 
@@ -19,7 +18,6 @@ function CourseHeader() {
     percentage,
     totalSubtopics,
     completedSubtopics,
-    totalMinutes,
     topics,
     totalQuestions,
     nextSubtopic,
@@ -53,7 +51,6 @@ function CourseHeader() {
             <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 sm:gap-x-5">
               <Meta icon={faLayerGroup}>{topics.length} unidades</Meta>
               <Meta icon={faListCheck}>{totalSubtopics} subtemas</Meta>
-              <Meta icon={faClock}>{formatDuration(totalMinutes)}</Meta>
               {totalQuestions > 0 && <Meta>{totalQuestions} preguntas de repaso</Meta>}
             </div>
           </div>

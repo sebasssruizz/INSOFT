@@ -80,24 +80,6 @@ export function splitUnitName(name = '') {
   return { number: Number(match[1]), title: match[2] }
 }
 
-/** 95 -> "1 h 35 min" · 42 -> "42 min" */
-export function formatDuration(minutes = 0) {
-  const total = Math.max(0, Math.round(minutes))
-  if (total < 60) return `${total} min`
-  const hours = Math.floor(total / 60)
-  const rest = total % 60
-  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`
-}
-
-/** Versión compacta para metadatos densos: "1h 35m" */
-export function formatDurationShort(minutes = 0) {
-  const total = Math.max(0, Math.round(minutes))
-  if (total < 60) return `${total}m`
-  const hours = Math.floor(total / 60)
-  const rest = total % 60
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
-}
-
 /**
  * Cifras del temario oficial mostradas en la portada pública, donde todavía no
  * hay sesión para consultarlas por API. Reflejan app/seed/seed_content.py.

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import { session } from '../services/api'
-import { loginDev, loginWithGoogle, updateMyProfile, updateMyRole } from '../services/authService'
+import { loginDev, loginWithGoogle, updateMyProfile } from '../services/authService'
 
 const AuthContext = createContext(null)
 
@@ -32,16 +32,6 @@ export function AuthProvider({ children }) {
     [handleAuthResponse],
   )
 
-  const changeRole = useCallback(
-    async (role) => {
-      const updated = await updateMyRole(role)
-      if (token) session.save(token, updated)
-      setUser(updated)
-      return updated
-    },
-    [token],
-  )
-
   const completeProfile = useCallback(
     async (profile) => {
       const updated = await updateMyProfile(profile)
@@ -65,11 +55,10 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(token && user),
       loginGoogle,
       loginDevelopment,
-      changeRole,
       completeProfile,
       logout,
     }),
-    [user, token, loginGoogle, loginDevelopment, changeRole, completeProfile, logout],
+    [user, token, loginGoogle, loginDevelopment, completeProfile, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

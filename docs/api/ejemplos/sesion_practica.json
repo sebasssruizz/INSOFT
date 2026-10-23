@@ -1,0 +1,55 @@
+{
+  "nombre": "sesion_practica",
+  "descripcion": "Sesión de práctica: composición banco/IA. Las preguntas no traen respuesta correcta.",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/practice/sessions",
+    "cuerpo": {
+      "subtopic_id": 1,
+      "count": 3
+    }
+  },
+  "respuesta": {
+    "status": 200,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "attempt_id": "64bd5471-4a6c-4e5c-8172-8c59c2a10c29",
+      "mode": "practice",
+      "questions": [
+        {
+          "id": 2,
+          "subtopic_id": 1,
+          "prompt": "El aparato lagrimal drena la lágrima hacia la cavidad nasal a través de:",
+          "options": [
+            "El conducto nasolagrimal",
+            "El nervio óptico",
+            "La cámara anterior",
+            "El cuerpo ciliar"
+          ],
+          "order": 1,
+          "is_ai_generated": false
+        },
+        {
+          "id": 1,
+          "subtopic_id": 1,
+          "prompt": "¿Cuántos músculos extraoculares mueven cada globo ocular?",
+          "options": [
+            "Cuatro",
+            "Seis",
+            "Ocho",
+            "Doce"
+          ],
+          "order": 0,
+          "is_ai_generated": false
+        }
+      ],
+      "composition": {
+        "bank": 2,
+        "ai": 0
+      },
+      "ai_available": false
+    }
+  }
+}

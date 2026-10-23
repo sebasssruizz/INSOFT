@@ -157,3 +157,28 @@ y reglas de autorización.
 | El frontend no muestra el botón de Google | Falta `GOOGLE_CLIENT_ID` en `.env`; reconstruye con `docker compose up --build` |
 | Login de desarrollo no aparece | Asegúrate de `DEV_AUTH_ENABLED=true` y reconstruye el frontend |
 | Quiero empezar con la base de datos limpia | `docker compose down -v && docker compose up --build` |
+
+## 10. Probar "Agregar preguntas" como docente (local)
+
+1. En `.env` (raíz) define quién es docente y activa el login de desarrollo:
+   `TEACHER_EMAILS=profesora@correo.com` (la app compara minúsculas) y `DEV_AUTH_ENABLED=true`.
+   Luego `docker compose up --build` (recomendado `docker compose down -v` si cambiaste TEACHER_EMAILS
+   y el usuario ya existía: el rol solo se adjudica al crear la cuenta).
+2. Frontend local: `cd frontend && npm run dev` (puerto 5173; la API de desarrollo apunta a `http://localhost:8000`).
+3. En `/login`, accede con la tarjeta "Modo de desarrollo": correo DESDE el paso 1
+   (`profesora@correo.com`) y rol "teacher".
+   
+   Nota: si ya existía el usuario con otro rol, ábrelo en `/perfil` y cambia el rol a "teacher"
+   (autogestión), o borra la fila en la base local.
+4. Verifica el rol: en `/dashboard` debe verse el panel con "Mis cursos · Añadir curso" y
+   `GET http://localhost:8000/api/auth/me` debe devolver `"role": "TEACHER"`.
+5. Entra a la tarjeta del curso en `Mis cursos` (ruta `/teacher/courses/{id}`): arriba verás el
+   botón **Agregar preguntas**; abre el asistente:
+   - Elige **Unidad** y luego **Subtema** (el select de subtema se desbloquea).
+   - Escribe el enunciado, las 4 opciones **A–D** y marca la correcta (clic en la letra).
+   - Explicación opcional.
+   - **Guardar y agregar otra** conserva unidad y subtema, limpia el resto, muestra
+     "Pregunta guardada…" y devuelve el foco al enunciado.
+   - **Guardar y salir** guarda y cierra; las preguntas nuevas aparecen en el banco abajo.
+   - El botón es visible SOLO con rol `TEACHER` (la página exige el rol; un estudiante
+     ve su `/dashboard` de estudiante, no esta ruta).

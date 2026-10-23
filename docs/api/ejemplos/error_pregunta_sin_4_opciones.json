@@ -1,0 +1,26 @@
+{
+  "nombre": "error_pregunta_sin_4_opciones",
+  "descripcion": "Pregunta con 3 opciones: 422 (la regla exige A-D).",
+  "peticion": {
+    "metodo": "POST",
+    "ruta": "/api/content/subtopics/1/questions",
+    "cuerpo": {
+      "prompt": "Pregunta con tres opciones",
+      "options": [
+        "a",
+        "b",
+        "c"
+      ],
+      "correct_index": 0
+    }
+  },
+  "respuesta": {
+    "status": 422,
+    "cabeceras": {
+      "content-type": "application/json"
+    },
+    "cuerpo": {
+      "detail": "Debe haber exactamente 4 opciones (A-D)."
+    }
+  }
+}

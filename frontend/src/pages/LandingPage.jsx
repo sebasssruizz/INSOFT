@@ -130,7 +130,7 @@ const STEPS = [
   },
   {
     title: 'Estudia a tu ritmo',
-    body: 'Cada subtema trae su lectura, su tiempo estimado y un repaso corto al terminar.',
+    body: 'Cada subtema trae su lectura y un repaso corto al terminar.',
   },
   {
     title: 'Pregunta y avanza',
@@ -569,8 +569,8 @@ export default function LandingPage() {
                 Estudiar cirugía ocular sin perderse en el camino
               </SectionTitle>
               <p className="mt-5 max-w-[46ch] text-[0.9375rem] leading-relaxed text-ink-600">
-                Pensado para instrumentación quirúrgica: el orden del temario, el tiempo que lleva
-                cada parte y la comprobación de que de verdad se ha entendido.
+                Pensado para instrumentación quirúrgica: el orden del temario y la
+                comprobación de que de verdad se ha entendido.
               </p>
             </Reveal>
 

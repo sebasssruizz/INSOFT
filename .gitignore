@@ -29,3 +29,6 @@ docs/revision/*.docx
 # Fuentes de modelado 3D (.blend, variantes, referencias): fuera del build y del repo.
 # Los .glb de runtime viven en frontend/public/models/{mesas,instrumentos}.
 frontend/assets-src/
+
+# Respaldos locales privados (no publicar)
+.local-backups/

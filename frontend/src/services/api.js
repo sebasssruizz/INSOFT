@@ -1,18 +1,13 @@
-const DEFAULT_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-function getApiUrl() {
-  // Si VITE_API_URL está configurado, usarlo
-  if (DEFAULT_API_URL && DEFAULT_API_URL !== 'http://localhost:8000') {
-    return DEFAULT_API_URL
-  }
-  // Si estamos en producción (distinto host), inferir el backend desde el mismo host
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return `${window.location.protocol}//${window.location.hostname}:8000`
-  }
-  return DEFAULT_API_URL
-}
-
-const API_URL = getApiUrl()
+// URL base del backend. En producción VITE_API_URL es obligatoria (vite.config.js
+// falla el build si falta). NO hay fallback a otro host: adivinarlo dejaba
+// desplegados apuntando a un puerto 8000 inexistente. El literal de desarrollo
+// queda dentro de `import.meta.env.DEV`, así que Vite lo elimina del bundle.
+const API_URL = (() => {
+  const configured = import.meta.env.VITE_API_URL
+  if (configured) return configured.replace(/\/+$/, '')
+  if (import.meta.env.DEV) return 'http://localhost:8000'
+  throw new Error('Falta VITE_API_URL en el build de producción.')
+})()
 
 const TOKEN_KEY = 'insoft_token'
 const USER_KEY = 'insoft_user'
@@ -61,15 +56,45 @@ export async function downloadCsv(path, filename) {
   URL.revokeObjectURL(url)
 }
 
+// Servidores gratuitos (Render free) se quedan dormidos: la primera petición
+// puede superar los 5 s. Al excederse se avisa a la UI con eventos
+// 'insoft:api-slow' / 'insoft:api-slow-end' (componente SlowServerBanner).
+const SLOW_THRESHOLD_MS = 5000
+let slowRequestCount = 0
+
+const notifySlowCount = () =>
+  window.dispatchEvent(
+    new CustomEvent(slowRequestCount > 0 ? 'insoft:api-slow' : 'insoft:api-slow-end'),
+  )
+
 export async function apiFetch(path, { method = 'GET', body } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   const token = session.getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const response = await fetch(`${API_URL}/api${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
+  const response = await new Promise((resolve, reject) => {
+    let wentSlow = false
+    const timer = setTimeout(() => {
+      if (!wentSlow) {
+        wentSlow = true
+        slowRequestCount += 1
+        notifySlowCount()
+      }
+    }, SLOW_THRESHOLD_MS)
+    fetch(`${API_URL}/api${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    })
+      .then(resolve, reject)
+      .finally(() => {
+        clearTimeout(timer)
+        if (wentSlow) {
+          wentSlow = false
+          slowRequestCount -= 1
+          notifySlowCount()
+        }
+      })
   })
 
   if (response.status === 401) {

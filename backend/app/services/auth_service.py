@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.models.user import User, UserRole
 from app.repositories import user_repository as user_repo
 from app.services import course_service
-from app.services.exceptions import BadRequestError, UnauthorizedError
+from app.services.exceptions import ForbiddenError, UnauthorizedError
 
 
 def _role_for_email(email: str) -> UserRole:
@@ -69,9 +69,13 @@ def change_own_role(db: Session, user: User, new_role: UserRole) -> User:
 
 
 def authenticate_dev(db: Session, email: str, name: str, role: str) -> User:
-    """Login de desarrollo sin Google. Solo disponible si DEV_AUTH_ENABLED=true."""
+    """Login de desarrollo sin Google. Solo disponible si DEV_AUTH_ENABLED=true.
+
+    Con DEV_AUTH_ENABLED=false (o sin definir) NO crea usuario ni sesión:
+    responde 403. Nota de seguridad: DEV login es SOLO para entornos locales.
+    """
     if not settings.DEV_AUTH_ENABLED:
-        raise BadRequestError("El login de desarrollo está desactivado.")
+        raise ForbiddenError("El login de desarrollo está desactivado.")
 
     email = email.lower()
     user = user_repo.get_by_email(db, email)

@@ -24,7 +24,7 @@ export default function TeacherCoursePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
-  // Asistente "Agregar pregunta" a nivel de curso (independiente del banco).
+  // Asistente "Agregar preguntas" a nivel de curso (independiente del banco).
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardInitialSubtopic, setWizardInitialSubtopic] = useState(null)
   const [wizardRefreshSignal, setWizardRefreshSignal] = useState(0)

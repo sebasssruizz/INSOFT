@@ -47,6 +47,26 @@ def list_chunks_for_course(db: Session, course_id: int) -> list[SubtopicChunk]:
     return list(db.scalars(stmt).all())
 
 
+def list_chunks_for_course_ids(db: Session, course_ids: list[int]) -> list[SubtopicChunk]:
+    """Chunks de topics habilitados en CUALQUIERA de los cursos indicados.
+
+    Usada para acotar la búsqueda global de /rag/search al contenido que el
+    usuario puede ver (sus cursos como estudiante o como profesor).
+    """
+    if not course_ids:
+        return []
+    stmt = (
+        select(SubtopicChunk)
+        .join(Subtopic, Subtopic.id == SubtopicChunk.subtopic_id)
+        .join(CourseTopic, CourseTopic.topic_id == Subtopic.topic_id)
+        .where(CourseTopic.course_id.in_(course_ids), CourseTopic.enabled.is_(True))
+        # DISTINCT: un chunk habilitado en varios cursos del usuario NO debe
+        # devolverse N veces (igual que el índice global, sin duplicados).
+        .distinct()
+    )
+    return list(db.scalars(stmt).all())
+
+
 def list_all_chunks(db: Session) -> list[SubtopicChunk]:
     """Todos los chunks indexados (para búsqueda global sin filtro de subtema)."""
     return list(db.scalars(select(SubtopicChunk).order_by(SubtopicChunk.id)).all())

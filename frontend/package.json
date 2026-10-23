@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "npm run check:models && vite build && node scripts/check-dist.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check:dist": "node scripts/check-dist.mjs",
+    "check:models": "node scripts/check-models.mjs"
   },
   "dependencies": {
     "@fontsource-variable/roboto": "^5.3.0",
@@ -23,10 +26,16 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^30.1.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^2.1.9"
   }
 }

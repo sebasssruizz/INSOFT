@@ -99,7 +99,11 @@ def rag_search(
     elif payload.course_id is not None:
         chunks = chunk_repo.list_chunks_for_course(db, payload.course_id)
     else:
-        chunks = chunk_repo.list_all_chunks(db)
+        # Búsqueda global acotada al contenido de los cursos con acceso del
+        # usuario (permitida): un estudiante NO inscrito NO leerá chunks de
+        # contenido que no puede ver en la app. Docentes sin cursos: vacío.
+        course_ids = _courses_with_access(db, current_user)
+        chunks = chunk_repo.list_chunks_for_course_ids(db, course_ids)
 
     if not chunks:
         return SearchResponse(query=payload.query, results=[])

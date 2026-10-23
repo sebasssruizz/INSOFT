@@ -1,10 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight, faCheck, faClock, faListCheck } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faCheck, faListCheck } from '@fortawesome/free-solid-svg-icons'
 
 import { Meta } from '../../components/ui/Meta'
 import { cn } from '../../lib/utils'
-import { formatDuration, splitUnitName, unitIdentity } from '../../lib/curriculum'
+import { splitUnitName, unitIdentity } from '../../lib/curriculum'
 import { useAuth } from '../../hooks/useAuth'
 import { useCourse } from '../../hooks/useCourse'
 
@@ -65,7 +65,6 @@ function UnitCard({ topic, courseId, index, isStudent }) {
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1">
         <Meta icon={faListCheck}>{total} subtemas</Meta>
-        <Meta icon={faClock}>{formatDuration(topic.estimated_minutes)}</Meta>
       </div>
 
       <div className="mt-auto pt-5">

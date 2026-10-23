@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.core.config import settings
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -21,7 +23,22 @@ def change_my_role(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """El usuario cambia su propio rol (estudiante ↔ profesor)."""
+    """Cambio de rol propio: SOLO con DEV_AUTH_ENABLED (desarrollo).
+
+    En producción el rol se adjudica al CREAR la cuenta (TEACHER_EMAILS) o con
+    el script backend/app/scripts/promote_teacher.py por parte del equipo: un
+    cliente NO puede promoverse a sí mismo (evita autogestión a docente y
+    acceso al panel docente).
+    """
+    if not settings.DEV_AUTH_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "El cambio de rol propio está deshabilitado. Los roles se "
+                "asignan al crear la cuenta (TEACHER_EMAILS) o por el equipo "
+                "del curso."
+            ),
+        )
     return auth_service.change_own_role(db, current_user, payload.role)
 
 
