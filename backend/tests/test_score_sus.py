@@ -7,9 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 
 
-def test_score_sus_calcula_promedio():
+def test_score_sus_calcula_promedio(tmp_path):
     """No importa app: es un script autónomo; ejecuta como subprocess."""
-    csv_path = "/tmp/opencode/sus_test.csv"
+    csv_path = tmp_path / "sus_test.csv"
     with open(csv_path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["respondent_id"] + [f"q{i}" for i in range(1, 11)])
@@ -18,7 +18,7 @@ def test_score_sus_calcula_promedio():
         # neutras => 50
         w.writerow(["b"] + [3] * 10)
     out = subprocess.check_output(
-        [sys.executable, str(ROOT / "scripts" / "score_sus.py"), csv_path],
+        [sys.executable, str(ROOT / "scripts" / "score_sus.py"), str(csv_path)],
         text=True,
     )
     assert "100.0" in out
