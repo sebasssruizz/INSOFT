@@ -26,7 +26,7 @@ from app.models.question_meta import QuestionSource, QuestionStatus
 @pytest.fixture(scope="module")
 def client():
     with TestClient(app) as c:
-        # El lifespan ya corrió ensure_schema_compatibility + create_all + seed.
+        # El lifespan ya corrió create_all + migraciones versionadas + seed.
         yield c
 
 
@@ -64,11 +64,12 @@ def test_migracion_columnas_existentes(client):
 
 
 def test_migracion_idempotente(client):
-    """Correr ensure_schema_compatibility dos veces no falla ni duplica índices."""
-    from app.database.migrations import ensure_schema_compatibility
+    """Repetir el migrador vigente no aplica versiones ni duplica índices."""
+    from app.database.migrations import run_migrations
+    from app.database.session import engine
 
-    ensure_schema_compatibility()
-    ensure_schema_compatibility()
+    assert run_migrations(engine) == []
+    assert run_migrations(engine) == []
 
     from sqlalchemy import inspect
 

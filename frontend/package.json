@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/check-dist.mjs",
+    "build": "npm run check:models && vite build && node scripts/check-dist.mjs",
     "preview": "vite preview",
     "test": "vitest run",
-    "check:dist": "node scripts/check-dist.mjs"
+    "check:dist": "node scripts/check-dist.mjs",
+    "check:models": "node scripts/check-models.mjs"
   },
   "dependencies": {
     "@fontsource-variable/roboto": "^5.3.0",

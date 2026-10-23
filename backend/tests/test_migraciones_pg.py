@@ -75,6 +75,7 @@ def test_pg_esquema_viejo_llega_al_actual_sin_perder_filas(engine):
     cols_q = {c["name"] for c in inspect(engine).get_columns("questions")}
     assert {"country", "age"} <= cols_users
     assert {"source", "status", "created_by", "created_at"} <= cols_q
+    assert "question_normalizada" in {c["name"] for c in inspect(engine).get_columns("ai_queries")}
 
     with engine.connect() as conn:
         assert conn.scalar(text("SELECT COUNT(*) FROM users")) == 2

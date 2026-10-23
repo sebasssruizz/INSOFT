@@ -99,7 +99,7 @@ def test_esquema_viejo_con_datos_llega_al_actual_sin_perder_filas(tmp_path):
     # Columnas nuevas presentes.
     assert {"country", "age"} <= _columns(engine, "users")
     assert {"source", "status", "created_by", "created_at"} <= _columns(engine, "questions")
-    assert {"session_id", "model_used", "status", "response_time_ms"} <= _columns(engine, "ai_queries")
+    assert {"session_id", "model_used", "status", "response_time_ms", "question_normalizada"} <= _columns(engine, "ai_queries")
 
     with engine.connect() as conn:
         # Ninguna fila se pierde.
@@ -128,6 +128,21 @@ def test_adopta_base_existente_con_linea_base_sin_perder_datos(tmp_path):
         nombre = conn.scalar(text("SELECT name FROM schema_migrations WHERE version = 1"))
         assert nombre == "linea_base"
         assert conn.scalar(text("SELECT COUNT(*) FROM questions")) == 2
+
+
+def test_actualiza_base_con_versiones_1_y_2_registradas(tmp_path, monkeypatch):
+    engine = _engine(tmp_path)
+    _esquema_viejo(engine)
+    all_migrations = migrations.MIGRATIONS
+    with monkeypatch.context() as previous:
+        previous.setattr(migrations, "MIGRATIONS", all_migrations[:2])
+        assert migrations.run_migrations(engine) == [1, 2]
+    assert migrations.run_migrations(engine) == [3]
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE ai_queries SET question_normalizada='pregunta normalizada' WHERE id=1"))
+        assert conn.scalar(text("SELECT respuesta FROM ai_queries WHERE id=1")) == "respuesta previa"
+        assert conn.scalar(text("SELECT question_normalizada FROM ai_queries WHERE id=1")) == "pregunta normalizada"
+    assert migrations.run_migrations(engine) == []
 
 
 def test_migracion_fallida_no_se_registra_y_se_reintenta(tmp_path, monkeypatch):

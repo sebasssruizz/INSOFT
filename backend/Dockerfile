@@ -16,7 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # -40% de RAM y -~2.4 GB de imagen, vectores idénticos; ver
 # docs/perf/INFORME_MEMORIA.md). Se elige con build-arg al construir:
 #   docker build --build-arg EMBEDDINGS_BACKEND=onnx -t insoft-backend .
-ARG EMBEDDINGS_BACKEND=torch
+ARG EMBEDDINGS_BACKEND=onnx
 ENV EMBEDDINGS_BACKEND=${EMBEDDINGS_BACKEND}
 
 RUN if [ "$EMBEDDINGS_BACKEND" = "onnx" ]; then \
@@ -50,5 +50,9 @@ COPY app ./app
 EXPOSE 8000
 
 # El puerto lo decide la plataforma (PORT en Render); por defecto 8000.
+# Un proceso y límites de threads: evitar multiplicar el modelo en memoria.
+ENV OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false \
+    EMBEDDINGS_LOCAL_FILES_ONLY=true EMBEDDINGS_THREADS=1
+
 # Sin --reload: imagen de producción.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

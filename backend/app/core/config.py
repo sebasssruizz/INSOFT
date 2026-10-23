@@ -84,6 +84,9 @@ class Settings(BaseSettings):
     # ~100x más rápido por consulta). Con "onnx" NO se reindexa: dimensión y
     # modelo son los mismos. Ver docs/perf/INFORME_MEMORIA.md.
     EMBEDDINGS_BACKEND: str = "torch"
+    # Imagen Docker: modelo precargado, sin verificación remota en runtime.
+    EMBEDDINGS_LOCAL_FILES_ONLY: bool = False
+    EMBEDDINGS_THREADS: int = 1
 
     # OpenRouter (IA)
     OPENROUTER_API_KEY: str = ""

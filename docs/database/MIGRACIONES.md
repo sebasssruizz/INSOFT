@@ -32,6 +32,7 @@ Una base creada antes de este sistema no tiene `schema_migrations`. Al primer ar
 |---|---|---|
 | 1 | `linea_base` | Todo el esquema previo: extensión pgvector, `question_answers`, columnas `users.country/age`, `questions.source/status/created_by/created_at`, columnas de `ai_queries`, índices de quiz y banco. |
 | 2 | `indice_ai_queries_usuario_fecha` | Índice `(user_id, created_at)` en `ai_queries` para el tope diario del asistente. |
+| 3 | `pregunta_normalizada_ai` | Añade `question_normalizada TEXT` anulable a bases antiguas; conserva consultas y respuestas existentes. |
 
 ## Cómo añadir una migración
 

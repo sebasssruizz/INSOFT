@@ -157,12 +157,20 @@ def _indice_ai_queries_usuario_fecha(conn: Connection) -> None:
     ))
 
 
-# Lista ORDENADA. Para añadir una migración: agregar una entrada al final con
-# el siguiente número y una función idempotente. NUNCA renumerar ni editar una
-# migración ya publicada: crea una nueva.
+# Migración 3: completar el esquema de consultas de bases anteriores.
+def _pregunta_normalizada_ai(conn: Connection) -> None:
+    if "ai_queries" not in set(inspect(conn).get_table_names()):
+        return
+    columns = {column["name"] for column in inspect(conn).get_columns("ai_queries")}
+    if "question_normalizada" not in columns:
+        conn.execute(text("ALTER TABLE ai_queries ADD COLUMN question_normalizada TEXT"))
+
+
+# Lista ordenada: añadir al final; nunca editar versiones ya publicadas.
 MIGRATIONS: list[Migration] = [
     Migration(1, "linea_base", _linea_base),
     Migration(2, "indice_ai_queries_usuario_fecha", _indice_ai_queries_usuario_fecha),
+    Migration(3, "pregunta_normalizada_ai", _pregunta_normalizada_ai),
 ]
 
 _SCHEMA_MIGRATIONS_DDL = """

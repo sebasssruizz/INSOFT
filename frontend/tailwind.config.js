@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  // Los `hover:` solo se aplican en dispositivos con cursor. En pantallas
+  // táctiles el hover se queda «pegado» tras tocar (tarjetas levantadas,
+  // fichas abiertas) hasta que se toca otra cosa.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       fontFamily: {
@@ -147,6 +151,14 @@ export default {
           from: { transform: 'translateX(-100%)' },
           to: { transform: 'translateX(0)' },
         },
+        'slide-in-up': {
+          from: { transform: 'translateY(100%)' },
+          to: { transform: 'translateY(0)' },
+        },
+        sheen: {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(250%)' },
+        },
       },
       animation: {
         'rise-in': 'rise-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both',
@@ -165,6 +177,8 @@ export default {
         'soft-ping': 'soft-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite',
         'spin-iris': 'spin-iris 0.9s linear infinite',
         'slide-in-left': 'slide-in-left 0.32s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'slide-in-up': 'slide-in-up 0.36s cubic-bezier(0.16, 1, 0.3, 1) both',
+        sheen: 'sheen 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite',
       },
     },
   },

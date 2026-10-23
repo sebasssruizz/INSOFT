@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faLayerGroup, faListCheck } from '@fortawesome/free-solid-svg-icons'
 
 import ContentRail from '../../components/course/ContentRail'
+import CourseProgress from '../../components/course/CourseProgress'
 import { Badge, Meta } from '../../components/ui/Meta'
 import { Button } from '../../components/ui/Button'
 import { useAuth } from '../../hooks/useAuth'
@@ -54,48 +55,30 @@ function CourseHeader() {
             </div>
           </div>
 
-          <div className="flex w-full items-center justify-between gap-5 sm:w-auto sm:justify-start">
-            {isStudent && (
-              <div className="text-right">
-                <p className="tabular font-display text-[2rem] font-semibold leading-none text-blue-800">
-                  {percentage}%
-                </p>
-                <p className="tabular mt-1 text-xs text-ink-500">
-                  {completedSubtopics} de {totalSubtopics}
-                </p>
-              </div>
-            )}
-
-            {nextSubtopic && (
-              <Button
-                as={Link}
-                to={`/courses/${courseId}/subtopics/${nextSubtopic.id}`}
-                size="md"
-                className="group/btn"
-              >
-                {!isStudent ? 'Ver contenido' : completedSubtopics > 0 ? 'Continuar' : 'Empezar'}
-              </Button>
-            )}
-          </div>
+          {nextSubtopic && (
+            <Button
+              as={Link}
+              to={`/courses/${courseId}/subtopics/${nextSubtopic.id}`}
+              size="md"
+              className="group/btn w-full sm:w-auto"
+            >
+              {!isStudent ? 'Ver contenido' : completedSubtopics > 0 ? 'Continuar' : 'Empezar'}
+            </Button>
+          )}
         </div>
 
-      </div>
-
-      {/* El borde inferior de la cabecera ES la barra de progreso del curso:
-          se llena a medida que se completan subtemas dentro. */}
-      {isStudent && (
-        <div className="h-[3px] w-full bg-ink-200">
-          <div
-            role="progressbar"
-            aria-label="Progreso del curso"
-            aria-valuenow={percentage}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="h-full w-full origin-left bg-blue-900 transition-transform duration-700 ease-out"
-            style={{ transform: `scaleX(${percentage / 100})` }}
+        {isStudent && topics.length > 0 && (
+          <CourseProgress
+            className="mt-4"
+            topics={topics}
+            courseId={courseId}
+            percentage={percentage}
+            completed={completedSubtopics}
+            total={totalSubtopics}
+            nextSubtopic={nextSubtopic}
           />
-        </div>
-      )}
+        )}
+      </div>
     </header>
   )
 }
@@ -139,7 +122,7 @@ function CourseBody() {
           <main className="min-w-0">
             <Outlet />
           </main>
-          <ContentRail className="lg:sticky lg:top-[13.5rem]" />
+          <ContentRail className="lg:sticky lg:top-[16.5rem]" />
         </div>
       </div>
     </>

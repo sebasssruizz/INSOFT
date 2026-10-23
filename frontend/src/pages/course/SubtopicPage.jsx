@@ -16,6 +16,7 @@ import { Button } from '../../components/ui/Button'
 import { Meta } from '../../components/ui/Meta'
 import { cn } from '../../lib/utils'
 import { splitUnitName } from '../../lib/curriculum'
+import { mesasForSubtopic, resolveMesa } from '../../lib/mesas'
 import { getSubtopic } from '../../services/contentService'
 import { newQuizAttemptId, submitQuizAnswer } from '../../services/quizService'
 import { useAuth } from '../../hooks/useAuth'
@@ -154,7 +155,8 @@ export default function SubtopicPage() {
   const previous = position > 0 ? flatSubtopics[position - 1] : null
   const next =
     position >= 0 && position < flatSubtopics.length - 1 ? flatSubtopics[position + 1] : null
-  const hasInteractiveView = subtopic?.name === 'Inyecciones intravítreas'
+  const mesasDelSubtema = mesasForSubtopic(subtopic?.name)
+  const hasInteractiveView = mesasDelSubtema.length > 0
   const questions = subtopic?.questions || []
 
   if (loading) {
@@ -229,15 +231,26 @@ export default function SubtopicPage() {
                 Explora el montaje del instrumental girando el modelo.
               </span>
             </span>
-            <Button
-              as={Link}
-              to={`/courses/${courseId}/subtopics/${subtopicId}/interactive`}
-              variant="inverse"
-              size="sm"
-              className="mt-4 w-full sm:mt-0 sm:w-auto"
-            >
-              Abrir vista interactiva
-            </Button>
+            <div className="mt-4 flex w-full flex-col gap-2 sm:mt-0 sm:w-auto sm:flex-row">
+              {mesasDelSubtema.map((mesaKey) => {
+                const mesa = resolveMesa(mesaKey)
+                const label =
+                  mesasDelSubtema.length === 1
+                    ? 'Abrir vista interactiva'
+                    : mesa?.title.replace(/^Mesa de /, '')
+                return (
+                  <Button
+                    key={mesaKey}
+                    as={Link}
+                    to={`/courses/${courseId}/subtopics/${subtopicId}/interactive?mesa=${mesaKey}`}
+                    variant="inverse"
+                    size="sm"
+                  >
+                    {label}
+                  </Button>
+                )
+              })}
+            </div>
           </div>
         )}
       </div>

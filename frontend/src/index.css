@@ -116,3 +116,13 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+@layer utilities {
+  /* Carruseles táctiles: se desplazan con el dedo, sin barra visible. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
