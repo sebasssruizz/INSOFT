@@ -36,6 +36,9 @@ def authenticate_with_google(db: Session, credential: str) -> User:
     # Vincular cuenta existente con el mismo correo
     user = user_repo.get_by_email(db, info["email"])
     if user is not None:
+        if user.google_id.startswith("review-demo:"):
+            user.name = info["name"]
+            user.profile_image = info["profile_image"]
         user.google_id = info["google_id"]
         db.commit()
         db.refresh(user)

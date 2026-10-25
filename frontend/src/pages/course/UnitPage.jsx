@@ -39,13 +39,14 @@ export default function UnitPage() {
 
   return (
     <div className="animate-fade-in">
-      <Link
+      <Button
+        as={Link}
         to={`/courses/${courseId}`}
-        className="inline-flex items-center gap-2 text-[0.8125rem] font-medium text-ink-500 transition-colors duration-150 hover:text-blue-800"
+        variant="secondary"
+        icon={faArrowLeft}
       >
-        <FontAwesomeIcon icon={faArrowLeft} className="text-[0.7rem]" aria-hidden="true" />
         Todas las unidades
-      </Link>
+      </Button>
 
       <header className="mt-4 flex items-start gap-4 sm:gap-5">
         <span

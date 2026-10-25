@@ -21,6 +21,7 @@ from app.models.question_meta import QuestionSource, QuestionStatus
 from app.models.user import User, UserRole
 from app.repositories import content_repository as content_repo
 from app.repositories import course_repository as course_repo
+from app.repositories import course_question_repository as course_question_repo
 from app.services import course_service
 
 
@@ -99,6 +100,28 @@ def assert_teacher_can_manage_question(db: Session, teacher: User, question: Que
                 detail="Las preguntas oficiales son de solo lectura.",
             )
         raise HTTPException(status_code=403, detail="Solo el autor puede modificar esta pregunta.")
+
+
+def _assert_course_topic(db: Session, teacher: User, course_id: int, topic_id: int) -> None:
+    course = course_service.get_course_with_access_check(db, teacher, course_id)
+    if teacher.role != UserRole.TEACHER or course.teacher_id != teacher.id:
+        raise HTTPException(status_code=403, detail="Solo puedes gestionar tus propios cursos.")
+    if not db.scalar(select(CourseTopic.id).where(
+        CourseTopic.course_id == course_id,
+        CourseTopic.topic_id == topic_id,
+        CourseTopic.enabled.is_(True),
+    )):
+        raise HTTPException(status_code=404, detail="Unidad no encontrada en este curso.")
+
+
+def remove_question_from_course(db: Session, teacher: User, course_id: int, question_id: int) -> dict:
+    question = content_repo.get_question(db, question_id)
+    if question is None:
+        raise HTTPException(status_code=404, detail="Pregunta no encontrada.")
+    subtopic = content_repo.get_subtopic(db, question.subtopic_id)
+    _assert_course_topic(db, teacher, course_id, subtopic.topic_id)
+    course_question_repo.exclude(db, course_id, question_id)
+    return {"removed": True, "detail": "Pregunta retirada de este curso. Las respuestas anteriores se conservan."}
 
 
 def _clean_options(options: list[str]) -> list[str]:
@@ -182,15 +205,19 @@ def get_subtopic_bank(
     *,
     status: str | None = None,
     source: str | None = None,
+    course_id: int | None = None,
 ) -> list[Question]:
     """Banco de preguntas de un subtema: TODAS las estados y orígenes."""
-    assert_teacher_can_manage_subtopic(db, teacher, subtopic_id)
+    subtopic = assert_teacher_can_manage_subtopic(db, teacher, subtopic_id)
+    if course_id is not None:
+        _assert_course_topic(db, teacher, course_id, subtopic.topic_id)
     if status is not None and status not in QuestionStatus.ALL:
         raise HTTPException(status_code=422, detail="Estado inválido.")
     if source is not None and source not in QuestionSource.ALL:
         raise HTTPException(status_code=422, detail="Origen inválido.")
 
     stmt = select(Question).where(Question.subtopic_id == subtopic_id)
+    stmt = stmt.where(course_question_repo.available_in_course(course_id))
     if status is not None:
         stmt = stmt.where(Question.status == status)
     if source is not None:
@@ -198,7 +225,7 @@ def get_subtopic_bank(
     return list(db.scalars(stmt.order_by(Question.order)).all())
 
 
-def get_topic_bank_summary(db: Session, teacher: User, topic_id: int) -> list[dict]:
+def get_topic_bank_summary(db: Session, teacher: User, topic_id: int, course_id: int | None = None) -> list[dict]:
     """Resumen por subtema de una unidad: conteos por estado y origen.
 
     Valida que el profesor tenga el topic habilitado en algún curso propio.
@@ -210,8 +237,10 @@ def get_topic_bank_summary(db: Session, teacher: User, topic_id: int) -> list[di
         raise HTTPException(status_code=404, detail="Unidad no encontrada.")
 
     assert_teacher_can_manage_topic(db, teacher, topic_id)
+    if course_id is not None:
+        _assert_course_topic(db, teacher, course_id, topic_id)
 
-    counts = content_repo.count_questions_by_status_and_source(db, topic_id)
+    counts = content_repo.count_questions_by_status_and_source(db, topic_id, course_id=course_id)
     summary = []
     for subtopic in sorted(topic.subtopics, key=lambda s: s.order):
         bucket = counts.get(subtopic.id, {})

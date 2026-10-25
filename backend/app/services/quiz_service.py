@@ -13,6 +13,9 @@ from sqlalchemy.orm import Session
 from app.models.content import Question, QuestionStatus
 from app.models.question_answer import QuestionAnswer
 from app.repositories import quiz_answer_repository as quiz_answer_repo
+from app.repositories import content_repository as content_repo
+from app.repositories import course_question_repository as course_question_repo
+from app.services import course_service
 from app.services.ai_service import _ensure_subtopic_access
 from app.services.exceptions import ForbiddenError, NotFoundError
 
@@ -33,6 +36,8 @@ def submit_answer(
     question_id: int,
     selected_index: int,
     attempt_id,
+    *,
+    course_id: int | None = None,
 ) -> dict:
     """Registra la respuesta de un intento y califica en el servidor.
 
@@ -58,6 +63,12 @@ def submit_answer(
         _ensure_subtopic_access(db, current_user, question.subtopic_id)
     except (NotFoundError, ForbiddenError) as exc:
         raise HTTPException(status_code=403, detail=exc.detail)
+
+    if course_id is not None:
+        course_service.get_course_with_access_check(db, current_user, course_id)
+        if (question.subtopic_id not in content_repo.get_subtopic_ids_for_course(db, course_id)
+                or question.id in course_question_repo.excluded_ids(db, course_id)):
+            raise HTTPException(status_code=404, detail="Pregunta no disponible en este curso.")
 
     # Idempotencia: una respuesta ya guardada se devuelve tal cual.
     existing = quiz_answer_repo.get_for_attempt(db, attempt_uuid, question_id)

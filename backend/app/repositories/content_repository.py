@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.content import CourseTopic, Question, Subtopic, Topic
 from app.models.question_meta import QuestionSource, QuestionStatus
+from app.repositories.course_question_repository import available_in_course
 
 
 def get_all_topics(db: Session) -> list[Topic]:
@@ -78,7 +79,7 @@ def get_subtopic_ids_for_course(db: Session, course_id: int) -> list[int]:
     return list(db.scalars(stmt).all())
 
 
-def get_approved_questions_by_subtopic(db: Session, subtopic_id: int) -> list[Question]:
+def get_approved_questions_by_subtopic(db: Session, subtopic_id: int, course_id: int | None = None) -> list[Question]:
     """Preguntas visibles para estudiantes de un subtema (solo approved).
 
     Filtro centralizado: TODO listado para estudiantes debe pasar por aquí
@@ -88,18 +89,20 @@ def get_approved_questions_by_subtopic(db: Session, subtopic_id: int) -> list[Qu
         db.scalars(
             select(Question)
             .where(Question.subtopic_id == subtopic_id, Question.status == QuestionStatus.APPROVED)
+            .where(available_in_course(course_id))
             .order_by(Question.order)
         ).all()
     )
 
 
-def get_approved_questions_by_topic(db: Session, topic_id: int) -> list[Question]:
+def get_approved_questions_by_topic(db: Session, topic_id: int, course_id: int | None = None) -> list[Question]:
     """Preguntas aprobadas de todos los subtemas de una unidad, ordenadas."""
     return list(
         db.scalars(
             select(Question)
             .join(Subtopic, Subtopic.id == Question.subtopic_id)
             .where(Subtopic.topic_id == topic_id, Question.status == QuestionStatus.APPROVED)
+            .where(available_in_course(course_id))
             .order_by(Subtopic.order, Question.order)
         ).all()
     )
@@ -139,7 +142,7 @@ def find_duplicate_prompt(
     return None
 
 
-def count_approved_questions_by_subtopics(db: Session, subtopic_ids: list[int]) -> dict[int, int]:
+def count_approved_questions_by_subtopics(db: Session, subtopic_ids: list[int], course_id: int | None = None) -> dict[int, int]:
     """Conteo de preguntas aprobadas por subtema (una sola query agregada)."""
     if not subtopic_ids:
         return {}
@@ -150,11 +153,12 @@ def count_approved_questions_by_subtopics(db: Session, subtopic_ids: list[int]) 
             Question.status == QuestionStatus.APPROVED,
         )
         .group_by(Question.subtopic_id)
+        .where(available_in_course(course_id))
     ).all()
     return dict(rows)
 
 
-def count_questions_by_status_and_source(db: Session, topic_id: int) -> dict[int, dict[str, int]]:
+def count_questions_by_status_and_source(db: Session, topic_id: int, course_id: int | None = None) -> dict[int, dict[str, int]]:
     """Conteos por subtema de una unidad: {subtopic_id: {status/source: n}}.
 
     Una sola query agregada (GROUP BY) para alimentar el resumen del panel
@@ -169,6 +173,7 @@ def count_questions_by_status_and_source(db: Session, topic_id: int) -> dict[int
         )
         .join(Subtopic, Subtopic.id == Question.subtopic_id)
         .where(Subtopic.topic_id == topic_id)
+        .where(available_in_course(course_id))
         .group_by(Question.subtopic_id, Question.status, Question.source)
     ).all()
 

@@ -29,6 +29,7 @@ class PracticeSessionRequest(BaseModel):
 
     subtopic_id: int | None = None
     topic_id: int | None = None
+    course_id: int | None = None
     count: int | None = Field(
         default=None,
         ge=1,
@@ -67,4 +68,5 @@ async def create_practice_session_endpoint(
         subtopic_id=payload.subtopic_id,
         topic_id=payload.topic_id,
         count=payload.count,
+        course_id=payload.course_id,
     )

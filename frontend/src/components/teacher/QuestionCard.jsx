@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark, faPen, faRobot, faTrash } from '@fortawesome/free-solid-svg-icons'
 
@@ -49,6 +50,7 @@ function badgeFor(question) {
  * la correcta marcada, explicación y acciones según permisos (is_owner).
  */
 export default function QuestionCard({ question, onEdit, onDelete, onReview, busy }) {
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const badge = badgeFor(question)
   const canManage = question.is_owner && question.source !== 'official'
   const canReview =
@@ -68,21 +70,35 @@ export default function QuestionCard({ question, onEdit, onDelete, onReview, bus
     >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <Badge tone={badge.tone}>{badge.label}</Badge>
-        {canManage && (
+        {(canManage || onDelete) && (
           <div className="flex items-center gap-2">
-            {onEdit && (
+            {canManage && onEdit && (
               <Button variant="ghost" size="sm" icon={faPen} onClick={() => onEdit(question)} disabled={busy}>
                 Editar
               </Button>
             )}
             {onDelete && (
-              <Button variant="ghost" size="sm" icon={faTrash} onClick={() => onDelete(question)} disabled={busy}>
-                Eliminar
-              </Button>
+              <Button type="button" variant="ghost" size="icon" icon={faTrash}
+                className="h-11 w-11 text-wrong-700"
+                aria-label={`Retirar del curso: ${question.prompt}`}
+                title="Retirar de este curso"
+                aria-expanded={confirmRemove}
+                onClick={() => setConfirmRemove((current) => !current)} disabled={busy} />
             )}
           </div>
         )}
       </header>
+
+      {confirmRemove && (
+        <div role="alert" className="mt-3 rounded-xl border border-wrong-200 bg-wrong-50 p-3.5">
+          <p className="text-sm font-medium text-ink-900">¿Retirar esta pregunta de este curso?</p>
+          <p className="mt-1 text-sm text-ink-600">Se conservarán las respuestas anteriores y seguirá disponible en otros cursos.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => setConfirmRemove(false)}>Cancelar</Button>
+            <Button type="button" variant="danger" size="sm" disabled={busy} onClick={() => { setConfirmRemove(false); onDelete(question) }}>Retirar del curso</Button>
+          </div>
+        </div>
+      )}
 
       <p className="mt-3 text-[0.9375rem] font-medium leading-relaxed text-ink-900">
         {question.prompt}
@@ -110,6 +126,7 @@ export default function QuestionCard({ question, onEdit, onDelete, onReview, bus
               </span>
               <span className={cn('pt-0.5', isCorrect ? 'font-medium text-correct-700' : 'text-ink-700')}>
                 {option}
+                {isCorrect && <span className="mt-1 block text-xs font-semibold">Respuesta correcta</span>}
               </span>
             </li>
           )
@@ -121,10 +138,6 @@ export default function QuestionCard({ question, onEdit, onDelete, onReview, bus
           <span className="font-semibold text-ink-700">Explicación: </span>
           {question.explanation}
         </p>
-      )}
-
-      {question.source === 'official' && (
-        <p className="mt-3 text-[0.75rem] text-ink-400">Pregunta oficial (solo lectura)</p>
       )}
 
       {canReview && (

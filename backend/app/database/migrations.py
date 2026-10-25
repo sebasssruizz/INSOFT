@@ -178,6 +178,12 @@ def _crear_evaluaciones_usabilidad(conn: Connection) -> None:
     UsabilityEvaluation.__table__.create(bind=conn, checkfirst=True)
 
 
+def _exclusiones_preguntas_curso(conn: Connection) -> None:
+    from app.models.course_question_exclusion import CourseQuestionExclusion
+
+    CourseQuestionExclusion.__table__.create(bind=conn, checkfirst=True)
+
+
 # Lista ordenada: añadir al final; nunca editar versiones ya publicadas.
 MIGRATIONS: list[Migration] = [
     Migration(1, "linea_base", _linea_base),
@@ -185,6 +191,7 @@ MIGRATIONS: list[Migration] = [
     Migration(3, "pregunta_normalizada_ai", _pregunta_normalizada_ai),
     Migration(4, "crear_feedback", _crear_feedback),
     Migration(5, "crear_evaluaciones_usabilidad", _crear_evaluaciones_usabilidad),
+    Migration(6, "exclusiones_preguntas_curso", _exclusiones_preguntas_curso),
 ]
 
 _SCHEMA_MIGRATIONS_DDL = """

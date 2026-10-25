@@ -112,12 +112,13 @@ def get_subtopic_question_bank(
     subtopic_id: int,
     status: str | None = Query(default=None, description="Filtro por estado (approved|pending|rejected)"),
     source: str | None = Query(default=None, description="Filtro por origen (official|ai|teacher)"),
+    course_id: int | None = Query(default=None),
     current_user: User = Depends(require_teacher),
     db: Session = Depends(get_db),
 ):
     """Todas las preguntas del subtema (oficiales, docentes e IA) con su estado."""
     questions = question_service.get_subtopic_bank(
-        db, current_user, subtopic_id, status=status, source=source
+        db, current_user, subtopic_id, status=status, source=source, course_id=course_id
     )
     return [
         serialize_question_for_teacher(q, current_user.id) for q in questions
@@ -134,11 +135,12 @@ def get_subtopic_question_bank(
 )
 def get_topic_question_summary(
     topic_id: int,
+    course_id: int | None = Query(default=None),
     current_user: User = Depends(require_teacher),
     db: Session = Depends(get_db),
 ):
     """Conteos por subtema (total, approved, pending, rejected, official, teacher, ai)."""
-    return question_service.get_topic_bank_summary(db, current_user, topic_id)
+    return question_service.get_topic_bank_summary(db, current_user, topic_id, course_id=course_id)
 
 
 @router.patch(

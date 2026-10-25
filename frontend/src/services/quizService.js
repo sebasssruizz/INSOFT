@@ -7,13 +7,14 @@ import { apiFetch } from './api'
  * recibe is_correct, correct_index y la explicación.
  */
 
-export const submitQuizAnswer = ({ questionId, selectedIndex, attemptId }) =>
+export const submitQuizAnswer = ({ questionId, selectedIndex, attemptId, courseId }) =>
   apiFetch('/quiz/answers', {
     method: 'POST',
     body: {
       question_id: questionId,
       selected_index: selectedIndex,
       attempt_id: attemptId,
+      course_id: courseId ? Number(courseId) : undefined,
     },
   })
 

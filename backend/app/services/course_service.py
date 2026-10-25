@@ -101,7 +101,7 @@ def _student_course_summary(db: Session, student: User, course: Course) -> dict:
         "question_count": sum(
             count
             for count in content_repo.count_approved_questions_by_subtopics(
-                db, subtopic_ids
+                db, subtopic_ids, course_id=course.id
             ).values()
         ),
     }

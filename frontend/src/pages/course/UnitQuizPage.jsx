@@ -110,7 +110,7 @@ export default function UnitQuizPage() {
           <Quiz
             questions={questions}
             onAnswer={(questionId, selectedIndex) =>
-              submitQuizAnswer({ questionId, selectedIndex, attemptId })
+              submitQuizAnswer({ questionId, selectedIndex, attemptId, courseId })
             }
             onRestartAttempt={() => setAttemptId(newQuizAttemptId())}
             exit={

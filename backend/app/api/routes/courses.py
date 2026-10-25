@@ -14,8 +14,19 @@ from app.schemas.course import (
 )
 from app.schemas.user import StudentRead
 from app.services import course_service
+from app.services import question_service
 
 router = APIRouter(prefix="/courses", tags=["courses"])
+
+
+@router.delete("/{course_id}/questions/{question_id}", response_model=dict)
+def remove_course_question(
+    course_id: int,
+    question_id: int,
+    current_user: User = Depends(require_teacher),
+    db: Session = Depends(get_db),
+):
+    return question_service.remove_question_from_course(db, current_user, course_id, question_id)
 
 
 @router.get("", response_model=list[StudentCourseRead] | list[TeacherCourseRead])
