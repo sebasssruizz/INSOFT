@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faRotateRight, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 
@@ -16,6 +17,7 @@ import { cn } from '../../lib/utils'
  * 429 (más tarde), red (reintentar).
  */
 export default function PracticeQuiz({ subtopicId = null, topicId = null, count, exit }) {
+  const { courseId } = useParams()
   const [session, setSession] = useState(null)
   const [preparing, setPreparing] = useState(false)
   const [error, setError] = useState(null)
@@ -26,7 +28,7 @@ export default function PracticeQuiz({ subtopicId = null, topicId = null, count,
     setError(null)
     setSession(null)
     try {
-      const data = await startPracticeSession({ subtopicId, topicId, count })
+      const data = await startPracticeSession({ subtopicId, topicId, count, courseId })
       setSession(data)
     } catch (err) {
       if (err instanceof ApiError) {
@@ -40,7 +42,7 @@ export default function PracticeQuiz({ subtopicId = null, topicId = null, count,
     } finally {
       setPreparing(false)
     }
-  }, [subtopicId, topicId, count])
+  }, [subtopicId, topicId, count, courseId])
 
   const answerQuestion = useCallback(
     (questionId, selectedIndex) =>
@@ -48,8 +50,9 @@ export default function PracticeQuiz({ subtopicId = null, topicId = null, count,
         questionId,
         selectedIndex,
         attemptId: session.attempt_id,
+        courseId,
       }),
-    [session],
+    [session, courseId],
   )
 
   if (preparing) {

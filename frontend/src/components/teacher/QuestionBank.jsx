@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
   faCircleCheck,
+  faEye,
   faRobot,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 
 import { Button } from '../ui/Button'
@@ -11,8 +13,7 @@ import { IrisSpinner } from '../ui/EyeLoader'
 import { ApiError } from '../../services/api'
 import {
   createTeacherQuestion,
-  deleteQuestion,
-  generateAiQuestions,
+  removeCourseQuestion,
   getSubtopicQuestionBank,
   getTopicQuestionSummary,
   reviewPendingQuestion,
@@ -22,16 +23,6 @@ import QuestionCard from './QuestionCard'
 import QuestionForm from './QuestionForm'
 import { cn } from '../../lib/utils'
 import { splitUnitName } from '../../lib/curriculum'
-
-const STATUS_FILTERS = [
-  { value: '', label: 'Todas' },
-  { value: 'approved', label: 'Aprobadas' },
-  { value: 'pending', label: 'Pendientes' },
-  { value: 'practice', label: 'Práctica IA' },
-  { value: 'rejected', label: 'Rechazadas' },
-]
-
-const SOURCE_LABELS = { official: 'Oficial', teacher: 'Docente', ai: 'IA' }
 
 /**
  * Banco de preguntas del curso: navegación unidad → subtema, listado con
@@ -49,22 +40,42 @@ export default function QuestionBank({
   const [expandedTopicId, setExpandedTopicId] = useState(null)
   const [summaries, setSummaries] = useState({})
   const [selectedSubtopic, setSelectedSubtopic] = useState(null)
+  const [bankOpen, setBankOpen] = useState(false)
+  const dialogRef = useRef(null)
+  const closeButtonRef = useRef(null)
+  const bankContentRef = useRef(null)
   const [questions, setQuestions] = useState([])
-  const [statusFilter, setStatusFilter] = useState('')
-  const [sourceFilter, setSourceFilter] = useState('')
   const [loadingBank, setLoadingBank] = useState(false)
   const [bankError, setBankError] = useState(null)
   const [editing, setEditing] = useState(null) // null | {} (nueva) | question (editar)
   const [formError, setFormError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [actionMessage, setActionMessage] = useState(null)
-  const [generating, setGenerating] = useState(false)
-  const [countChoice, setCountChoice] = useState(3)
-  const [generateError, setGenerateError] = useState(null)
-  const [highlightIds, setHighlightIds] = useState([])
+  const [actionError, setActionError] = useState(null)
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewItems, setReviewItems] = useState([])
   const [reviewLoading, setReviewLoading] = useState(false)
+
+  useEffect(() => {
+    if (!bankOpen) return
+    const dialog = dialogRef.current
+    const trigger = document.activeElement
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    dialog.showModal()
+    closeButtonRef.current?.focus()
+    return () => {
+      dialog.close()
+      document.body.style.overflow = previousOverflow
+      trigger?.focus()
+    }
+  }, [bankOpen])
+
+  const closeBank = () => {
+    if (editing && !window.confirm('¿Cerrar el panel? Los cambios sin guardar se perderán.')) return
+    setEditing(null)
+    setBankOpen(false)
+  }
 
   // Resumen de conteos por unidad (para badges de pendientes en la navegación)
   const loadSummaries = useCallback(
@@ -73,14 +84,14 @@ export default function QuestionBank({
       const results = {}
       for (const topic of topics) {
         try {
-          results[topic.id] = await getTopicQuestionSummary(topic.id)
+          results[topic.id] = await getTopicQuestionSummary(topic.id, courseId)
         } catch {
           results[topic.id] = []
         }
       }
       if (!cancelledRef?.cancelled) setSummaries(results)
     },
-    [topics],
+    [topics, courseId],
   )
 
   useEffect(() => {
@@ -105,10 +116,9 @@ export default function QuestionBank({
       setBankError(null)
       try {
         const data = await getSubtopicQuestionBank(subtopicId, {
-          status: statusFilter || undefined,
-          source: sourceFilter || undefined,
+          courseId,
         })
-        setQuestions(data)
+        setQuestions(data.filter((question) => ['approved', 'practice'].includes(question.status)))
       } catch (error) {
         setQuestions([])
         setBankError(error instanceof ApiError ? error.message : 'Error al cargar el banco.')
@@ -116,7 +126,7 @@ export default function QuestionBank({
         setLoadingBank(false)
       }
     },
-    [statusFilter, sourceFilter],
+    [courseId],
   )
 
   useEffect(() => {
@@ -130,7 +140,7 @@ export default function QuestionBank({
     )?.id
     if (!topicId) return
     try {
-      const summary = await getTopicQuestionSummary(topicId)
+      const summary = await getTopicQuestionSummary(topicId, courseId)
       setSummaries((current) => ({ ...current, [topicId]: summary }))
     } catch {
       /* el resumen es informativo; el banco ya se refrescó */
@@ -138,12 +148,17 @@ export default function QuestionBank({
   }
 
   const selectSubtopic = (subtopicId) => {
+    if (selectedSubtopic !== subtopicId) {
+      setQuestions([])
+      setLoadingBank(true)
+    }
+    setActionError(null)
     setSelectedSubtopic(subtopicId)
+    setBankOpen(true)
     onSelectedSubtopicChange?.(subtopicId)
     setEditing(null)
     setFormError(null)
     setActionMessage(null)
-    setGenerateError(null)
   }
 
   const handleSubmitQuestion = async (payload) => {
@@ -169,23 +184,17 @@ export default function QuestionBank({
   }
 
   const handleDelete = async (question) => {
-    if (!window.confirm('¿Eliminar esta pregunta? Esta acción no se puede deshacer.')) return
     setBusy(true)
     setActionMessage(null)
+    setActionError(null)
     try {
-      const result = await deleteQuestion(question.id)
-      if (result.deleted) {
-        setQuestions((current) => current.filter((q) => q.id !== question.id))
-        setActionMessage('Pregunta eliminada.')
-      } else {
-        setQuestions((current) =>
-          current.map((q) => (q.id === question.id ? { ...q, status: 'rejected' } : q)),
-        )
-        setActionMessage(result.detail)
-      }
+      const result = await removeCourseQuestion(courseId, question.id)
+      setQuestions((current) => current.filter((q) => q.id !== question.id))
+      if (editing?.id === question.id) setEditing(null)
+      setActionMessage(result.detail)
       refreshSummary()
     } catch (error) {
-      setActionMessage(error instanceof ApiError ? error.message : 'No se pudo eliminar.')
+      setActionError(error instanceof ApiError ? error.message : 'No se pudo retirar la pregunta.')
     } finally {
       setBusy(false)
     }
@@ -207,35 +216,6 @@ export default function QuestionBank({
     }
   }
 
-  const handleGenerate = async (count) => {
-    setGenerating(true)
-    setGenerateError(null)
-    setActionMessage(null)
-    try {
-      const data = await generateAiQuestions({ subtopicId: selectedSubtopic, count })
-      const newIds = data.generated.map((q) => q.id)
-      setQuestions((current) => [...current, ...data.generated])
-      setHighlightIds(newIds)
-      setActionMessage(
-        data.warning ??
-          `Se generaron ${data.created} preguntas. Quedan pendientes hasta que las apruebes.`,
-      )
-      setTimeout(() => setHighlightIds([]), 4000)
-      refreshSummary()
-    } catch (error) {
-      if (error instanceof ApiError) {
-        if (error.status === 429) setGenerateError('Alcanzaste el límite de generaciones por hora. Intenta más tarde.')
-        else if (error.status === 422) setGenerateError(error.message)
-        else if (error.status === 502) setGenerateError('La IA no devolvió preguntas válidas. Intenta de nuevo en unos minutos.')
-        else setGenerateError(error.message)
-      } else {
-        setGenerateError('No se pudieron generar preguntas.')
-      }
-    } finally {
-      setGenerating(false)
-    }
-  }
-
   const openReviewQueue = async () => {
     if (reviewOpen) {
       setReviewOpen(false)
@@ -253,7 +233,7 @@ export default function QuestionBank({
       }
       const batches = await Promise.all(
         pendingBySubtopic.map((subtopicId) =>
-          getSubtopicQuestionBank(subtopicId, { status: 'pending', source: 'ai' }),
+          getSubtopicQuestionBank(subtopicId, { status: 'pending', source: 'ai', courseId }),
         ),
       )
       setReviewItems(batches.flat())
@@ -306,7 +286,10 @@ export default function QuestionBank({
         </Button>
       </div>
       <p className="mt-1.5 max-w-[62ch] text-[0.875rem] leading-relaxed text-ink-500">
-        Crea preguntas a mano, genera con IA y revisa lo que verán tus estudiantes en los cuestionarios.
+        Consulta y administra las preguntas disponibles para tus estudiantes en cada subtema.
+      </p>
+      <p className="mt-2 text-sm text-ink-600">
+        El botón del ojo abre las preguntas y sus respuestas correctas de cada subtema.
       </p>
 
       {reviewOpen && (
@@ -385,30 +368,36 @@ export default function QuestionBank({
                     : topic.subtopics.map((subtopic) => ({
                         subtopic_id: subtopic.id,
                         title: subtopic.name,
-                        total: 0,
+                        total: subtopic.question_count ?? 0,
                         pending: 0,
                       }))
                   ).map((item) => (
                     <li key={item.subtopic_id}>
-                      <button
-                        type="button"
-                        onClick={() => selectSubtopic(item.subtopic_id)}
+                      <div
                         className={cn(
-                          'flex w-full items-center justify-between gap-3 px-5 py-3 text-left text-sm transition-colors duration-150 hover:bg-soft-sky/60',
-                          selectedSubtopic === item.subtopic_id && 'bg-soft-sky font-semibold text-blue-900',
+                          'flex items-center justify-between gap-3 px-4 py-3 text-sm sm:px-5',
+                          bankOpen && selectedSubtopic === item.subtopic_id && 'bg-soft-sky',
                         )}
                       >
-                        <span className="min-w-0 truncate text-ink-700">{item.title}</span>
-                        <span className="tabular shrink-0 text-[0.75rem] text-ink-400">
-                          {item.total} pregunta{item.total === 1 ? '' : 's'}
-                          {item.pending > 0 && (
-                            <span className="ml-2 font-bold text-deep-butter">{item.pending} IA pend.</span>
-                          )}
-                          {item.practice > 0 && (
-                            <span className="ml-2 font-bold text-deep-lavender">{item.practice} práctica</span>
-                          )}
+                        <span className="min-w-0 flex-1">
+                          <span className="block break-words font-medium leading-relaxed text-ink-700">{item.title}</span>
+                          <span className="tabular mt-1 block text-xs text-ink-500">
+                          {(item.approved ?? item.total) + (item.practice ?? 0)} {(item.approved ?? item.total) + (item.practice ?? 0) === 1 ? 'pregunta disponible' : 'preguntas disponibles'}
+                          </span>
                         </span>
-                      </button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          icon={faEye}
+                          className="h-11 w-11 shrink-0"
+                          aria-label={`Ver preguntas y respuestas de ${item.title}`}
+                          title="Ver preguntas y respuestas"
+                          aria-haspopup="dialog"
+                          aria-controls="question-bank-dialog"
+                          onClick={() => selectSubtopic(item.subtopic_id)}
+                        />
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -420,143 +409,91 @@ export default function QuestionBank({
 
       {/* Panel del subtema seleccionado */}
       {selectedSubtopic && (
-        <div className="mt-6 rounded-2xl border border-ink-200 bg-ink-50/50 p-5 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-base font-semibold text-ink-900">{selectedSubtopicName}</h3>
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={countChoice}
-                onChange={(event) => setCountChoice(Number(event.target.value))}
-                aria-label="Cantidad de preguntas a generar"
-                className="h-9 rounded-xl border border-ink-200 bg-white px-2.5 text-[0.8125rem] text-ink-700"
-              >
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={faRobot}
-                loading={generating}
-                onClick={() => handleGenerate(countChoice)}
-              >
-                {generating ? 'Generando…' : 'Generar con IA'}
-              </Button>
-              <Button variant="primary" size="sm" onClick={() => { setEditing({}); setFormError(null) }} disabled={busy}>
-                Nueva pregunta
-              </Button>
-            </div>
-          </div>
-          <p className="mt-2 text-[0.75rem] leading-relaxed text-ink-400">
-            Las preguntas generadas con IA quedan pendientes y no se muestran a los estudiantes hasta que las apruebes.
-          </p>
-
-          <p aria-live="polite" className="sr-only">
-            {actionMessage ?? ''}
-          </p>
-
-          {generateError && (
-            <p role="alert" className="mt-4 rounded-xl border border-wrong-200 bg-wrong-50 px-3.5 py-2.5 text-sm text-wrong-700">
-              {generateError}
-            </p>
-          )}
-          {actionMessage && (
-            <p className="mt-4 rounded-xl border border-correct-200 bg-correct-50 px-3.5 py-2.5 text-sm text-correct-700">
-              {actionMessage}
-            </p>
-          )}
-
-          {editing && (
-            <div className="mt-5">
-              <QuestionForm
-                initial={editing.id ? editing : undefined}
-                onSubmit={handleSubmitQuestion}
-                onCancel={() => { setEditing(null); setFormError(null) }}
-                submitting={busy}
-                serverError={formError}
-              />
-            </div>
-          )}
-
-          {/* Filtros */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            {STATUS_FILTERS.map((filter) => (
-              <button
-                key={filter.value}
-                type="button"
-                onClick={() => setStatusFilter(filter.value)}
-                className={cn(
-                  'rounded-full px-3.5 py-1.5 text-[0.8125rem] font-semibold transition-colors duration-150',
-                  statusFilter === filter.value
-                    ? 'bg-blue-900 text-white'
-                    : 'bg-white text-ink-600 hover:bg-ink-100',
-                )}
-              >
-                {filter.label}
-              </button>
-            ))}
-            <span className="mx-1 h-5 w-px bg-ink-200" aria-hidden="true" />
-            {['', ...Object.keys(SOURCE_LABELS)].map((source) => (
-              <button
-                key={source || 'all'}
-                type="button"
-                onClick={() => setSourceFilter(source)}
-                className={cn(
-                  'rounded-full px-3.5 py-1.5 text-[0.8125rem] font-semibold transition-colors duration-150',
-                  sourceFilter === source
-                    ? 'bg-blue-900 text-white'
-                    : 'bg-white text-ink-600 hover:bg-ink-100',
-                )}
-              >
-                {source ? SOURCE_LABELS[source] : 'Todos los orígenes'}
-              </button>
-            ))}
-          </div>
-
-          {/* Listado */}
-          <div className="mt-5" aria-live="polite">
-            {loadingBank ? (
-              <div className="space-y-3">
-                <div className="skeleton h-32 w-full rounded-2xl" />
-                <div className="skeleton h-32 w-full rounded-2xl" />
+        <dialog
+          ref={dialogRef}
+          id="question-bank-dialog"
+          aria-labelledby="question-bank-title"
+          aria-describedby="question-bank-subtopic"
+          onCancel={(event) => { event.preventDefault(); closeBank() }}
+          onClick={(event) => { if (event.target === event.currentTarget) closeBank() }}
+          className="m-auto max-h-[100dvh] w-full max-w-3xl overflow-hidden border-0 bg-white p-0 text-ink-900 shadow-e4 backdrop:bg-ink-950/40 sm:max-h-[calc(100dvh-3rem)] sm:w-[calc(100%-3rem)] sm:rounded-xl"
+        >
+          <div className="flex max-h-[100dvh] flex-col sm:max-h-[calc(100dvh-3rem)]">
+            <header className="flex shrink-0 items-start justify-between gap-3 border-b border-ink-200 bg-white p-4 sm:px-6 sm:py-5">
+              <div className="min-w-0">
+                <h2 id="question-bank-title" className="text-lg font-semibold sm:text-xl">Preguntas y respuestas</h2>
+                <p id="question-bank-subtopic" className="mt-1 break-words text-sm text-ink-600">{selectedSubtopicName}</p>
               </div>
-            ) : bankError ? (
-              <div className="rounded-2xl border border-wrong-200 bg-wrong-50 px-6 py-8 text-center">
-                <p className="text-sm text-wrong-700">{bankError}</p>
-                <Button variant="secondary" size="sm" className="mt-4" onClick={() => loadBank(selectedSubtopic)}>
-                  Reintentar
-                </Button>
-              </div>
-            ) : questions.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-ink-300 bg-white px-6 py-10 text-center text-sm text-ink-500">
-                Este subtema aún no tiene preguntas{statusFilter || sourceFilter ? ' con esos filtros' : ''}.
+              <Button ref={closeButtonRef} type="button" variant="ghost" size="icon" icon={faXmark} className="h-11 w-11 shrink-0" aria-label="Cerrar preguntas y respuestas" onClick={closeBank} />
+            </header>
+            <div ref={bankContentRef} className="min-h-0 overflow-y-auto overscroll-contain bg-ink-50 p-4 sm:p-6">
+              <p className="text-sm text-ink-600">
+                Preguntas disponibles para los estudiantes de este curso.
               </p>
-            ) : (
-              <div className="space-y-4">
-                {questions.map((question) => (
-                  <div
-                    key={question.id}
-                    className={cn(
-                      'rounded-2xl transition-shadow duration-500',
-                      highlightIds.includes(question.id) && 'ring-2 ring-deep-butter ring-offset-2',
-                    )}
-                  >
-                    <QuestionCard
-                      question={question}
-                      busy={busy}
-                      onEdit={(q) => { setEditing(q); setFormError(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                      onDelete={handleDelete}
-                      onReview={handleReview}
-                    />
+
+              <p aria-live="polite" className="sr-only">
+                {actionMessage ?? ''}
+              </p>
+
+              {actionError && (
+                <p role="alert" className="mt-4 rounded-xl border border-wrong-200 bg-wrong-50 px-3.5 py-2.5 text-sm text-wrong-700">
+                  {actionError}
+                </p>
+              )}
+              {actionMessage && (
+                <p className="mt-4 rounded-xl border border-correct-200 bg-correct-50 px-3.5 py-2.5 text-sm text-correct-700">
+                  {actionMessage}
+                </p>
+              )}
+
+              {editing && (
+                <div className="mt-5">
+                  <QuestionForm
+                    initial={editing.id ? editing : undefined}
+                    onSubmit={handleSubmitQuestion}
+                    onCancel={() => { setEditing(null); setFormError(null) }}
+                    submitting={busy}
+                    serverError={formError}
+                  />
+                </div>
+              )}
+
+              {/* Listado */}
+              <div className="mt-5" aria-live="polite">
+                {loadingBank ? (
+                  <div className="space-y-3">
+                    <div className="skeleton h-32 w-full rounded-2xl" />
+                    <div className="skeleton h-32 w-full rounded-2xl" />
                   </div>
-                ))}
+                ) : bankError ? (
+                  <div className="rounded-2xl border border-wrong-200 bg-wrong-50 px-6 py-8 text-center">
+                    <p className="text-sm text-wrong-700">{bankError}</p>
+                    <Button variant="secondary" size="sm" className="mt-4" onClick={() => loadBank(selectedSubtopic)}>
+                      Reintentar
+                    </Button>
+                  </div>
+                ) : questions.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-ink-300 bg-white px-6 py-10 text-center text-sm text-ink-500">
+                    Este subtema no tiene preguntas disponibles en este curso.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {questions.map((question) => (
+                      <div key={question.id}>
+                        <QuestionCard
+                          question={question}
+                          busy={busy}
+                          onEdit={(q) => { setEditing(q); setFormError(null); bankContentRef.current?.scrollTo({ top: 0 }) }}
+                          onDelete={handleDelete}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        </dialog>
       )}
     </section>
   )

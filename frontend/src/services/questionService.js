@@ -8,16 +8,20 @@ import { apiFetch } from './api'
  * 502 IA sin respuesta válida, 503 cuota).
  */
 
-export const getSubtopicQuestionBank = (subtopicId, { status, source } = {}) => {
+export const getSubtopicQuestionBank = (subtopicId, { status, source, courseId } = {}) => {
   const params = new URLSearchParams()
   if (status) params.set('status', status)
   if (source) params.set('source', source)
+  if (courseId) params.set('course_id', courseId)
   const query = params.toString() ? `?${params.toString()}` : ''
   return apiFetch(`/content/subtopics/${subtopicId}/questions/bank${query}`)
 }
 
-export const getTopicQuestionSummary = (topicId) =>
-  apiFetch(`/content/topics/${topicId}/questions/summary`)
+export const getTopicQuestionSummary = (topicId, courseId) =>
+  apiFetch(`/content/topics/${topicId}/questions/summary${courseId ? `?course_id=${courseId}` : ''}`)
+
+export const removeCourseQuestion = (courseId, questionId) =>
+  apiFetch(`/courses/${courseId}/questions/${questionId}`, { method: 'DELETE' })
 
 export const createTeacherQuestion = (subtopicId, payload) =>
   apiFetch(`/content/subtopics/${subtopicId}/questions`, { method: 'POST', body: payload })

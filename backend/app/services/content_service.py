@@ -80,7 +80,7 @@ def get_course_content(db: Session, user: User, course_id: int) -> list[dict]:
         topic_subtopics = sorted(topic.subtopics, key=lambda s: s.order)
         # Una sola query agregada para los conteos del curso (evita N+1).
         approved_counts = content_repo.count_approved_questions_by_subtopics(
-            db, [sub.id for sub in topic_subtopics]
+            db, [sub.id for sub in topic_subtopics], course_id=course_id
         )
         subtopics = [
             {
@@ -126,7 +126,7 @@ def get_subtopic_detail(db: Session, user: User, course_id: int, subtopic_id: in
         completed = bool(record and record.completed)
 
     # Solo preguntas aprobadas (oficiales + docentes + IA aprobadas), con tope.
-    questions = content_repo.get_approved_questions_by_subtopic(db, subtopic.id)
+    questions = content_repo.get_approved_questions_by_subtopic(db, subtopic.id, course_id=course_id)
     questions = _sample_questions(questions)
     return {
         "id": subtopic.id,
@@ -152,6 +152,6 @@ def get_topic_questions(db: Session, user: User, course_id: int, topic_id: int) 
         raise NotFoundError("Unidad no encontrada en este curso.")
 
     # Solo preguntas aprobadas (oficiales + docentes + IA aprobadas), con tope.
-    questions = content_repo.get_approved_questions_by_topic(db, topic_id)
+    questions = content_repo.get_approved_questions_by_topic(db, topic_id, course_id=course_id)
     questions = _sample_questions(questions)
     return [_serialize_question(question) for question in questions]

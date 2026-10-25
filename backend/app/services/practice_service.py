@@ -19,6 +19,8 @@ from app.core.config import settings
 from app.models.content import Question, Subtopic
 from app.models.question_meta import QuestionSource, QuestionStatus
 from app.repositories import content_repository as content_repo
+from app.repositories import course_question_repository as course_question_repo
+from app.services import course_service
 from app.repositories import practice_repository as practice_repo
 from app.services.ai_service import (
     GeminiCallError,
@@ -134,6 +136,7 @@ async def create_practice_session(
     subtopic_id: int | None = None,
     topic_id: int | None = None,
     count: int | None = None,
+    course_id: int | None = None,
 ) -> dict:
     """Arma la sesión de práctica; devuelve el payload del endpoint."""
     if (subtopic_id is None) == (topic_id is None):
@@ -150,6 +153,12 @@ async def create_practice_session(
         raise HTTPException(status_code=422, detail="count debe ser al menos 1.")
 
     subtopics = _target_subtopics(db, user, subtopic_id, topic_id)
+    if course_id is not None:
+        course_service.get_course_with_access_check(db, user, course_id)
+        allowed_ids = set(content_repo.get_subtopic_ids_for_course(db, course_id))
+        subtopics = [subtopic for subtopic in subtopics if subtopic.id in allowed_ids]
+        if not subtopics:
+            raise NotFoundError("Tema no encontrado en este curso.")
     subtopics = _subtopics_with_chunks(db, subtopics)
     subtopic_ids = [s.id for s in subtopics]
 
@@ -160,7 +169,8 @@ async def create_practice_session(
     ai_target = target - bank_target
 
     # ── 1. Banco: docente > oficial; excluye acertadas, prioriza falladas ──
-    bank_pool = _bank_pool(db, ordered_ids)
+    excluded_ids = course_question_repo.excluded_ids(db, course_id)
+    bank_pool = [q for q in _bank_pool(db, ordered_ids) if q.id not in excluded_ids]
     recent = practice_repo.recent_results_by_question(db, user.id, [q.id for q in bank_pool])
     failed, fresh = _order_bank(bank_pool, recent)
 
@@ -193,7 +203,7 @@ async def create_practice_session(
         already_answered = practice_repo.answered_question_ids(
             db, user.id, _practice_ids(db, ordered_ids)
         )
-        pool = practice_repo.practice_pool(db, ordered_ids, list(already_answered))
+        pool = practice_repo.practice_pool(db, ordered_ids, list(already_answered | excluded_ids))
         ai_selected = pool[:ai_target]
 
         missing = ai_target - len(ai_selected)
@@ -219,7 +229,7 @@ async def create_practice_session(
                     )
                     llm_calls += 1
                     fresh_generated = [
-                        q for q in result["questions"] if q.id not in already_answered
+                        q for q in result["questions"] if q.id not in already_answered | excluded_ids
                     ]
                     ai_selected.extend(fresh_generated[:missing])
                     missing = ai_target - len(ai_selected)

@@ -106,6 +106,7 @@ export default function SubtopicPage() {
       questionId,
       selectedIndex,
       attemptId: quizAttemptId ?? newQuizAttemptId(),
+      courseId,
     })
 
   const load = useCallback(async () => {
@@ -183,13 +184,17 @@ export default function SubtopicPage() {
   return (
     <article className="animate-fade-in">
       {topic && (
-        <Link
-          to={`/courses/${courseId}/units/${topic.id}`}
-          className="inline-flex items-center gap-2 text-[0.8125rem] font-medium text-ink-500 transition-colors duration-150 hover:text-blue-800"
-        >
-          <FontAwesomeIcon icon={faArrowLeft} className="text-[0.7rem]" aria-hidden="true" />
-          {unitTitle || 'Volver a la unidad'}
-        </Link>
+        <div>
+          <Button
+            as={Link}
+            to={`/courses/${courseId}/units/${topic.id}`}
+            variant="secondary"
+            icon={faArrowLeft}
+          >
+            Volver a la unidad
+          </Button>
+          {unitTitle && <p className="mt-2 text-sm text-ink-500">{unitTitle}</p>}
+        </div>
       )}
 
       <header className="mt-4">

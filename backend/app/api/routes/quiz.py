@@ -35,6 +35,7 @@ class QuizAnswerRequest(BaseModel):
     question_id: int = Field(..., description="Pregunta respondida")
     selected_index: int = Field(..., ge=0, le=3, description="Opción elegida (0-3)")
     attempt_id: str = Field(..., description="UUID del intento (compartido por todo el quiz)")
+    course_id: int | None = None
 
 
 class QuizAnswerResponse(BaseModel):
@@ -91,6 +92,7 @@ def submit_answer_endpoint(
             payload.question_id,
             payload.selected_index,
             payload.attempt_id,
+            course_id=payload.course_id,
         )
     except HTTPException:
         raise

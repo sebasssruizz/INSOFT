@@ -7,12 +7,13 @@ import { apiFetch } from './api'
  * correcta; la calificación sigue ocurriendo en POST /quiz/answers.
  */
 
-export const startPracticeSession = ({ subtopicId, topicId, count } = {}) =>
+export const startPracticeSession = ({ subtopicId, topicId, count, courseId } = {}) =>
   apiFetch('/practice/sessions', {
     method: 'POST',
     body: {
       subtopic_id: subtopicId ?? null,
       topic_id: topicId ?? null,
       count: count ?? undefined,
+      course_id: courseId ? Number(courseId) : undefined,
     },
   })

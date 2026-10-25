@@ -64,6 +64,8 @@ class Settings(BaseSettings):
 
     # Correos que obtienen automáticamente el rol de profesor al registrarse (separados por comas)
     TEACHER_EMAILS: str = ""
+    # Preparación idempotente de cursos con datos ficticios para docentes autorizados.
+    REVIEW_DEMO_TEACHER_EMAILS: str = ""
     # Acceso investigador a PQRS/evaluaciones, independiente del rol docente.
     FEEDBACK_REVIEWER_EMAILS: str = ""
 
