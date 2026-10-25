@@ -49,6 +49,10 @@ def _esquema_viejo_pg(engine):
                 id SERIAL PRIMARY KEY, subtopic_id INTEGER NOT NULL, prompt VARCHAR(500) NOT NULL,
                 options JSON NOT NULL, correct_index INTEGER NOT NULL, explanation TEXT,
                 "order" INTEGER NOT NULL DEFAULT 0)"""))
+        # Los cursos ya existían antes de las migraciones versionadas.
+        from app.models.course import Course
+
+        Course.__table__.create(conn, checkfirst=True)
         conn.execute(text("""
             CREATE TABLE ai_queries (
                 id SERIAL PRIMARY KEY, user_id INTEGER, subtopic_id INTEGER,
@@ -109,7 +113,7 @@ def test_pg_upgrade_v3_preserves_users_and_feedback_roundtrip(engine, monkeypatc
     with monkeypatch.context() as old:
         old.setattr(migrations, "MIGRATIONS", current[:3])
         assert migrations.run_migrations(engine) == [1, 2, 3]
-    assert migrations.run_migrations(engine) == [4, 5]
+    assert migrations.run_migrations(engine) == [m.version for m in current if m.version > 3]
     with Session(engine) as db:
         db.add(Feedback(user_id=1, tipo="Sugerencia", categoria="Otro", comentario="Ejemplo sintético", pagina="/dashboard"))
         db.add(UsabilityEvaluation(user_id=1, submission_id=str(uuid4()), version="insoft-nielsen-v1",
