@@ -8,6 +8,8 @@ import CompleteProfilePage from './pages/CompleteProfilePage'
 import DashboardPage from './pages/DashboardPage'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
+import UsabilityEvaluationPage from './pages/UsabilityEvaluationPage'
+import FeedbackReviewPage from './pages/FeedbackReviewPage'
 import NotFoundPage from './pages/NotFoundPage'
 import TeacherCoursePage from './pages/TeacherCoursePage'
 import TeacherAiStats from './pages/TeacherAiStats'
@@ -67,6 +69,9 @@ export default function App() {
 
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/feedback/evaluation" element={<UsabilityEvaluationPage />} />
+          <Route path="/feedback/review" element={<FeedbackReviewPage />} />
+          <Route path="/teacher/feedback" element={<Navigate to="/feedback/review" replace />} />
 
           {/* El curso es un contenedor persistente: cabecera con el progreso e
               índice lateral se mantienen mientras se navega por dentro. */}

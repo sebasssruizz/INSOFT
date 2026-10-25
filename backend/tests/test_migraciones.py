@@ -137,7 +137,7 @@ def test_actualiza_base_con_versiones_1_y_2_registradas(tmp_path, monkeypatch):
     with monkeypatch.context() as previous:
         previous.setattr(migrations, "MIGRATIONS", all_migrations[:2])
         assert migrations.run_migrations(engine) == [1, 2]
-    assert migrations.run_migrations(engine) == [3]
+    assert migrations.run_migrations(engine) == [m.version for m in all_migrations if m.version > 2]
     with engine.begin() as conn:
         conn.execute(text("UPDATE ai_queries SET question_normalizada='pregunta normalizada' WHERE id=1"))
         assert conn.scalar(text("SELECT respuesta FROM ai_queries WHERE id=1")) == "respuesta previa"

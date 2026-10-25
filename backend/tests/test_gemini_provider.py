@@ -1,7 +1,7 @@
 """Tests del proveedor Gemini (/api/ai/ask con AI_PROVIDER=gemini).
 
 Usan SQLite en fichero temporal y el login de desarrollo. Mockean
-call_openrouter (normalización) y call_gemini (respuesta final): ninguna
+call_openrouter y call_gemini; Gemini no normaliza con OpenRouter: ninguna
 prueba depende de red externa ni consume créditos de API.
 """
 import os
@@ -100,6 +100,7 @@ def test_gemini_responde_con_formato_compatible(
     assert data["subtopic_id"] == indexed_subtopic_id
     assert data["chunks_usados"] >= 1
     assert mock_gemini.await_count == 1
+    mock_or.assert_not_awaited()
 
 
 @patch("app.services.ai_service.call_gemini", new_callable=AsyncMock)
@@ -230,3 +231,48 @@ def test_gemini_sin_api_key_503_controlado(
     data = resp.json()
     assert data["degraded"] is True
     assert "MODO RESPALDO" in data["respuesta"]
+
+
+def test_gemini_rest_sends_context_and_system_separately(monkeypatch):
+    import asyncio
+    import httpx
+    from app.services.ai_service import call_gemini
+
+    use_gemini(monkeypatch)
+    response = httpx.Response(200, json={"candidates": [{
+        "finishReason": "STOP", "content": {"parts": [{"text": "Respuesta "}, {"text": "del temario."}]},
+    }]})
+    with patch("app.services.ai_service.httpx.AsyncClient.post", new_callable=AsyncMock, return_value=response) as post:
+        answer = asyncio.run(call_gemini("gemini-3.5-flash-lite", "Solo contexto", "CONTEXTO: anatomía"))
+    assert answer == "Respuesta del temario."
+    args, kw = post.call_args
+    assert settings.GEMINI_API_KEY not in args[0]
+    assert kw["headers"]["x-goog-api-key"] == settings.GEMINI_API_KEY
+    assert kw["json"]["systemInstruction"]["parts"][0]["text"] == "Solo contexto"
+    assert kw["json"]["contents"][0]["parts"][0]["text"] == "CONTEXTO: anatomía"
+
+
+@pytest.mark.parametrize("kind", ["quota", "unauthorized", "server", "empty", "blocked", "truncated", "timeout", "network"])
+def test_gemini_rest_failures_are_controlled_and_do_not_expose_secrets(monkeypatch, kind):
+    import asyncio
+    import httpx
+    from app.services.ai_service import call_gemini
+
+    use_gemini(monkeypatch)
+    if kind in ("quota", "unauthorized", "server"):
+        response = httpx.Response({"quota": 429, "unauthorized": 403, "server": 503}[kind], json={"error": settings.GEMINI_API_KEY})
+    else:
+        response = httpx.Response(200, json={"candidates": [{
+            "finishReason": {"blocked": "SAFETY", "truncated": "MAX_TOKENS"}.get(kind, "STOP"),
+            "content": {"parts": [] if kind == "empty" else [{"text": "parcial"}]},
+        }]})
+    with patch("app.services.ai_service.httpx.AsyncClient.post", new_callable=AsyncMock) as post:
+        if kind == "timeout":
+            post.side_effect = httpx.ReadTimeout(settings.GEMINI_API_KEY)
+        elif kind == "network":
+            post.side_effect = httpx.ConnectError(settings.GEMINI_API_KEY)
+        else:
+            post.return_value = response
+        with pytest.raises(GeminiCallError) as exc:
+            asyncio.run(call_gemini("gemini-3.5-flash-lite", "Sistema", "Pregunta"))
+    assert settings.GEMINI_API_KEY not in str(exc.value)

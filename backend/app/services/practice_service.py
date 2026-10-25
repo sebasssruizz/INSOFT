@@ -24,6 +24,7 @@ from app.services.ai_service import (
     GeminiCallError,
     NoChunksError,
     OpenRouterCallError,
+    OpenRouterQuotaError,
     OpenRouterSaturatedError,
     _ensure_subtopic_access,
     generate_questions_for_subtopic,
@@ -226,6 +227,7 @@ async def create_practice_session(
                     GeminiCallError,
                     OpenRouterSaturatedError,
                     OpenRouterCallError,
+                    OpenRouterQuotaError,
                     NoChunksError,
                 ):
                     # Fallos del LLM no deben romper la sesión: degrada a banco.

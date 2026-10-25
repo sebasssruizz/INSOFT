@@ -70,6 +70,10 @@ fondo oscuro (portada, vista 3D) debe declarar `text-white` explícitamente.
 
 ## Componentes
 
+La marca usa el ojo PNG transparente aprobado por el usuario en
+`public/brand/ojo-insoft-20261024.png`, tanto en `Logo` como en el favicon.
+Se conserva la proporción con `object-contain`, sin placa de fondo.
+
 Vocabulario único; no crees variantes nuevas sin quitar la vieja.
 
 - `ui/Button` — variantes `primary`, `secondary`, `inverse`, `outline`, `ghost`,

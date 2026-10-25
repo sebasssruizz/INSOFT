@@ -5,6 +5,7 @@ from app.models.progress import Progress
 from app.models.subtopic_chunk import SubtopicChunk
 from app.models.ai_query import AiQuery
 from app.models.question_answer import QuestionAnswer
+from app.models.feedback import Feedback, UsabilityEvaluation
 
 __all__ = [
     "User",
@@ -20,4 +21,6 @@ __all__ = [
     "SubtopicChunk",
     "AiQuery",
     "QuestionAnswer",
+    "Feedback",
+    "UsabilityEvaluation",
 ]

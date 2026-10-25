@@ -94,9 +94,9 @@ export default function PracticeQuiz({ subtopicId = null, topicId = null, count,
 
   return (
     <div>
-      {session.composition.ai > 0 && !session.ai_available && (
+      {!session.ai_available && (
         <p className="mb-4 rounded-xl border border-soft-butter bg-soft-butter/50 px-3.5 py-2.5 text-[0.75rem] text-deep-butter">
-          La IA no está disponible ahora: practicás solo con preguntas del banco.
+          La IA no está disponible ahora: practicas con las preguntas disponibles del banco.
         </p>
       )}
       <Quiz

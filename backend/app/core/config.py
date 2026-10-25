@@ -64,6 +64,8 @@ class Settings(BaseSettings):
 
     # Correos que obtienen automáticamente el rol de profesor al registrarse (separados por comas)
     TEACHER_EMAILS: str = ""
+    # Acceso investigador a PQRS/evaluaciones, independiente del rol docente.
+    FEEDBACK_REVIEWER_EMAILS: str = ""
 
     # Login de desarrollo (sin Google). SOLO para pruebas locales. Desactivado por defecto.
     DEV_AUTH_ENABLED: bool = False
@@ -110,7 +112,7 @@ class Settings(BaseSettings):
 
     # Google Gemini (IA) - proveedor alternativo gratuito
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
     AI_PROVIDER: str = "openrouter"  # "openrouter" o "gemini"
 
     # Generación de preguntas con IA (solo profesores)

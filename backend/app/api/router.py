@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.routes import auth, ai, content, courses, practice, progress, quiz, rag, users
+from app.api.routes import feedback
 
 api_router = APIRouter()
 api_router.include_router(auth.router)
@@ -12,3 +13,4 @@ api_router.include_router(practice.router)
 api_router.include_router(quiz.router)
 api_router.include_router(rag.router)
 api_router.include_router(ai.router)
+api_router.include_router(feedback.router)
