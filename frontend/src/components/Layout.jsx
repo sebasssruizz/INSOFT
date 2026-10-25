@@ -18,6 +18,8 @@ import { CoursesProvider, useCourses } from '../hooks/useCourses'
 import Logo from './Logo'
 import ProfileDrawer from './ProfileDrawer'
 import AiChatWidget from './AiChatWidget'
+import FeedbackWidget from './FeedbackWidget'
+import { getFeedbackAccess } from '../services/feedbackService'
 import SlowServerBanner from './ui/SlowServerBanner'
 
 function CourseLink({ course, isTeacher }) {
@@ -82,7 +84,19 @@ function SidebarContent({ onNavigate, onOpenProfile }) {
   const { user, logout } = useAuth()
   const { courses, loading } = useCourses()
   const isTeacher = user?.role === 'TEACHER'
-  const items = NAV_ITEMS[isTeacher ? 'TEACHER' : 'STUDENT']
+  const [canReview, setCanReview] = useState(false)
+  useEffect(() => {
+    let active = true
+    setCanReview(false)
+    getFeedbackAccess().then((result) => {
+      if (active) setCanReview(result.can_review)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [isTeacher, user?.id])
+  const items = [
+    ...NAV_ITEMS[isTeacher ? 'TEACHER' : 'STUDENT'],
+    ...(canReview ? [{ to: '/feedback/review', label: 'Opiniones y PQRS', icon: faChartColumn }] : []),
+  ]
 
   return (
     <div className="flex h-full flex-col">
@@ -301,6 +315,7 @@ function Shell() {
       <SlowServerBanner />
 
       <AiChatWidget />
+      <FeedbackWidget />
     </div>
   )
 }

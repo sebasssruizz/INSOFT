@@ -285,7 +285,8 @@ def test_llm_generation_when_pool_insufficient(client, scenario):
     assert len(ai_questions) == 2
 
 
-def test_llm_failure_degrades_to_bank(client, scenario):
+@pytest.mark.parametrize("provider_error", ["saturated", "quota", "missing_key"])
+def test_llm_failure_degrades_to_bank(client, scenario, provider_error):
     """Fallo del proveedor: completa con banco y ai_available=false, sin 5xx.
 
     Subtema propio con solo banco (sin pool practice y sin tope diario
@@ -311,9 +312,12 @@ def test_llm_failure_degrades_to_bank(client, scenario):
     with patch(
         "app.services.ai_service.call_openrouter", new_callable=AsyncMock
     ) as mock_call:
-        from app.core.openrouter_client import OpenRouterSaturatedError
+        from app.core.openrouter_client import OpenRouterSaturatedError, OpenRouterQuotaError
 
-        mock_call.side_effect = OpenRouterSaturatedError("límite global")
+        mock_call.side_effect = (
+            OpenRouterSaturatedError("límite global") if provider_error == "saturated"
+            else OpenRouterQuotaError("cuota agotada" if provider_error == "quota" else "clave ausente")
+        )
         resp = client.post(
             "/api/practice/sessions",
             json={"subtopic_id": degrade_subtopic_id, "count": 5},

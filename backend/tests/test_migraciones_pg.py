@@ -10,7 +10,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("DEV_AUTH_ENABLED", "true")
 
 import pytest
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, inspect, text, select
 from sqlalchemy.engine.url import make_url
 
 import app.database.migrations as migrations
@@ -97,3 +97,28 @@ def test_pg_registro_y_bloqueo_no_quedan_colgados(engine):
     migrations.run_migrations(engine)
     with engine.connect() as conn:
         assert conn.scalar(text("SELECT COUNT(*) FROM schema_migrations")) == len(migrations.MIGRATIONS)
+
+
+def test_pg_upgrade_v3_preserves_users_and_feedback_roundtrip(engine, monkeypatch):
+    from uuid import uuid4
+    from sqlalchemy.orm import Session
+    from app.models.feedback import Feedback, UsabilityEvaluation
+
+    _esquema_viejo_pg(engine)
+    current = migrations.MIGRATIONS
+    with monkeypatch.context() as old:
+        old.setattr(migrations, "MIGRATIONS", current[:3])
+        assert migrations.run_migrations(engine) == [1, 2, 3]
+    assert migrations.run_migrations(engine) == [4, 5]
+    with Session(engine) as db:
+        db.add(Feedback(user_id=1, tipo="Sugerencia", categoria="Otro", comentario="Ejemplo sintético", pagina="/dashboard"))
+        db.add(UsabilityEvaluation(user_id=1, submission_id=str(uuid4()), version="insoft-nielsen-v1",
+                                  respuestas={f"h{i:02d}": None if i == 10 else 4 for i in range(1, 11)},
+                                  dispositivo="Teléfono", comentario="Ejemplo sintético", pagina="/dashboard"))
+        db.commit()
+        assert db.scalar(select(UsabilityEvaluation)).respuestas['h10'] is None
+    assert migrations.run_migrations(engine) == []
+    with engine.connect() as conn:
+        assert conn.scalar(text("SELECT COUNT(*) FROM users")) == 2
+        assert conn.scalar(text("SELECT COUNT(*) FROM feedback")) == 1
+        assert conn.scalar(text("SELECT COUNT(*) FROM usability_evaluations")) == 1

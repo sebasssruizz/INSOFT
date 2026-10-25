@@ -15,6 +15,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 import { EyeLoader } from '../components/ui/EyeLoader'
 import { INSTRUMENTOS, instrumentForMesh, resolveMesa } from '../lib/mesas'
+import { disposeModel } from '../lib/threeResources'
 
 const INITIAL_CAMERA = { x: 1.08, y: 5.18, z: 2.9 }
 
@@ -75,12 +76,12 @@ export default function InteractiveViewPage() {
     camera.rotation.order = 'YXZ'
     camera.lookAt(0, 1, 0)
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouchDevice ? 1.75 : 2))
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'low-power' })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
-    renderer.shadowMap.enabled = true
+    renderer.shadowMap.enabled = false
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
     const keys = new Set()
@@ -92,6 +93,17 @@ export default function InteractiveViewPage() {
     const clock = new THREE.Clock()
     let animationFrame
     let disposed = false
+    let needsRender = true
+    let lastRender = 0
+    let inspectionAsset = null
+    let inspectionRequest = 0
+    const clearInspection = () => {
+      inspectionGroup.clear()
+      if (inspectionAsset) disposeModel(inspectionAsset)
+      inspectionAsset = null
+      inspectionRequest += 1
+      needsRender = true
+    }
     const roomGroup = new THREE.Group()
     const inspectionGroup = new THREE.Group()
     const inspection = { id: null, savedPosition: null, savedQuaternion: null }
@@ -210,7 +222,7 @@ export default function InteractiveViewPage() {
 
     const closeInspection = () => {
       if (!inspectionRef.current.id) return
-      inspectionGroup.clear()
+      clearInspection()
       inspectionGroup.visible = false
       if (mainModelRef.current) mainModelRef.current.visible = true
       roomGroup.visible = true
@@ -241,6 +253,7 @@ export default function InteractiveViewPage() {
       // el cursor debe poder llegar al botón "Volver a la sala".
       if (mainModelRef.current) mainModelRef.current.visible = false
       roomGroup.visible = false
+      clearInspection()
       mountInspectionObject(sourceObject)
 
       // En móvil el panel de información ocupa la parte inferior, así que la
@@ -252,8 +265,15 @@ export default function InteractiveViewPage() {
 
       // Si el GLB individual del instrumento está disponible se carga automáticamente;
       // si falla se conserva la malla incrustada de la mesa.
+      const request = inspectionRequest
       modelLoader.load(INSTRUMENTOS[id].modelUrl, (gltf) => {
-        if (!disposed && inspectionRef.current.id === id) mountInspectionObject(gltf.scene)
+        if (disposed || inspectionRef.current.id !== id || request !== inspectionRequest) {
+          disposeModel(gltf.scene)
+          return
+        }
+        clearInspection()
+        inspectionAsset = gltf.scene
+        mountInspectionObject(gltf.scene)
       }, undefined, () => {})
     }
 
@@ -389,6 +409,7 @@ export default function InteractiveViewPage() {
       camera.aspect = clientWidth / clientHeight
       camera.updateProjectionMatrix()
       renderer.setSize(clientWidth, clientHeight, false)
+      needsRender = true
     }
 
     const hemiLight = new THREE.HemisphereLight(0xf0f6ff, 0x22303b, 1.15)
@@ -454,7 +475,10 @@ export default function InteractiveViewPage() {
     modelLoader.load(
       mesa.modelUrl,
       (gltf) => {
-        if (disposed) return
+        if (disposed) {
+          disposeModel(gltf.scene)
+          return
+        }
 
         const model = gltf.scene
         mainModelRef.current = model
@@ -482,6 +506,7 @@ export default function InteractiveViewPage() {
         model.scale.setScalar(scale)
         model.position.y += 0.04
         scene.add(model)
+        needsRender = true
         setStatus('ready')
       },
       undefined,
@@ -492,6 +517,12 @@ export default function InteractiveViewPage() {
 
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
+      if (document.hidden) return
+      if (pausedRef.value && !cameraTransition.active && !inspectionRef.current.id && !needsRender) return
+      const now = performance.now()
+      if (now - lastRender < 1000 / 30) return
+      lastRender = now
+      needsRender = false
       const delta = Math.min(clock.getDelta(), 0.05)
 
       if (cameraTransition.active) {
@@ -585,14 +616,11 @@ export default function InteractiveViewPage() {
       if (document.pointerLockElement === canvas) document.exitPointerLock()
       startGameRef.current = () => {}
       pauseGameRef.current = () => {}
+      clearInspection()
+      disposeModel(scene)
+      surgicalLight.shadow.dispose()
       renderer.dispose()
-      floorTexture.dispose()
-      scene.traverse((object) => {
-        if (!object.isMesh) return
-        object.geometry.dispose()
-        if (Array.isArray(object.material)) object.material.forEach((material) => material.dispose())
-        else object.material.dispose()
-      })
+      renderer.forceContextLoss()
     }
   }, [mesaKey])
 

@@ -7,7 +7,7 @@
 // sufijo de copia (`.001`, p. ej. dos bowls); se normaliza antes de comparar.
 
 /** `/models/instrumentos/...` · GLB del catálogo que se muestra al inspeccionar. */
-const catalogo = (file) => `/models/instrumentos/${file}`
+const catalogo = (file) => `/models/optimized/instrumentos/${file}`
 
 /**
  * Catálogo central de instrumentos.
@@ -347,7 +347,7 @@ export const MESAS = {
     eyebrow: 'Unidad 2 · Procedimientos generales',
     description:
       'Montaje del instrumental para la resección de pterigión con plastía conjuntival: disección, extracción de tenón, confección de la plastía y sutura.',
-    modelUrl: '/models/mesas/mesa_pterigium.glb',
+    modelUrl: '/models/optimized/mesas/mesa_pterigium.glb',
     subtopicNames: ['Resección de pterigión'],
     instruments: ['b003', 'b004', 'b005', 'b007', 'b009', 'b011', 'b015', 'b019', 'b024', 'b026', 'b027'],
   },
@@ -356,7 +356,7 @@ export const MESAS = {
     eyebrow: 'Unidad 2 · Procedimientos generales',
     description:
       'Equipo de chalazión: delimitación, incisión, curetaje y resección de la cápsula con compresión hemostática.',
-    modelUrl: '/models/mesas/mesa_chalazium.glb',
+    modelUrl: '/models/optimized/mesas/mesa_chalazium.glb',
     subtopicNames: ['Drenaje de chalazión'],
     instruments: ['b004', 'b005', 'b007', 'b009', 'b010', 'b012', 'b013', 'b015', 'b022', 'b024', 'b026', 'b027'],
   },
@@ -365,7 +365,7 @@ export const MESAS = {
     eyebrow: 'Unidad 2 · Procedimientos generales',
     description:
       'Montaje para la inyección intravítrea: anestesia tópica estéril, asepsia estricta y administración del fármaco en el humor vítreo.',
-    modelUrl: '/models/mesas/mesa_inyeccion_intravitrea.glb',
+    modelUrl: '/models/optimized/mesas/mesa_inyeccion_intravitrea.glb',
     subtopicNames: ['Inyecciones intravítreas'],
     instruments: ['b001', 'b007', 'b014', 'b015', 'b022', 'b024', 'b026', 'b027'],
   },
@@ -374,7 +374,7 @@ export const MESAS = {
     eyebrow: 'Unidad 2 · Procedimientos generales',
     description:
       'Set de sondaje lagrimal: iniciador, sondas de calibre progresivo y verificación de permeabilidad por irrigación.',
-    modelUrl: '/models/mesas/mesa_vias_lagrimales.glb',
+    modelUrl: '/models/optimized/mesas/mesa_vias_lagrimales.glb',
     subtopicNames: ['Dilatación de vías lagrimales'],
     instruments: ['b007', 'b013', 'b015', 'b016', 'b022', 'b024', 'b026', 'b027'],
   },
@@ -383,7 +383,7 @@ export const MESAS = {
     eyebrow: 'Unidad 8 · Oculoplastia',
     description:
       'Instrumental para la evisceración del contenido ocular, con control de la hemostasia y cierre de la esclera.',
-    modelUrl: '/models/mesas/mesa_evisceracion.glb',
+    modelUrl: '/models/optimized/mesas/mesa_evisceracion.glb',
     subtopicNames: ['Cirugía en Párpados'],
     instruments: [
       'b003', 'b004', 'b005', 'b007', 'b010', 'b011', 'b012', 'b015',
@@ -395,7 +395,7 @@ export const MESAS = {
     eyebrow: 'Unidad 8 · Oculoplastia',
     description:
       'Instrumental para la enucleación del globo ocular: sección de inserciones musculares y del nervio óptico, hemostasia y cierre.',
-    modelUrl: '/models/mesas/mesa_enucleacion.glb',
+    modelUrl: '/models/optimized/mesas/mesa_enucleacion.glb',
     subtopicNames: ['Cirugía en Párpados'],
     instruments: [
       'b003', 'b004', 'b005', 'b006', 'b007', 'b010', 'b011', 'b015', 'b017',

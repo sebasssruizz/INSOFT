@@ -166,11 +166,25 @@ def _pregunta_normalizada_ai(conn: Connection) -> None:
         conn.execute(text("ALTER TABLE ai_queries ADD COLUMN question_normalizada TEXT"))
 
 
+def _crear_feedback(conn: Connection) -> None:
+    from app.models.feedback import Feedback
+
+    Feedback.__table__.create(bind=conn, checkfirst=True)
+
+
+def _crear_evaluaciones_usabilidad(conn: Connection) -> None:
+    from app.models.feedback import UsabilityEvaluation
+
+    UsabilityEvaluation.__table__.create(bind=conn, checkfirst=True)
+
+
 # Lista ordenada: añadir al final; nunca editar versiones ya publicadas.
 MIGRATIONS: list[Migration] = [
     Migration(1, "linea_base", _linea_base),
     Migration(2, "indice_ai_queries_usuario_fecha", _indice_ai_queries_usuario_fecha),
     Migration(3, "pregunta_normalizada_ai", _pregunta_normalizada_ai),
+    Migration(4, "crear_feedback", _crear_feedback),
+    Migration(5, "crear_evaluaciones_usabilidad", _crear_evaluaciones_usabilidad),
 ]
 
 _SCHEMA_MIGRATIONS_DDL = """

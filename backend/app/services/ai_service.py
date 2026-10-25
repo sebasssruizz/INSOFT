@@ -9,7 +9,8 @@ from __future__ import annotations
 import asyncio
 import time
 
-import google.generativeai as genai
+import httpx
+from urllib.parse import quote
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -50,7 +51,7 @@ ANSWER_SYSTEM = (
 
 TOP_K = 2
 
-GEMINI_TIMEOUT_SECONDS = 60
+GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
 class GeminiCallError(Exception):
@@ -157,7 +158,7 @@ async def call_gemini(
     """Llama a Google Gemini API para generar texto.
 
     Args:
-        model: Nombre del modelo de Gemini (ej. "gemini-1.5-flash").
+        model: Nombre del modelo de Gemini configurado en GEMINI_MODEL.
         system_prompt: Prompt de sistema (rol "system").
         user_content: Contenido del usuario (rol "user").
         max_tokens: Tokens máximos de respuesta (default 1200).
@@ -175,20 +176,40 @@ async def call_gemini(
         raise GeminiCallError(
             "El proveedor Gemini no está configurado (falta GEMINI_API_KEY)."
         )
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel(model)
+    # REST oficial, sin SDK legado ni llamadas síncronas que bloqueen el loop.
+    # La clave solo viaja en cabecera; nunca en URL, errores o registros.
+    payload = {
+        "systemInstruction": {"parts": [{"text": system_prompt}]},
+        "contents": [{"role": "user", "parts": [{"text": user_content}]}],
+        "generationConfig": {"maxOutputTokens": max_tokens, "temperature": temperature},
+    }
+    timeout = httpx.Timeout(settings.AI_TIMEOUT_SECS, connect=5.0)
+    url = f"{GEMINI_API_BASE}/{quote(model, safe='')}:generateContent"
     try:
-        response = gemini_model.generate_content(
-            [system_prompt, user_content],
-            generation_config=genai.GenerationConfig(
-                max_output_tokens=max_tokens,
-                temperature=temperature,
-            ),
-            request_options={"timeout": GEMINI_TIMEOUT_SECONDS},
-        )
-    except Exception as exc:
-        raise GeminiCallError(f"Error al generar respuesta con Gemini: {exc}") from exc
-    return response.text
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.post(
+                url, headers={"x-goog-api-key": settings.GEMINI_API_KEY}, json=payload,
+            )
+        if response.status_code == 429:
+            raise GeminiCallError("Se alcanzó la cuota de Gemini. Intenta más tarde.")
+        if response.status_code in (401, 403):
+            raise GeminiCallError("Gemini no pudo autorizar la solicitud.")
+        if response.is_error:
+            raise GeminiCallError(f"Gemini no está disponible (HTTP {response.status_code}).")
+        data = response.json()
+        candidate = (data.get("candidates") or [{}])[0]
+        parts = candidate.get("content", {}).get("parts", [])
+        answer = "".join(part.get("text", "") for part in parts if not part.get("thought")).strip()
+        # No guardar respuestas parciales o bloqueadas como si fueran completas.
+        if candidate.get("finishReason") not in (None, "STOP") or not answer:
+            raise GeminiCallError("Gemini no devolvió una respuesta completa.")
+        return answer
+    except httpx.TimeoutException:
+        raise GeminiCallError("Gemini tardó demasiado en responder.") from None
+    except httpx.RequestError:
+        raise GeminiCallError("No se pudo conectar con Gemini.") from None
+    except (ValueError, KeyError, TypeError, AttributeError, IndexError):
+        raise GeminiCallError("Gemini devolvió una respuesta no válida.") from None
 
 
 _ai_semaphore: tuple = None
@@ -285,16 +306,18 @@ async def ask_ai(
             "El asistente está saturado ahora mismo; intenta de nuevo en unos segundos."
         )
 
-    # 3. Normalizar la pregunta. Si la IA cae aquí, seguimos con el texto
-    #    original: la normalización es una mejora, no un requisito.
-    try:
-        normalized = await call_openrouter(
-            model=settings.OPENROUTER_NORMALIZE_MODEL,
-            system_prompt=NORMALIZE_SYSTEM,
-            user_content=question,
-        )
-    except (OpenRouterCallError, OpenRouterQuotaError, OpenRouterSaturatedError):
-        normalized = question.strip()
+    # Gemini usa la pregunta original: una sola generación, sin depender de
+    # una clave OpenRouter ni consumir una segunda petición de normalización.
+    normalized = question.strip()
+    if settings.AI_PROVIDER != "gemini":
+        try:
+            normalized = await call_openrouter(
+                model=settings.OPENROUTER_NORMALIZE_MODEL,
+                system_prompt=NORMALIZE_SYSTEM,
+                user_content=question,
+            )
+        except (OpenRouterCallError, OpenRouterQuotaError, OpenRouterSaturatedError):
+            pass
 
     # 4. Buscar chunks similares (contextuales al curso/subtema si se pasan)
     chunks = await _retrieve_chunks(db, normalized, subtopic_id, course_id)
