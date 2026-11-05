@@ -4,7 +4,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUp,
   faChevronDown,
-  faEye,
   faListCheck,
   faPaperPlane,
   faXmark,
@@ -17,8 +16,6 @@ import { useAuth } from '../hooks/useAuth'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { askAi } from '../services/aiService'
 import { getCourseTopics } from '../services/contentService'
-
-const GREETED_KEY = 'insoft:sofia-greeted'
 
 /** Renderiza negritas **así** como texto en negrita (misma prosa que las lecciones). */
 function RichText({ text }) {
@@ -35,15 +32,15 @@ function RichText({ text }) {
 
 function SofiaAvatar({ size = 'sm' }) {
   return (
-    <span
+    <img
+      src="/brand/sofia-asistente.webp"
+      alt=""
       aria-hidden="true"
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-full bg-blue-900 text-white',
-        size === 'sm' ? 'h-7 w-7 text-[0.7rem]' : 'h-10 w-10 text-sm',
+        'shrink-0 object-contain',
+        size === 'sm' ? 'h-9 w-9' : 'h-12 w-12',
       )}
-    >
-      <FontAwesomeIcon icon={faEye} />
-    </span>
+    />
   )
 }
 
@@ -176,7 +173,6 @@ function useVisualViewport(active) {
 export default function AiChatWidget() {
   const { user } = useAuth()
   const firstName = user?.name?.split(' ')[0] || ''
-  const isStudent = user?.role === 'STUDENT'
   // Pantalla completa en celular, también en horizontal (poca altura): ahí
   // una ventana flotante dejaría dos líneas de conversación a la vista.
   const isMobile = !useMediaQuery('(min-width: 640px) and (min-height: 560px)')
@@ -184,7 +180,6 @@ export default function AiChatWidget() {
   const touch = !useMediaQuery('(hover: hover) and (pointer: fine)')
 
   const [open, setOpen] = useState(false)
-  const [teaser, setTeaser] = useState(false)
 
   // Curso, unidad y subtema actuales (cualquier página dentro de /courses/:courseId/...).
   const courseMatch = useMatch('/courses/:courseId/*')
@@ -203,32 +198,6 @@ export default function AiChatWidget() {
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const viewport = useVisualViewport(open && isMobile)
-
-  // Al entrar a la plataforma Sofía saluda una vez por sesión, en una burbuja
-  // junto al botón. Se retira sola o al abrir el chat.
-  useEffect(() => {
-    if (!isStudent) return undefined
-    try {
-      if (sessionStorage.getItem(GREETED_KEY)) return undefined
-    } catch {
-      // Sin almacenamiento: saluda igual, solo que puede repetirse.
-    }
-    // Se marca como saludado al mostrarse, no antes: en desarrollo el efecto
-    // se monta dos veces y marcarlo aquí cancelaría el saludo.
-    const show = setTimeout(() => {
-      setTeaser(true)
-      try {
-        sessionStorage.setItem(GREETED_KEY, '1')
-      } catch {
-        // Ignorado: ver arriba.
-      }
-    }, 900)
-    const hide = setTimeout(() => setTeaser(false), 9000)
-    return () => {
-      clearTimeout(show)
-      clearTimeout(hide)
-    }
-  }, [isStudent])
 
   // En móvil el chat ocupa la pantalla: se bloquea el scroll del fondo para
   // que el gesto no arrastre la página por debajo.
@@ -253,7 +222,6 @@ export default function AiChatWidget() {
   }, [messages, sending, open, viewport?.height])
 
   const openChat = () => {
-    setTeaser(false)
     setOpen(true)
   }
 
@@ -308,31 +276,6 @@ export default function AiChatWidget() {
 
   return (
     <>
-      {/* Saludo de bienvenida junto al botón */}
-      {teaser && !open && (
-        <div
-          role="status"
-          className="fixed bottom-[5.25rem] right-4 z-40 flex max-w-[min(18rem,calc(100vw-2rem))] animate-rise-in items-start gap-2.5 rounded-2xl rounded-br-md border border-ink-200 bg-white py-3 pl-3 pr-2 shadow-e3 sm:right-6"
-        >
-          <SofiaAvatar />
-          <button
-            type="button"
-            onClick={openChat}
-            className="min-w-0 flex-1 pt-0.5 text-left text-[0.875rem] leading-snug text-ink-800"
-          >
-            {greeting}
-          </button>
-          <button
-            type="button"
-            onClick={() => setTeaser(false)}
-            aria-label="Cerrar el saludo"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-400 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700"
-          >
-            <FontAwesomeIcon icon={faXmark} className="text-xs" aria-hidden="true" />
-          </button>
-        </div>
-      )}
-
       {/* Botón flotante. En móvil se oculta con el chat abierto: el panel
           tiene su propio botón de cerrar y no debe quedar nada encima. */}
       <button
@@ -341,22 +284,32 @@ export default function AiChatWidget() {
         aria-label={open ? 'Cerrar a Sofía' : 'Hablar con Sofía, la asistente de IA'}
         aria-expanded={open}
         className={cn(
-          'fixed bottom-5 right-4 z-40 flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full text-white shadow-e3',
-          'transition-[background-color,transform,box-shadow] duration-150 active:scale-95 sm:right-6',
+          'group/sofia fixed right-4 z-40 rounded-xl transition-transform duration-150 active:scale-[0.97] sm:right-6',
           open
-            ? 'bg-ink-800 hover:bg-ink-900'
-            : 'bg-blue-900 hover:bg-blue-800 hover:shadow-blue-glow',
+            ? 'bottom-[max(1.25rem,env(safe-area-inset-bottom))] flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full bg-ink-800 text-white shadow-e3 hover:bg-ink-900'
+            : 'bottom-[max(4.75rem,calc(env(safe-area-inset-bottom)+4rem))] h-28 w-56 text-left sm:bottom-[max(1.25rem,env(safe-area-inset-bottom))] sm:w-60',
           open && isMobile && 'hidden',
         )}
       >
-        {teaser && !open && (
-          <span className="absolute inset-0 animate-soft-ping rounded-full bg-blue-700/40" />
+        {open ? (
+          <FontAwesomeIcon icon={faChevronDown} className="text-lg" aria-hidden="true" />
+        ) : (
+          <>
+            <span className="absolute -top-1.5 left-0 z-10 w-40 rounded-xl border border-black bg-white px-3 py-2 text-blue-900 shadow-e3 transition-colors duration-150 group-hover/sofia:bg-soft-sky sm:top-0">
+              <span className="block text-xs leading-4">Sofía · Asistente IA</span>
+              <span className="mt-0.5 block text-sm font-semibold leading-[1.125rem]">Hazme una pregunta</span>
+            </span>
+            <img
+              src="/brand/sofia-asistente.webp"
+              alt=""
+              aria-hidden="true"
+              width="384"
+              height="448"
+              draggable="false"
+              className="pointer-events-none absolute bottom-0 right-0 h-28 w-24 object-contain"
+            />
+          </>
         )}
-        <FontAwesomeIcon
-          icon={open ? faChevronDown : faEye}
-          className={cn('relative text-lg', !open && 'animate-rise-in')}
-          aria-hidden="true"
-        />
       </button>
 
       {open && (
