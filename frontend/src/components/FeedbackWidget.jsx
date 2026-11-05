@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { useAuth } from '../hooks/useAuth'
 import { sendFeedback } from '../services/feedbackService'
@@ -118,8 +118,8 @@ export default function FeedbackWidget() {
         {option === 'rating' ? (
           <div className="space-y-4 pb-2">
             <h3 className="text-lg font-semibold">Cuéntanos cómo fue usar INSOFT</h3>
-            <p className="text-sm leading-relaxed text-ink-600">Diez preguntas sobre navegación, claridad y ayuda. Puedes marcar lo que todavía no has probado y revisar todo antes de enviarlo.</p>
-            <Button as={Link} to="/feedback/evaluation" state={{ sourcePage: pathname === '/feedback/evaluation' ? '/dashboard' : pathname }} onClick={() => setOpen(false)} className="w-full">Comenzar evaluación</Button>
+            <p className="text-sm leading-relaxed text-ink-600">Tu opinión nos ayuda a mejorar INSOFT. Al comenzar, irás directamente a la encuesta en Google Forms.</p>
+            <Button as="a" href="https://forms.gle/aadYJxpfVMqrWvsk9" className="w-full">Comenzar evaluación</Button>
           </div>
         ) : (
           <form onSubmit={submit} noValidate className="space-y-4">
