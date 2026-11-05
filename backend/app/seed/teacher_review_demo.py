@@ -12,10 +12,7 @@ from app.models import Question, QuestionAnswer, Subtopic, Topic, User, UserRole
 
 
 def seed_teacher_review_demo(db: Session) -> dict:
-    emails = list(dict.fromkeys(
-        email.strip().lower() for email in settings.REVIEW_DEMO_TEACHER_EMAILS.split(",")
-        if email.strip()
-    ))
+    emails = settings.review_demo_teacher_emails
     if not emails:
         return {"courses": 0}
     if not set(emails) <= set(settings.teacher_emails):

@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     TEACHER_EMAILS: str = ""
     # Preparación idempotente de cursos con datos ficticios para docentes autorizados.
     REVIEW_DEMO_TEACHER_EMAILS: str = ""
+    # Autorizaciones adicionales para grabación, sin reemplazar listas existentes.
+    # Asigna rol docente y prepara su curso con estudiantes ficticios.
+    RECORDING_TEACHER_EMAILS: str = ""
     # Acceso investigador a PQRS/evaluaciones, independiente del rol docente.
     FEEDBACK_REVIEWER_EMAILS: str = ""
 
@@ -221,7 +224,15 @@ class Settings(BaseSettings):
 
     @property
     def teacher_emails(self) -> list[str]:
-        return [e.lower() for e in self._split_csv(self.TEACHER_EMAILS)]
+        return list(dict.fromkeys(e.lower() for e in self._split_csv(
+            f"{self.TEACHER_EMAILS},{self.RECORDING_TEACHER_EMAILS}"
+        )))
+
+    @property
+    def review_demo_teacher_emails(self) -> list[str]:
+        return list(dict.fromkeys(e.lower() for e in self._split_csv(
+            f"{self.REVIEW_DEMO_TEACHER_EMAILS},{self.RECORDING_TEACHER_EMAILS}"
+        )))
 
 
 @lru_cache

@@ -11,6 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 import Quiz from '../../components/course/Quiz'
+import LessonVideo from '../../components/course/LessonVideo'
 import PracticeQuiz from '../../components/course/PracticeQuiz'
 import { Button } from '../../components/ui/Button'
 import { Meta } from '../../components/ui/Meta'
@@ -216,6 +217,8 @@ export default function SubtopicPage() {
           )}
         </div>
       </header>
+
+      <LessonVideo subtopicName={subtopic?.name} />
 
       <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-5 shadow-e1 sm:p-7 lg:p-10">
         <LessonContent content={subtopic?.content || ''} />
