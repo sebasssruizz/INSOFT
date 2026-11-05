@@ -86,7 +86,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_official_content(db)
-        if settings.REVIEW_DEMO_TEACHER_EMAILS:
+        if settings.review_demo_teacher_emails:
             from app.seed.teacher_review_demo import seed_teacher_review_demo
 
             logger.info("Teacher review demo ready: %s", seed_teacher_review_demo(db))

@@ -10,11 +10,15 @@ from app.seed.teacher_review_demo import seed_teacher_review_demo
 from app.services.auth_service import authenticate_with_google
 
 
-def test_demo_idempotente_con_dos_docentes_y_cinco_estudiantes(monkeypatch):
+@pytest.mark.parametrize('recording', [False, True])
+def test_demo_idempotente_con_docentes_y_cinco_estudiantes(monkeypatch, recording):
     key = uuid4().hex[:8]
     emails = [f'{key}-new@example.com', f'{key}-existing@example.com']
     monkeypatch.setattr(settings, 'TEACHER_EMAILS', ','.join(emails))
     monkeypatch.setattr(settings, 'REVIEW_DEMO_TEACHER_EMAILS', ','.join(emails))
+    if recording:
+        emails.append(f'{key}-recording@example.com')
+    monkeypatch.setattr(settings, 'RECORDING_TEACHER_EMAILS', emails[-1] if recording else '', raising=False)
     with SessionLocal() as db:
         existing = User(name='Nombre existente', email=emails[1], google_id=f'old-{key}', role=UserRole.STUDENT)
         db.add(existing)
@@ -31,11 +35,12 @@ def test_demo_idempotente_con_dos_docentes_y_cinco_estudiantes(monkeypatch):
                                 explanation='Explicación', source='official', status='approved'))
         db.commit()
         result = seed_teacher_review_demo(db)
-        assert result['new_courses'] == 2
+        assert result['new_courses'] == len(emails)
         assert existing.role == UserRole.TEACHER
         assert existing.name == 'Nombre existente'
-        courses = list(db.scalars(select(Course)))
-        assert len(courses) == 2
+        courses = list(db.scalars(select(Course).join(User, Course.teacher_id == User.id)
+                                  .where(User.email.in_(emails))))
+        assert len(courses) == len(emails)
         for course in courses:
             assert db.scalar(select(func.count()).select_from(CourseMembership).where(CourseMembership.course_id == course.id)) == 5
         before = db.scalar(select(func.count()).select_from(QuestionAnswer))
