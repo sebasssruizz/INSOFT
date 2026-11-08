@@ -75,7 +75,11 @@ export default function FeedbackReviewPage() {
                 <h2 className="text-lg font-semibold">{kind === 'pqrs' ? `${item.tipo} · ${item.categoria}` : `Evaluación de uso #${item.id}`}</h2>
                 <time className="text-sm text-ink-600" dateTime={item.creado_en}>{new Date(item.creado_en).toLocaleString('es-CO')}</time>
               </div>
-              <p className="mt-2 text-xs text-ink-600">Participante {item.participante} · Registro #{item.id}{item.dispositivo ? ` · ${item.dispositivo}` : ''}</p>
+              <div className="mt-2 text-sm [overflow-wrap:anywhere]">
+                <p className="font-medium">{item.nombre || 'Nombre no disponible'}</p>
+                <p className="text-ink-600">{item.correo || 'Correo no disponible'}</p>
+              </div>
+              <p className="mt-2 text-xs text-ink-600">Registro #{item.id}{item.dispositivo ? ` · ${item.dispositivo}` : ''}</p>
               <p className="mt-3 whitespace-pre-wrap leading-relaxed [overflow-wrap:anywhere]">{item.comentario || 'Sin comentario adicional.'}</p>
               <p className="mt-3 text-xs text-ink-600 [overflow-wrap:anywhere]">Página: {item.pagina}</p>
               {kind === 'evaluacion' && <details className="mt-4">
@@ -90,7 +94,7 @@ export default function FeedbackReviewPage() {
             <Button variant="secondary" disabled={offset + 20 >= data.total || loading} onClick={() => setOffset((value) => value + 20)}>Siguiente</Button>
           </nav>}
         </>}
-        <p className="mt-8 border-t border-ink-200 pt-5 text-xs leading-relaxed text-ink-600">El CSV incluye PQRS y evaluaciones completas. h01 a h10 siguen el orden de las heurísticas: 1 significa totalmente en desacuerdo y 5 totalmente de acuerdo; las celdas vacías no deben contarse como cero. El código de participante permite distinguir personas de entregas repetidas. No se exportan nombres ni correos de las cuentas; el texto libre puede contener información personal. Conserva el archivo dentro del equipo autorizado.</p>
+        <p className="mt-8 border-t border-ink-200 pt-5 text-xs leading-relaxed text-ink-600">El CSV incluye PQRS y evaluaciones completas, con el nombre y correo de la cuenta que realizó cada envío. h01 a h10 siguen el orden de las heurísticas: 1 significa totalmente en desacuerdo y 5 totalmente de acuerdo; las celdas vacías no deben contarse como cero. El código de participante permite distinguir personas de entregas repetidas. Conserva el archivo dentro del equipo autorizado.</p>
       </>}
       {error && <p role="alert" className="mt-4 text-sm text-wrong-700">{error}</p>}
       {message && <p role="status" className="mt-4 text-sm">{message}</p>}

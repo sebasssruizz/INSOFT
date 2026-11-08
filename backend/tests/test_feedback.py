@@ -96,14 +96,24 @@ def test_auth_and_explicit_reviewer_permission(client, accounts):
     assert client.get('/api/feedback/access', headers=accounts['student']).json() == {'can_review': True}
 
 
-def test_csv_no_account_pii_and_safe_spreadsheet_cells(client, accounts):
-    client.post('/api/feedback/evaluations', headers=accounts['student'], json=evaluation())
+def test_csv_includes_authors_and_safe_spreadsheet_cells(client, accounts):
+    survey_id = client.post('/api/feedback/evaluations', headers=accounts['student'], json=evaluation()).json()['id']
+    feedback_id = client.post('/api/feedback', headers=accounts['peer'], json={
+        'tipo': 'Sugerencia', 'categoria': 'Otro', 'comentario': 'Una sugerencia.', 'pagina': '/dashboard'}).json()['id']
+    with SessionLocal() as db:
+        student = db.scalar(select(User).where(User.email == 'student@example.com'))
+        student.name = '=Nombre de prueba'
+        db.commit()
     response = client.get('/api/feedback/export.csv', headers=accounts['reviewer'])
     assert response.status_code == 200
     assert response.headers['cache-control'] == 'no-store'
-    assert '@example.com' not in response.text
     rows = list(csv.DictReader(io.StringIO(response.text.lstrip('\ufeff'))))
-    survey = next(row for row in rows if row['tipo_registro'] == 'evaluacion')
+    survey = next(row for row in rows if row['tipo_registro'] == 'evaluacion' and row['id'] == str(survey_id))
+    feedback = next(row for row in rows if row['tipo_registro'] == 'pqrs' and row['id'] == str(feedback_id))
+    assert survey['nombre'] == "'=Nombre de prueba"
+    assert survey['correo'] == 'student@example.com'
+    assert feedback['nombre'] == 'peer'
+    assert feedback['correo'] == 'peer@example.com'
     assert survey['h01'] == '4' and survey['h10'] == ''
     assert survey['comentario'].startswith("'=")
     assert survey['participante'].startswith('P')
@@ -124,7 +134,12 @@ def test_private_list_students_allowed_only_by_explicit_permission(client, accou
         assert response.status_code == 200
         assert response.headers['cache-control'] == 'no-store'
         assert len(response.json()['items']) <= 1
-        assert '@example.com' not in response.text
+        with SessionLocal() as db:
+            model = Feedback if kind == 'pqrs' else UsabilityEvaluation
+            for item in response.json()['items']:
+                author = db.get(User, db.get(model, item['id']).user_id)
+                assert item['nombre'] == author.name
+                assert item['correo'] == author.email
         assert 'user_id' not in response.text
     assert client.get('/api/feedback/review?limit=51', headers=accounts['student']).status_code == 422
     assert client.get('/api/feedback/review?offset=-1', headers=accounts['student']).status_code == 422

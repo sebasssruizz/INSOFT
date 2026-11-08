@@ -71,10 +71,14 @@ def review_feedback(
 ):
     model = Feedback if kind == "pqrs" else UsabilityEvaluation
     total = db.scalar(select(func.count()).select_from(model))
-    records = db.scalars(select(model).order_by(model.creado_en.desc(), model.id.desc()).offset(offset).limit(limit))
+    records = db.execute(
+        select(model, User.name, User.email).outerjoin(User, model.user_id == User.id)
+        .order_by(model.creado_en.desc(), model.id.desc()).offset(offset).limit(limit)
+    )
     items = []
-    for row in records:
+    for row, nombre, correo in records:
         item = {"id": row.id, "participante": f"P{row.user_id}", "creado_en": row.creado_en,
+                "nombre": nombre, "correo": correo,
                 "pagina": row.pagina, "comentario": row.comentario}
         if kind == "pqrs":
             item.update(tipo=row.tipo, categoria=row.categoria)
@@ -100,11 +104,15 @@ def export_feedback(
 ):
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["tipo_registro", "id", "participante", "fecha_utc", "pagina", "version", "dispositivo", "tipo_pqrs", "categoria", *HEURISTIC_IDS, "comentario"])
+    writer.writerow(["tipo_registro", "id", "participante", "nombre", "correo", "fecha_utc", "pagina", "version", "dispositivo", "tipo_pqrs", "categoria", *HEURISTIC_IDS, "comentario"])
     for model, kind in ((Feedback, "pqrs"), (UsabilityEvaluation, "evaluacion")):
-        for item in db.scalars(select(model).order_by(model.id).execution_options(yield_per=200)):
+        records = db.execute(
+            select(model, User.name, User.email).outerjoin(User, model.user_id == User.id)
+            .order_by(model.id).execution_options(yield_per=200)
+        )
+        for item, nombre, correo in records:
             answers = getattr(item, "respuestas", {})
-            writer.writerow([kind, item.id, f"P{item.user_id}", item.creado_en.isoformat(), csv_cell(item.pagina),
+            writer.writerow([kind, item.id, f"P{item.user_id}", csv_cell(nombre), csv_cell(correo), item.creado_en.isoformat(), csv_cell(item.pagina),
                              getattr(item, "version", ""), getattr(item, "dispositivo", ""),
                              getattr(item, "tipo", ""), getattr(item, "categoria", ""),
                              *[answers.get(key) for key in HEURISTIC_IDS], csv_cell(item.comentario)])
