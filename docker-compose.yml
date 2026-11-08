@@ -68,6 +68,7 @@ services:
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:?define el/los origenes exactos del frontend, ej https://mi-app.vercel.app}
       BACKEND_CORS_ORIGIN_REGEX: ${BACKEND_CORS_ORIGIN_REGEX:-}
       TEACHER_EMAILS: ${TEACHER_EMAILS:-}
+      FEEDBACK_REVIEWER_EMAILS: ${FEEDBACK_REVIEWER_EMAILS:-}
       DEV_AUTH_ENABLED: ${DEV_AUTH_ENABLED:-false}
       # Tope de login por IP (endpoints de /api/auth/*).
       AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-60/hour}
