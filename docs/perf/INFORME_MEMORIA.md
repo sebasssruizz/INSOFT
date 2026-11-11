@@ -83,3 +83,52 @@ sin tocar los datos de la base real (trabajar sobre una base desechable).
 `HF_HOME=/app/hf-cache` y precarga el modelo en build tanto para torch como
 para onnx, de modo que no hay descargas en el arranque (el disco de Render
 free es efímero y cada cold start re-descargaría ~220 MB).
+
+## 5. Conciliación de cifras (2026-10-10, mismos condiciones)
+
+Para comparar de verdad, se midieron torch y onnx CON EL BACKEND COMPLETO
+(uvicorn + FastAPI + SQLAlchemy + RAG con pgvector) via `docker stats` de
+contenedor, contra el mismo Postgres desechable, mismo seed (contenido
+oficial: 26 subtemas / 128 chunks), LLM simulado sin red (modo degradado) y
+10 consultas RAG secuenciales.
+
+| métrica (contenedor docker, docker stats) | torch | onnx |
+|---|---|---|
+| reposo ANTES de la primera consulta (modelo lazy, no cargado) | 147 MB | 103 MB |
+| RAM estable tras la carga del modelo (1ª consulta) | 1 054 MB | **697 MB** |
+| RAM tras 10 consultas RAG | 1 053 MB | 697 MB (sin fuga) |
+| 10 consultas totales | 42.1 s | 23.5 s |
+| imagen (docker, on-disk) | ~2.9 GB | 1.27 GB |
+
+(Anteriores cifras del propio informe —torch 1 121 MB / onnx 666 MB— se
+midiaron sobre procesos python en un script de medición: la diferencia con
+la tabla se explica porque acá el backend HTTP y las librerías están cargadas
+también inmediatamente del modelo; de cuidado comparar processes vs docker
+stats: esta tabla es LA referencia común para ambas plataformas.)
+
+### ¿Por qué onnx marca ~697 MB en reposo si el ahorro era del 40 %?
+
+1. El 40 % del informe (torch 1 121 → onnx 666 MB) comparó **RSS del
+   proceso python**, no todo el contenedor. Con backend completo el
+   ahorro real medido es torch 1 054 GB → onnx 697 = **−34 %**: mismo orden
+   de magnitud, se sostiene la recomendación.
+2. La RAM de la app NO depende del backend: FastAPI+SQLAlchemy+pgvector
+   ponen ~105-147 MB de piso en ambos cases; se suman por encima del motor
+   del embeddings y no desaparecen con onnx.
+3. El peso del ahorro está en el STACK torch-vs-onnx: torch carga
+   pytorch + sentence-transformers (runtime pesado, ~900 MB sobre el piso);
+   onnxruntime carga el mismo modelo 384d con ~600 MB de runtime. Los propios
+    pesos del modelo pesan casi lo mismo (~130 MB en ambos): el ahorro
+   grande no viene del modelo, sino de librar menos pytorch.
+4. El dato "reposo ~697 MB" CONSISTE con modelo YA CARGADO (carga perezosa
+   en la primera consulta). Antes de la primera consulta hay solo los
+   103-147 MB de piso.
+
+### Backend recomendado por ruta de despliegue
+
+| Ruta | backend | Motivo |
+|---|---|---|
+| PC compose (MVP, PRI línea) | `onnx` (default del compose, PR #38) | −35 % RAM y boot 10 veces más rápido para las consultas; ocupa Postgres	Default convive en la misma máquina |
+| VM producción final (≥2 GB) | `onnx` | misma razón; deja margen para Postgres y picos |
+| Render pago (≥1c-2g) | `onnx` | menos RAM ocupada; imagen más pequeña que build más corto |
+| Tests/CI local con venv | `torch` (default en config.py) | entorno prep validado; no tocar si no hay necesidad |
