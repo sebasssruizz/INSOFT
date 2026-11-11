@@ -1,0 +1,111 @@
+# Ensayo local tipo Neon. Todo desechable: sin volúmenes con nombre, sin puertos
+# de base de datos publicados, solo el backend escucha en 127.0.0.1:8010.
+#
+# Topología (imita Neon):
+#   backend ──(SSL)──► pgbouncer (agrupada, transaction pooling) ──(SSL)──► pg
+#   backend ──(SSL)──► pg (conexión DIRECTA para DDL y migraciones)
+#   backend ──(SSL, DNS openrouter.ai → mock)──► llm (mock de OpenRouter; no hay red externa)
+#
+# Uso (siempre con preparar.sh antes; ver docs/despliegue/ENSAYO_LOCAL.md):
+#   docker compose --env-file "$ENSAYO_RUN/compose.env" -f deploy/ensayo/docker-compose.ensayo.yml -p tmp-ensayo up -d
+name: tmp-ensayo
+
+networks:
+  ens:
+    name: tmp-ensayo-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.250.0/24
+
+services:
+  pg:
+    image: pgvector/pgvector:pg16
+    container_name: tmp-ensayo-pg
+    # El servidor exige SSL: el certificado de prueba se copia con permisos del
+    # usuario postgres (Postgres rechaza claves legibles por otros).
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        install -m 600 -o postgres -g postgres /run/tls/server.crt /tmp/server.crt &&
+        install -m 600 -o postgres -g postgres /run/tls/server.key /tmp/server.key &&
+        install -m 600 -o postgres -g postgres /run/pg/pg_hba.conf /tmp/pg_hba.conf &&
+        exec docker-entrypoint.sh postgres
+        -c ssl=on -c ssl_cert_file=/tmp/server.crt -c ssl_key_file=/tmp/server.key
+        -c hba_file=/tmp/pg_hba.conf
+    environment:
+      POSTGRES_USER: ensayo
+      POSTGRES_PASSWORD: ${ENSAYO_PG_PASSWORD}
+      POSTGRES_DB: ensayo
+    volumes:
+      - ${ENSAYO_RUN}/certs:/run/tls:ro
+      - ./pg_hba.conf:/run/pg/pg_hba.conf:ro
+    tmpfs:
+      - /var/lib/postgresql/data
+    networks:
+      ens:
+        ipv4_address: 172.31.250.10
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ensayo -d ensayo"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: tmp-ensayo-pgbouncer
+    # Corre como postgres (uid 70): pgbouncer se niega a ejecutarse como root.
+    # Los certificados NO se montan (el home del usuario es 700 y uid 70 no lo
+    # atraviesa): levantar.sh copia certificados y userlist con docker cp (dueño 70).
+    user: "70:70"
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        while [ ! -s /tmp/server.key ] || [ ! -s /tmp/server.crt ]; do sleep 0.2; done;
+        exec /entrypoint.sh pgbouncer /etc/pgbouncer/pgbouncer.ini
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+    depends_on:
+      pg:
+        condition: service_healthy
+    networks:
+      ens:
+        ipv4_address: 172.31.250.11
+
+  llm:
+    image: python:3.12-slim
+    container_name: tmp-ensayo-llm
+    command: ["python", "-u", "/srv/mock/mock_openrouter.py"]
+    volumes:
+      - ./mock_openrouter.py:/srv/mock/mock_openrouter.py:ro
+      - ${ENSAYO_RUN}/certs:/run/tls:ro
+    networks:
+      ens:
+        ipv4_address: 172.31.250.20
+
+  backend:
+    image: insoft-backend-sim
+    container_name: tmp-ensayo-backend
+    env_file: ${ENSAYO_RUN}/backend.env
+    working_dir: /srv/src
+    # La CA de prueba se añade al almacén de certificados de Python (así httpx
+    # confía en el mock de openrouter.ai). El código se monta desde el repo.
+    command:
+      - sh
+      - -c
+      - >-
+        cat /run/tls/ca.pem >> "$$(python -c 'import certifi;print(certifi.where())')" &&
+        exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - ../../backend:/srv/src:ro
+      - ${ENSAYO_RUN}/certs:/run/tls:ro
+    extra_hosts:
+      - "openrouter.ai:172.31.250.20"
+    ports:
+      - "127.0.0.1:8010:8000"
+    # Reintenta el arranque (como Neon tras el arranque en frío): si pgbouncer
+    # aún no escucha, el backend se reinicia en vez de quedarse parado.
+    restart: unless-stopped
+    networks:
+      ens:
+        ipv4_address: 172.31.250.30
