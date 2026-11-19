@@ -85,6 +85,7 @@ export default function SubtopicPage() {
   const { topics, flatSubtopics, markSubtopic } = useCourse()
 
   const [subtopic, setSubtopic] = useState(null)
+  const [selectedFragment, setSelectedFragment] = useState('')
   const [completed, setCompleted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -115,6 +116,7 @@ export default function SubtopicPage() {
     setError(null)
     setQuizOpen(false)
     setQuizScore(null)
+    setSelectedFragment('')
     try {
       const data = await getSubtopic(subtopicId, courseId)
       setSubtopic(data)
@@ -221,7 +223,22 @@ export default function SubtopicPage() {
       <LessonVideo subtopicName={subtopic?.name} />
 
       <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-5 shadow-e1 sm:p-7 lg:p-10">
-        <LessonContent content={subtopic?.content || ''} />
+        <div onMouseUp={(event) => {
+          const selection = window.getSelection()
+          if (selection && event.currentTarget.contains(selection.anchorNode) && event.currentTarget.contains(selection.focusNode)) {
+            setSelectedFragment(selection.toString().trim().slice(0, 2000))
+          }
+        }} onKeyUp={(event) => {
+          const selection = window.getSelection()
+          if (selection && event.currentTarget.contains(selection.anchorNode) && event.currentTarget.contains(selection.focusNode)) {
+            setSelectedFragment(selection.toString().trim().slice(0, 2000))
+          }
+        }}>
+          <LessonContent content={subtopic?.content || ''} />
+        </div>
+        {selectedFragment && <Button onClick={() => window.dispatchEvent(new CustomEvent('sofia:selection', {
+          detail: { courseId, subtopicId, text: selectedFragment },
+        }))}>Preguntar a Sofía sobre el fragmento seleccionado</Button>}
 
         {hasInteractiveView && (
           <div className="mt-8 rounded-2xl bg-blue-950 p-5 sm:flex sm:flex-wrap sm:items-center sm:gap-4 sm:p-6">

@@ -35,12 +35,17 @@ export class ApiError extends Error {
   }
 }
 
+const connectionError = () => new ApiError(
+  0,
+  'No se pudo conectar con el servidor. Comprueba tu conexión y que el backend esté disponible; luego vuelve a intentarlo.',
+)
+
 /** Descarga un CSV del backend con el token de sesión. */
 export async function downloadCsv(path, filename) {
   const headers = {}
   const token = session.getToken()
   if (token) headers.Authorization = `Bearer ${token}`
-  const response = await fetch(`${API_URL}/api${path}`, { headers })
+  const response = await fetch(`${API_URL}/api${path}`, { headers }).catch(() => { throw connectionError() })
   if (!response.ok) {
     const data = await response.json().catch(() => ({}))
     throw new ApiError(response.status, data.detail || 'No se pudo descargar el CSV')
@@ -86,7 +91,7 @@ export async function apiFetch(path, { method = 'GET', body } = {}) {
       headers,
       body: body ? JSON.stringify(body) : undefined,
     })
-      .then(resolve, reject)
+      .then(resolve, () => reject(connectionError()))
       .finally(() => {
         clearTimeout(timer)
         if (wentSlow) {

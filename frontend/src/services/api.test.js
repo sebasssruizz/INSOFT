@@ -108,4 +108,18 @@ describe('api.js', () => {
 
     await expect(apiFetch('/health')).resolves.toEqual({ ok: true })
   })
+
+  it('un fallo de red muestra un mensaje comprensible sin borrar la sesión ni repetir el envío', async () => {
+    const { apiFetch, session, ApiError } = await loadApi('https://api.ejemplo.test')
+    session.save('vigente', { id: 2 })
+    fetch.mockRejectedValue(new TypeError('Failed to fetch'))
+
+    const error = await apiFetch('/ai/ask', { method: 'POST', body: { question: 'Hola' } }).catch((e) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.status).toBe(0)
+    expect(error.message).toContain('No se pudo conectar con el servidor')
+    expect(session.getToken()).toBe('vigente')
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
 })

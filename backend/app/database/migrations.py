@@ -25,8 +25,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from typing import Callable
+from uuid import UUID
 
-from sqlalchemy import Connection, Engine, inspect, text
+from sqlalchemy import Connection, Engine, Uuid, inspect, text
 
 from app.database.session import ddl_engine
 
@@ -184,6 +185,58 @@ def _exclusiones_preguntas_curso(conn: Connection) -> None:
     CourseQuestionExclusion.__table__.create(bind=conn, checkfirst=True)
 
 
+def _memoria_y_feedback_ia(conn: Connection) -> None:
+    columns = {column["name"] for column in inspect(conn).get_columns("ai_queries")}
+    for name, sql_type in (
+        ("course_id", "INTEGER REFERENCES courses(id)"),
+        ("topic_id", "INTEGER REFERENCES topics(id)"),
+        ("sources", "JSON"),
+        ("feedback_helpful", "BOOLEAN"),
+        ("feedback_reason", "VARCHAR(40)"),
+        ("feedback_comment", "TEXT"),
+    ):
+        if name not in columns:
+            conn.execute(text(f"ALTER TABLE ai_queries ADD COLUMN {name} {sql_type}"))
+    conn.execute(text(
+        "CREATE INDEX IF NOT EXISTS ix_ai_queries_conversation "
+        "ON ai_queries (user_id, session_id, course_id, created_at)"
+    ))
+
+
+def _session_id_uuid(conn: Connection) -> None:
+    """Alinea el esquema legado de sesiones con Uuid del modelo, sin perder consultas."""
+    inspector = inspect(conn)
+    if "ai_queries" not in inspector.get_table_names():
+        return
+    column = next((c for c in inspector.get_columns("ai_queries") if c["name"] == "session_id"), None)
+    if column is None or isinstance(column["type"], Uuid):
+        return
+
+    values = conn.execute(text(
+        "SELECT DISTINCT session_id FROM ai_queries WHERE session_id IS NOT NULL"
+    )).scalars().all()
+    replacements = []
+    # Validar todo antes de actualizar. Un identificador inválido no se borra ni se reemplaza.
+    for value in values:
+        stripped = value.strip()
+        try:
+            parsed = UUID(stripped) if stripped else None
+        except ValueError:
+            raise RuntimeError(
+                "No se puede migrar ai_queries.session_id: hay identificadores no UUID. "
+                "Revisar los datos históricos antes de reintentar; no se modificó el historial."
+            ) from None
+        normalized = (str(parsed) if conn.dialect.name == "postgresql" else parsed.hex) if parsed else None
+        if normalized != value:
+            replacements.append({"old": value, "new": normalized})
+    if replacements:
+        conn.execute(text("UPDATE ai_queries SET session_id = :new WHERE session_id = :old"), replacements)
+    if conn.dialect.name == "postgresql":
+        conn.execute(text(
+            "ALTER TABLE ai_queries ALTER COLUMN session_id TYPE UUID USING session_id::uuid"
+        ))
+
+
 # Lista ordenada: añadir al final; nunca editar versiones ya publicadas.
 MIGRATIONS: list[Migration] = [
     Migration(1, "linea_base", _linea_base),
@@ -192,6 +245,8 @@ MIGRATIONS: list[Migration] = [
     Migration(4, "crear_feedback", _crear_feedback),
     Migration(5, "crear_evaluaciones_usabilidad", _crear_evaluaciones_usabilidad),
     Migration(6, "exclusiones_preguntas_curso", _exclusiones_preguntas_curso),
+    Migration(7, "memoria_y_feedback_ia", _memoria_y_feedback_ia),
+    Migration(8, "session_id_uuid", _session_id_uuid),
 ]
 
 _SCHEMA_MIGRATIONS_DDL = """

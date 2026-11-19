@@ -57,6 +57,14 @@ function EstadoVacio({ mensaje }) {
   return <p className="rounded-xl border border-dashed border-ink-300 bg-white px-5 py-8 text-center text-sm text-ink-500">{mensaje}</p>
 }
 
+function ConsultaTexto({ text }) {
+  if (!text) return <span>Sin contenido</span>
+  if (text.length <= 120) return <span>{text}</span>
+  return <details><summary className="cursor-pointer">{text.slice(0, 120)}…</summary>
+    <p className="mt-2 whitespace-pre-wrap">{text}</p>
+  </details>
+}
+
 function ErrorBox({ mensaje, onRetry }) {
   return (
     <div className="rounded-xl border border-wrong-200 bg-wrong-50 px-4 py-3">
@@ -83,12 +91,13 @@ function AiTab() {
   const [overview, setOverview] = useState(null)
   const [filtroSubtopic, setFiltroSubtopic] = useState('')
   const [filtroSession, setFiltroSession] = useState('')
+  const [feedbackOnly, setFeedbackOnly] = useState(false)
+  const [feedbackReason, setFeedbackReason] = useState('')
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [recarga, setRecarga] = useState(0)
 
   useEffect(() => {
-    if (!recarga) return
     let cancelled = false
     const load = async () => {
       setCargando(true)
@@ -97,6 +106,8 @@ function AiTab() {
         const params = new URLSearchParams()
         if (filtroSubtopic) params.set('subtopic_id', filtroSubtopic)
         if (filtroSession) params.set('session_id', filtroSession)
+        if (feedbackOnly) params.set('feedback_only', 'true')
+        if (feedbackReason) params.set('feedback_reason', feedbackReason)
         params.set('limit', '100')
         const data = await apiFetch(`/ai/history/all?${params.toString()}`)
         if (cancelled) return
@@ -133,7 +144,7 @@ function AiTab() {
     return () => {
       cancelled = true
     }
-  }, [recarga, filtroSubtopic, filtroSession])
+  }, [recarga, filtroSubtopic, filtroSession, feedbackOnly, feedbackReason])
 
   const sesiones = Array.from(
     new Set(historial.map((h) => h.session_id).filter(Boolean)),
@@ -142,6 +153,20 @@ function AiTab() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap gap-4">
+        <label className="self-center text-sm text-ink-500">
+          <input type="checkbox" checked={feedbackOnly} onChange={(e) => { setFeedbackOnly(e.target.checked); setRecarga((n) => n + 1) }} className="mr-2" />
+          Solo respuestas que no sirvieron
+        </label>
+        <label className="text-sm text-ink-500">Motivo:
+          <select aria-label="Filtrar motivo de valoración" value={feedbackReason}
+            onChange={(e) => { setFeedbackReason(e.target.value); setRecarga((n) => n + 1) }} className="ml-2 rounded border p-1">
+            <option value="">Todos</option>
+            <option value="context">No entendió el contexto</option>
+            <option value="incomplete">Respuesta incompleta</option>
+            <option value="incorrect">Información incorrecta</option>
+            <option value="other">Otro</option>
+          </select>
+        </label>
         <label className="block text-sm text-ink-500">
           Subtema:
           <select
@@ -262,21 +287,23 @@ function AiTab() {
                     <Th>Pregunta</Th>
                     <Th>Subtema</Th>
                     <Th>Respuesta</Th>
+                    <Th>Retroalimentación</Th>
                     <Th>Fecha</Th>
                   </tr>
                 </thead>
                 <tbody>
                   {historial.map((item) => (
                     <tr key={item.id} className="border-b border-ink-100">
-                      <Td>{item.question.length > 80 ? item.question.slice(0, 80) + '…' : item.question}</Td>
+                      <Td><ConsultaTexto text={item.question} /></Td>
                       <Td>{item.subtitulo}</Td>
                       <Td>
-                        {item.answer
-                          ? item.answer.length > 120
-                            ? item.answer.slice(0, 120) + '…'
-                            : item.answer
-                          : 'Sin respuesta'}
+                        <ConsultaTexto text={item.answer} />
                       </Td>
+                      <Td>{item.feedback ? <>
+                        <p>{item.feedback.helpful ? 'Me sirvió' : 'No me sirvió'}</p>
+                        <p>{({ context: 'No entendió el contexto', incomplete: 'Respuesta incompleta', incorrect: 'Información incorrecta', other: 'Otro' })[item.feedback.reason]}</p>
+                        <p>{item.feedback.comment}</p>
+                      </> : 'Sin valoración'}</Td>
                       <Td>{new Date(item.created_at).toLocaleString()}</Td>
                     </tr>
                   ))}

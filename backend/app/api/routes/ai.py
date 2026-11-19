@@ -10,6 +10,7 @@ GET /api/ai/stats/overview|students|subtopics — estadísticas (solo profesor).
 """
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -23,7 +24,8 @@ from app.database.session import get_db
 from app.models.user import User, UserRole
 from app.repositories import ai_query_repository as ai_query_repo
 from app.repositories import content_repository as content_repo
-from app.schemas.ai import AskRequest, AskResponse, GenerateQuestionsRequest, GenerateQuestionsResponse
+from app.schemas.ai import AskRequest, AskResponse, AnswerFeedbackRequest, GenerateQuestionsRequest, GenerateQuestionsResponse
+from app.models.ai_query import AiQuery
 from app.services import ai_service, question_service
 from app.services.ai_service import (
     ConcurrencyExceeded,
@@ -94,6 +96,8 @@ async def ask_ai_endpoint(
             current_user=current_user,
             course_id=payload.course_id,
             session_id=payload.session_id,
+            topic_id=payload.topic_id,
+            selected_text=payload.selected_text,
         )
         return AskResponse(**result)
     except NotFoundError as exc:
@@ -238,7 +242,33 @@ def _serialize_ai_query(q) -> dict:
         "model_used": q.model_used,
         "response_time_ms": q.response_time_ms,
         "created_at": q.created_at.isoformat(),
+        "course_id": q.course_id,
+        "topic_id": q.topic_id,
+        "sources": q.sources or [],
+        "degraded": q.status == "degraded",
+        "feedback": None if q.feedback_helpful is None else {
+            "helpful": q.feedback_helpful, "reason": q.feedback_reason, "comment": q.feedback_comment,
+        },
     }
+
+
+@router.put("/answers/{query_id}/feedback", response_model=dict)
+@limiter.limit("60/hour")
+def answer_feedback(
+    request: Request,
+    query_id: int,
+    payload: AnswerFeedbackRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    query = db.get(AiQuery, query_id)
+    if query is None or query.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Respuesta no encontrada.")
+    query.feedback_helpful = payload.helpful
+    query.feedback_reason = None if payload.helpful else payload.reason
+    query.feedback_comment = (payload.comment or "").strip() or None
+    db.commit()
+    return _serialize_ai_query(query)
 
 
 @router.get("/history", response_model=list[dict], tags=["ai"])
@@ -246,7 +276,9 @@ def history_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     subtopic_id: int | None = None,
-    session_id: str | None = None,
+    session_id: UUID | None = None,
+    course_id: int | None = None,
+    global_only: bool = False,
     limit: int = 50,
     offset: int = 0,
 ):
@@ -256,6 +288,8 @@ def history_endpoint(
         current_user.id,
         subtopic_id=subtopic_id,
         session_id=session_id,
+        course_id=course_id,
+        global_only=global_only,
         limit=limit,
         offset=offset,
     )
@@ -268,7 +302,9 @@ def history_all_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     subtopic_id: int | None = None,
-    session_id: str | None = None,
+    session_id: UUID | None = None,
+    feedback_only: bool = False,
+    feedback_reason: str | None = None,
     user_id: int | None = None,
     from_date: str | None = None,
     to_date: str | None = None,
@@ -299,6 +335,8 @@ def history_all_endpoint(
         to_date=to_date_dt,
         limit=limit,
         offset=offset,
+        feedback_only=feedback_only,
+        feedback_reason=feedback_reason,
     )
     return [_serialize_ai_query(q) for q in queries]
 

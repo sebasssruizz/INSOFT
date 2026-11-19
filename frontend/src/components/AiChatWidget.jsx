@@ -14,7 +14,8 @@ import { splitUnitName } from '../lib/curriculum'
 import { cn } from '../lib/utils'
 import { useAuth } from '../hooks/useAuth'
 import { useMediaQuery } from '../hooks/useMediaQuery'
-import { askAi } from '../services/aiService'
+import { askAi, getAiConversation } from '../services/aiService'
+import AiAnswerFeedback from './AiAnswerFeedback'
 import { getCourseTopics } from '../services/contentService'
 
 /** Renderiza negritas **así** como texto en negrita (misma prosa que las lecciones). */
@@ -70,6 +71,25 @@ function Message({ message }) {
             {' · '}
             {message.chunks} {message.chunks === 1 ? 'fragmento' : 'fragmentos'}
           </span>
+        )}
+        {message.degraded && <p className="mt-2 text-xs font-semibold">Modo respaldo: fragmentos del material académico.</p>}
+        {message.sources?.length > 0 && (
+          <details className="mt-2 whitespace-normal text-xs">
+            <summary className="cursor-pointer font-semibold">Fuentes consultadas</summary>
+            {message.sources.map((source) => {
+              const sourceCourse = source.course_id ?? message.courseId
+              const href = sourceCourse ? `/courses/${sourceCourse}${source.subtopic_id ? `/subtopics/${source.subtopic_id}` : source.topic_id ? `/units/${source.topic_id}` : ''}` : null
+              return <div key={source.number} className="mt-2">
+                {href ? <Link className="text-blue-900 underline" to={href}>
+                  [{source.number}] {source.title}
+                </Link> : <span>[{source.number}] {source.title}</span>}
+                <p className="mt-1 text-ink-500">{source.excerpt}</p>
+              </div>
+            })}
+          </details>
+        )}
+        {!isUser && message.queryId && !message.error && (
+          <AiAnswerFeedback queryId={message.queryId} initialFeedback={message.feedback} />
         )}
       </div>
     </div>
@@ -193,11 +213,75 @@ export default function AiChatWidget() {
 
   const greeting = `Hola${firstName ? `, ${firstName}` : ''}. Soy Sofía y estoy para ayudarte.`
   const [messages, setMessages] = useState([])
+  const storageKey = `sofia:conversation:${user?.id ?? user?.email ?? 'anonymous'}:${courseId ?? 'general'}`
+  const [sessionId, setSessionId] = useState(null)
+  const [restoring, setRestoring] = useState(true)
+  const [historyError, setHistoryError] = useState('')
+  const [selectedText, setSelectedText] = useState('')
+  const activeConversation = useRef(null)
+  const conversationEpoch = useRef(0)
+  const activeScope = useRef(storageKey)
+  activeScope.current = storageKey
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const viewport = useVisualViewport(open && isMobile)
+
+  useEffect(() => {
+    let cancelled = false
+    let stored
+    try { stored = sessionStorage.getItem(storageKey) } catch { /* memoria de esta página */ }
+    const id = stored || crypto.randomUUID()
+    try { sessionStorage.setItem(storageKey, id) } catch { /* memoria de esta página */ }
+    activeConversation.current = id
+    conversationEpoch.current += 1
+    setSessionId(id)
+    setMessages([])
+    setInput('')
+    setSending(false)
+    setHistoryError('')
+    setRestoring(Boolean(stored))
+    if (stored) {
+      getAiConversation(id, courseId).then((rows) => {
+        if (cancelled) return
+        setMessages([...rows].reverse().flatMap((row) => [
+          { role: 'user', content: row.question },
+          { role: 'assistant', content: row.answer || '', queryId: row.id, feedback: row.feedback,
+            sources: row.sources, courseId: row.course_id, course: row.course_id != null,
+            scope: Boolean(row.subtopic_id), chunks: row.sources?.length || 0, degraded: row.degraded },
+        ]))
+      }).catch((err) => {
+        if (!cancelled) setHistoryError(`No se pudo recuperar la conversación: ${err.message}`)
+      }).finally(() => { if (!cancelled) setRestoring(false) })
+    }
+    return () => { cancelled = true }
+  }, [storageKey, courseId])
+
+  useEffect(() => { setSelectedText('') }, [courseId, subtopicId])
+
+  useEffect(() => {
+    const selectFragment = (event) => {
+      if (Number(event.detail.courseId) !== courseId || Number(event.detail.subtopicId) !== subtopicId) return
+      setSelectedText(event.detail.text.slice(0, 2000))
+      setInput('Explícame este fragmento')
+      setOpen(true)
+    }
+    window.addEventListener('sofia:selection', selectFragment)
+    return () => window.removeEventListener('sofia:selection', selectFragment)
+  }, [courseId, subtopicId])
+
+  const newConversation = () => {
+    const id = crypto.randomUUID()
+    activeConversation.current = id
+    conversationEpoch.current += 1
+    setSessionId(id)
+    try { sessionStorage.setItem(storageKey, id) } catch { /* memoria de esta página */ }
+    setMessages([])
+    setInput('')
+    setHistoryError('')
+    setSelectedText('')
+  }
 
   // En móvil el chat ocupa la pantalla: se bloquea el scroll del fondo para
   // que el gesto no arrastre la página por debajo.
@@ -227,14 +311,21 @@ export default function AiChatWidget() {
 
   const send = async (question) => {
     const text = (question ?? input).trim()
-    if (!text || sending) return
+    if (!text || sending || restoring || !sessionId) return
+    const requestSession = sessionId
+    const requestScope = storageKey
+    const requestEpoch = conversationEpoch.current
+    const stillActive = () => activeConversation.current === requestSession && activeScope.current === requestScope && conversationEpoch.current === requestEpoch
 
     setMessages((prev) => [...prev, { role: 'user', content: text }])
     setInput('')
     setSending(true)
 
     try {
-      const data = await askAi(text, courseId, subtopicId)
+      const data = await askAi(text, courseId, subtopicId, {
+        session_id: requestSession, topic_id: topicId, selected_text: selectedText || null,
+      })
+      if (!stillActive()) return
       setMessages((prev) => [
         ...prev,
         {
@@ -244,9 +335,13 @@ export default function AiChatWidget() {
           course: courseId != null,
           chunks: data.chunks_usados,
           degraded: Boolean(data.degraded),
+          queryId: data.query_id,
+          sources: data.sources,
+          courseId,
         },
       ])
     } catch (err) {
+      if (!stillActive()) return
       const hint =
         err.status === 429
           ? '\n\n(Alcanzaste el límite de consultas; reintenta en el tiempo indicado.)'
@@ -258,7 +353,7 @@ export default function AiChatWidget() {
         { role: 'assistant', content: err.message + hint, error: true },
       ])
     } finally {
-      setSending(false)
+      if (stillActive()) setSending(false)
     }
   }
 
@@ -339,8 +434,10 @@ export default function AiChatWidget() {
                 Sofía
                 <span className="h-1.5 w-1.5 rounded-full bg-correct-500" aria-hidden="true" />
               </h2>
-              <p className="truncate text-[0.75rem] text-ink-500">{contextLabel}</p>
+              <p className="truncate text-[0.75rem] text-ink-500" title={contextLabel}>Contexto actual: {contextLabel}</p>
             </div>
+            <button type="button" disabled={sending || restoring} onClick={newConversation}
+              className="text-xs font-semibold text-blue-900 disabled:opacity-50">Nueva conversación</button>
             <button
               type="button"
               onClick={() => setOpen(false)}
@@ -370,8 +467,10 @@ export default function AiChatWidget() {
             className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4"
           >
             <Message message={{ role: 'assistant', content: greeting }} />
+            {restoring && <p role="status" className="text-xs text-ink-500">Recuperando conversación…</p>}
+            {historyError && <p role="alert" className="text-xs text-wrong-700">{historyError} Puedes iniciar una nueva conversación.</p>}
 
-            {!hasAsked && !sending && (
+            {!hasAsked && !sending && !restoring && (
               <div className="animate-fade-in pl-[2.375rem]" style={{ animationDelay: '150ms' }}>
                 <p className="eyebrow mb-2 text-ink-400">Puedes preguntarme</p>
                 <div className="flex flex-col items-start gap-2">
@@ -390,11 +489,15 @@ export default function AiChatWidget() {
             )}
 
             {messages.map((message, index) => (
-              <Message key={index} message={message} />
+              <Message key={`${sessionId}-${index}`} message={message} />
             ))}
             {sending && <TypingBubble />}
           </div>
 
+          {selectedText && <div className="border-t border-ink-200 px-4 py-2 text-xs">
+            <p className="line-clamp-2">Fragmento seleccionado: {selectedText}</p>
+            <button type="button" className="mt-1 text-blue-900 underline" onClick={() => setSelectedText('')}>Quitar fragmento</button>
+          </div>}
           <form
             className={cn(
               'flex items-end gap-2 border-t border-ink-200 bg-white p-3',
@@ -424,6 +527,7 @@ export default function AiChatWidget() {
                 }
               }}
               rows={1}
+              maxLength={500}
               enterKeyHint="send"
               placeholder="Escribe tu pregunta…"
               aria-label="Tu pregunta para Sofía"
@@ -434,7 +538,7 @@ export default function AiChatWidget() {
             />
             <button
               type="submit"
-              disabled={sending || !input.trim()}
+              disabled={sending || restoring || !sessionId || !input.trim()}
               aria-label="Enviar pregunta"
               className="flex h-[2.75rem] w-[2.75rem] shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white transition-[background-color,transform] duration-150 hover:bg-blue-800 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
             >

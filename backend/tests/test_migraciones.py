@@ -100,6 +100,7 @@ def test_esquema_viejo_con_datos_llega_al_actual_sin_perder_filas(tmp_path):
     assert {"country", "age"} <= _columns(engine, "users")
     assert {"source", "status", "created_by", "created_at"} <= _columns(engine, "questions")
     assert {"session_id", "model_used", "status", "response_time_ms", "question_normalizada"} <= _columns(engine, "ai_queries")
+    assert {"course_id", "topic_id", "sources", "feedback_helpful", "feedback_reason", "feedback_comment"} <= _columns(engine, "ai_queries")
 
     with engine.connect() as conn:
         # Ninguna fila se pierde.

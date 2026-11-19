@@ -51,8 +51,10 @@ def _esquema_viejo_pg(engine):
                 "order" INTEGER NOT NULL DEFAULT 0)"""))
         # Los cursos ya existían antes de las migraciones versionadas.
         from app.models.course import Course
+        from app.models.content import Topic
 
         Course.__table__.create(conn, checkfirst=True)
+        Topic.__table__.create(conn, checkfirst=True)
         conn.execute(text("""
             CREATE TABLE ai_queries (
                 id SERIAL PRIMARY KEY, user_id INTEGER, subtopic_id INTEGER,
@@ -126,3 +128,51 @@ def test_pg_upgrade_v3_preserves_users_and_feedback_roundtrip(engine, monkeypatc
         assert conn.scalar(text("SELECT COUNT(*) FROM users")) == 2
         assert conn.scalar(text("SELECT COUNT(*) FROM feedback")) == 1
         assert conn.scalar(text("SELECT COUNT(*) FROM usability_evaluations")) == 1
+
+
+def test_pg_varchar_session_upgrades_to_uuid_and_conversation_roundtrips(engine, monkeypatch):
+    """Reproduce la base real: v7 aplicada, session_id VARCHAR y filtros ORM UUID."""
+    from uuid import uuid4
+    from sqlalchemy import Uuid
+    from sqlalchemy.orm import Session
+    from app.repositories import ai_query_repository as queries
+
+    _esquema_viejo_pg(engine)
+    current = migrations.MIGRATIONS
+    with monkeypatch.context() as old:
+        old.setattr(migrations, "MIGRATIONS", current[:7])
+        migrations.run_migrations(engine)
+    session_id = uuid4()
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE ai_queries SET session_id=:sid, status='ok' WHERE id=1"), {"sid": str(session_id)})
+    assert not isinstance(next(c for c in inspect(engine).get_columns("ai_queries") if c["name"] == "session_id")["type"], Uuid)
+
+    assert migrations.run_migrations(engine) == [8]
+    assert isinstance(next(c for c in inspect(engine).get_columns("ai_queries") if c["name"] == "session_id")["type"], Uuid)
+    with Session(engine) as db:
+        history, count = queries.get_by_user(db, 1, session_id=session_id)
+        assert count == 1
+        assert history[0].respuesta == "respuesta previa"
+        assert history[0].session_id == session_id
+        assert len(queries.conversation(db, 1, session_id, None)) == 1
+        saved = queries.create(db, user_id=1, question_original="Seguimiento", respuesta="Respuesta nueva",
+                               session_id=session_id, status="ok")
+        assert saved.session_id == session_id
+        assert len(queries.conversation(db, 1, session_id, None)) == 2
+    assert migrations.run_migrations(engine) == []
+
+
+def test_pg_invalid_legacy_session_does_not_lose_data_or_mark_migration(engine, monkeypatch):
+    _esquema_viejo_pg(engine)
+    current = migrations.MIGRATIONS
+    with monkeypatch.context() as old:
+        old.setattr(migrations, "MIGRATIONS", current[:7])
+        migrations.run_migrations(engine)
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE ai_queries SET session_id='sesion-legada-invalida' WHERE id=1"))
+    with pytest.raises(RuntimeError, match="identificadores no UUID"):
+        migrations.run_migrations(engine)
+    with engine.connect() as conn:
+        assert conn.scalar(text("SELECT session_id FROM ai_queries WHERE id=1")) == "sesion-legada-invalida"
+        assert conn.scalar(text("SELECT respuesta FROM ai_queries WHERE id=1")) == "respuesta previa"
+        assert conn.scalar(text("SELECT COUNT(*) FROM schema_migrations WHERE version=8")) == 0
