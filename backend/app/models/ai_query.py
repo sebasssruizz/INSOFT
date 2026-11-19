@@ -7,7 +7,7 @@ mejorar el modelo y evaluar la calidad de las respuestas.
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -24,6 +24,12 @@ class AiQuery(Base):
         ForeignKey("subtopics.id"), nullable=True
     )
     session_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True, index=True)
+    course_id: Mapped[int | None] = mapped_column(ForeignKey("courses.id"), nullable=True)
+    topic_id: Mapped[int | None] = mapped_column(ForeignKey("topics.id"), nullable=True)
+    sources: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    feedback_helpful: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    feedback_reason: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    feedback_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     model_used: Mapped[str | None] = mapped_column(String, nullable=True)
     # Estado de la consulta: ok | degraded | error (aditivo, retrocompatible).
     status: Mapped[str | None] = mapped_column(String(20), default="ok", nullable=True)

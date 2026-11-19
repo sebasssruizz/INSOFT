@@ -5,7 +5,7 @@ siempre acotadas a los estudiantes inscritos en los cursos del profesor.
 """
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.ai_query import AiQuery
@@ -30,6 +30,9 @@ def create(
     model_used: str | None = None,
     response_time_ms: int | None = None,
     status: str = "ok",
+    course_id: int | None = None,
+    topic_id: int | None = None,
+    sources: list | None = None,
 ) -> AiQuery:
     """Registra una pregunta del estudiante (y su subtema asociado si aplica)."""
     query = AiQuery(
@@ -42,6 +45,9 @@ def create(
         question_normalizada=question_normalizada,
         respuesta=respuesta,
         status=status,
+        course_id=course_id,
+        topic_id=topic_id,
+        sources=sources,
     )
     db.add(query)
     db.commit()
@@ -65,7 +71,9 @@ def get_by_user(
     user_id: int,
     *,
     subtopic_id: int | None = None,
-    session_id: str | None = None,
+    session_id: UUID | None = None,
+    course_id: int | None = None,
+    global_only: bool = False,
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[AiQuery], int]:
@@ -75,15 +83,30 @@ def get_by_user(
         conditions.append(AiQuery.subtopic_id == subtopic_id)
     if session_id is not None:
         conditions.append(AiQuery.session_id == session_id)
+    if course_id is not None:
+        conditions.append(AiQuery.course_id == course_id)
+    elif global_only:
+        conditions.append(AiQuery.course_id.is_(None))
     total = db.scalar(select(func.count()).select_from(AiQuery).where(*conditions)) or 0
     rows = db.scalars(
         select(AiQuery)
         .where(*conditions)
-        .order_by(AiQuery.created_at.desc())
+        .order_by(AiQuery.created_at.desc(), AiQuery.id.desc())
         .limit(min(limit, 100))
         .offset(offset)
     ).all()
     return list(rows), total
+
+
+def conversation(db: Session, user_id: int, session_id: UUID, course_id: int | None) -> list[AiQuery]:
+    """Memoria acotada, siempre propia y del mismo curso; orden cronológico."""
+    rows = db.scalars(select(AiQuery).where(
+        AiQuery.user_id == user_id,
+        AiQuery.session_id == session_id,
+        AiQuery.course_id == course_id,
+        AiQuery.status == "ok",
+    ).order_by(AiQuery.created_at.desc(), AiQuery.id.desc()).limit(6)).all()
+    return list(reversed(rows))
 
 
 def get_all_filtered(
@@ -91,16 +114,24 @@ def get_all_filtered(
     *,
     teacher_id: int,
     subtopic_id: int | None = None,
-    session_id: str | None = None,
+    session_id: UUID | None = None,
     user_id: int | None = None,
     from_date: datetime | None = None,
     to_date: datetime | None = None,
     limit: int = 100,
     offset: int = 0,
+    feedback_only: bool = False,
+    feedback_reason: str | None = None,
 ) -> tuple[list[AiQuery], int]:
     """Devuelve consultas de estudiantes de un profesor, con filtros (acumulativos, no or)."""
     student_ids = _get_teacher_student_ids(db, teacher_id)
     conditions = [AiQuery.user_id.in_(student_ids)]
+    course_repo_ids = _teacher_course_ids(db, teacher_id)
+    conditions.append(or_(AiQuery.course_id.in_(course_repo_ids), AiQuery.course_id.is_(None)))
+    if feedback_only:
+        conditions.append(AiQuery.feedback_helpful.is_(False))
+    if feedback_reason:
+        conditions.append(AiQuery.feedback_reason == feedback_reason)
     if subtopic_id is not None:
         conditions.append(AiQuery.subtopic_id == subtopic_id)
     if session_id is not None:
@@ -120,6 +151,11 @@ def get_all_filtered(
         .offset(offset)
     ).all()
     return list(rows), total
+
+
+def _teacher_course_ids(db: Session, teacher_id: int) -> list[int]:
+    from app.repositories.course_repository import get_courses_for_teacher
+    return [course.id for course in get_courses_for_teacher(db, teacher_id)]
 
 
 def _get_teacher_student_ids(db: Session, teacher_id: int) -> list[int]:

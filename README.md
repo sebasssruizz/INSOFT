@@ -231,6 +231,16 @@ users ──< progress (user_id, course_id, subtopic_id, completed)
   todo estudiante nuevo se inscribe automáticamente.
 - Los cursos de profesor tienen `type=TEACHER` y un código único `OFT-XXXX`.
 
+## Sofía: contexto, memoria y retroalimentación
+
+El asistente utiliza la ubicación actual (curso, unidad y subtema) y hasta seis
+intercambios previos de la conversación para interpretar preguntas de seguimiento.
+Incluye **Nueva conversación**, restauración del hilo al recargar, consultas sobre
+texto seleccionado, fuentes consultadas y valoraciones por respuesta. El docente
+puede revisar las valoraciones desde las estadísticas de IA.
+
+Funcionamiento, migración y guía de verificación: [Chat de Sofía](docs/CHAT_SOFIA.md).
+
 ## Banco de preguntas y preguntas con IA
 
 Los profesores gestionan las preguntas de evaluación desde el panel de su curso

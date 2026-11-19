@@ -115,6 +115,15 @@ def create_app() -> FastAPI:
     app.state.limiter = ai_limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+    @app.middleware("http")
+    async def controlled_internal_errors(request: Request, call_next):
+        # Dentro de CORS: también los errores inesperados deben llegar al navegador
+        # como JSON con sus cabeceras, no ocultarse tras un "Failed to fetch".
+        try:
+            return await call_next(request)
+        except Exception as exc:
+            return await unhandled_exception_handler(request, exc)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

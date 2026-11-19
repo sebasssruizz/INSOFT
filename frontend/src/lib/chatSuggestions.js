@@ -64,5 +64,9 @@ const GENERAL = [
 export function suggestionsFor(unitNumber, subtopicName) {
   const base = BY_UNIT[unitNumber] || GENERAL
   if (!subtopicName) return base
-  return [`Resúmeme «${subtopicName}»`, ...base.slice(0, 2)]
+  return [
+    `Resúmeme «${subtopicName}»`,
+    '¿Cuáles son los conceptos clave de este subtema?',
+    'Explícame lo que estoy viendo con más detalle',
+  ]
 }
